@@ -462,3 +462,65 @@ button.playing-card:disabled { opacity: 1; cursor: default; }
   .show-hand .chit { width: 100px; height: 74px; }
   .ball { width: 80px; height: 80px; }
 }
+
+/* ---------- Rummy (Sequence / 13-Card Rummy) ---------- */
+.hand-title { font-size: .95rem; font-weight: 800; margin: 18px 0 8px; }
+.hand-title .muted { font-weight: 600; font-size: .85rem; }
+.meld-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.meld { background: #2c2a27; border-radius: 8px; padding: 18px 8px 8px; border: 2px solid transparent; max-width: 100%; }
+.meld.pure { border-color: var(--green); }
+.meld.sequence { border-color: #6d9f43; border-style: dashed; }
+.meld.set { border-color: var(--blue); }
+.meld-cards { display: flex; flex-wrap: wrap; row-gap: 8px; padding-right: 18px; }
+.meld-cards .playing-card { width: 56px; height: 80px; font-size: .95rem; }
+.meld-cards .playing-card { margin-right: -18px; }
+.meld-cards .playing-card .suit-big { font-size: 1.4rem; }
+.meld-label { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-top: 8px; min-height: 32px; font-size: .8rem; flex-wrap: wrap; }
+.meld-label .kind { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: var(--green-hover); }
+.meld.set .meld-label .kind { color: #8fbdf0; }
+.meld-label .kind svg { width: 14px; height: 14px; }
+.end-hands { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+.end-hand .who { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.end-hand .who .avatar { width: 24px; height: 24px; font-size: .7rem; }
+.end-hand .meld { padding-top: 14px; }
+.playing-card.printed-joker { color: #7d3cb5; text-align: center; }
+.playing-card.printed-joker .suit-big { font-size: .6rem; font-weight: 900; letter-spacing: .05em; }
+.playing-card.hidden-joker { display: inline-grid; place-items: center; }
+.playing-card.hidden-joker span { position: relative; z-index: 1; color: #fff; font: 900 1.8rem var(--font); text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+
+/* ---------- Dumb Charades ---------- */
+.charades-entry { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 16px; padding: 14px; border-radius: var(--radius); background: var(--panel); border: 2px solid transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.charades-entry:hover { border-color: var(--green); }
+.charades-entry .thumb { width: 96px; height: 64px; flex: none; border-radius: 6px; overflow: hidden; }
+.charades-entry .thumb svg { width: 100%; height: 100%; display: block; }
+.charades-entry h4 { font-size: 1.02rem; font-weight: 800; }
+.charades-entry p { margin: 3px 0 0; font-size: .84rem; color: var(--muted); }
+.charades-page { max-width: 640px; margin: 0 auto; }
+.ch-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+.seg { display: inline-flex; background: #1d1c1a; border-radius: 6px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 700; padding: 6px 12px; border-radius: 4px; cursor: pointer; min-height: 32px; }
+.seg button.on { background: var(--raised-hover); color: var(--text); }
+.clap { max-width: 460px; margin: 0 auto; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .45)); }
+.clap-top {
+  height: 34px; border-radius: 6px 6px 0 0; transform-origin: 0 100%; transform: rotate(-8deg); transition: transform .25s;
+  background: repeating-linear-gradient(-45deg, #f4f4f4 0 18px, #1b1b1b 18px 36px);
+  border: 3px solid #1b1b1b;
+}
+.clap.open .clap-top { transform: rotate(0deg); }
+.clap-body {
+  background: #1b1b1b; color: #f4f4f4; border-radius: 0 0 8px 8px; min-height: 190px; padding: 22px 18px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  background-image: linear-gradient(transparent 62%, rgba(255, 255, 255, .12) 62%, rgba(255, 255, 255, .12) 63%, transparent 63%);
+}
+.clap-title { font-family: var(--hand); font-size: clamp(1.8rem, 7vw, 2.6rem); font-weight: 700; line-height: 1.15; word-break: break-word; }
+.clap-year { margin-top: 10px; color: #bdbdbd; font-weight: 700; letter-spacing: .2em; }
+.clap-hint { color: #bdbdbd; font-size: 1.05rem; }
+.ch-timer { text-align: center; margin-top: 22px; padding: 14px; background: #2c2a27; border-radius: 8px; }
+.ch-timer .time { font-size: 3rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+.ch-timer.low .time { color: #e08a3c; }
+.ch-timer.done .time { color: var(--red); }
+.ch-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.ch-team { background: #2c2a27; border-radius: 8px; padding: 12px; text-align: center; border: 2px solid transparent; }
+.ch-team.active { border-color: var(--green); }
+.ch-team .tname { font-weight: 800; color: var(--muted); }
+.ch-team .tscore { font-size: 2.4rem; font-weight: 900; line-height: 1.1; }

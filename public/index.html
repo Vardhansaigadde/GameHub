@@ -44,6 +44,11 @@
       <section class="catalog">
         <h2 class="section-title">Games</h2>
         <div id="catalog" class="catalog-list"></div>
+        <h2 class="section-title" style="margin-top:24px">Play in person</h2>
+        <button id="openCharades" class="charades-entry">
+          <span class="thumb" id="charadesThumb"></span>
+          <span><h4>Dumb Charades — Telugu movies</h4><p>Random Telugu movie names for acting it out together. Timer and team scores included. Works without a room, even offline.</p></span>
+        </button>
       </section>
     </div>
   </main>
@@ -70,6 +75,19 @@
         </div>
         <button id="leaveBtn" class="btn btn-ghost btn-block"></button>
       </aside>
+    </div>
+  </main>
+
+  <!-- Dumb Charades (offline helper) -->
+  <main id="charades" class="page hidden">
+    <div class="charades-page">
+      <div class="game">
+        <div class="game-bar">
+          <button id="charadesBack" class="btn btn-sm btn-ghost">← Back</button>
+          <span class="title">Dumb Charades</span>
+        </div>
+        <div class="game-body" id="charadesBody"></div>
+      </div>
     </div>
   </main>
 

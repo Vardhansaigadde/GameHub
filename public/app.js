@@ -80,6 +80,17 @@ function thumb(id) {
       <line x1="30" y1="13" x2="80" y2="13" stroke="#c62828" stroke-width="1.6"/><line x1="30" y1="8" x2="80" y2="58" stroke="#c62828" stroke-width="1.6"/>`,
     ramsita: `<rect width="96" height="64" fill="#6d4a2e"/>
       ${[[14, 18, -12], [38, 30, 8], [60, 14, -4], [70, 38, 14], [30, 42, -6]].map(([x, y, r]) => `<g transform="rotate(${r} ${x + 10} ${y + 7})"><rect x="${x}" y="${y}" width="20" height="14" fill="#f6f0df"/><line x1="${x + 10}" y1="${y}" x2="${x + 10}" y2="${y + 14}" stroke="#d6cbb0"/></g>`).join('')}`,
+    sequence: `<rect width="96" height="64" fill="#22603a"/>
+      <g transform="rotate(-16 30 40)"><rect x="18" y="16" width="24" height="34" rx="3" fill="#fff"/><text x="22" y="26" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">5♥</text></g>
+      <g transform="rotate(-4 46 38)"><rect x="34" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="38" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">6♥</text></g>
+      <g transform="rotate(10 62 38)"><rect x="50" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="54" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">7♥</text></g>
+      <rect x="66" y="40" width="22" height="16" rx="2" fill="#f2c14e"/><text x="77" y="51" font-family="Arial" font-size="9" font-weight="900" fill="#3a2a05" text-anchor="middle">?</text>`,
+    rummy: `<rect width="96" height="64" fill="#22603a"/>
+      <g transform="rotate(-16 30 40)"><rect x="18" y="16" width="24" height="34" rx="3" fill="#fff"/><text x="22" y="26" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">9♦</text></g>
+      <g transform="rotate(-4 46 38)"><rect x="34" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="38" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">10♦</text></g>
+      <g transform="rotate(10 62 38)"><rect x="50" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="54" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">J♦</text></g>
+      <rect x="70" y="38" width="20" height="22" rx="2" fill="#fff" transform="rotate(14 80 49)"/><text x="80" y="53" font-family="Arial" font-size="9" fill="#7d3cb5" text-anchor="middle" transform="rotate(14 80 49)">★</text>`,
+    charades: `<rect width="96" height="64" fill="#3c3a37"/><g transform="rotate(-10 20 22)"><rect x="16" y="14" width="64" height="10" fill="#f4f4f4"/>${[0, 1, 2, 3].map(i => `<path d="M${22 + i * 16} 14h8l-6 10h-8z" fill="#1b1b1b"/>`).join('')}</g><rect x="16" y="26" width="64" height="30" rx="3" fill="#1b1b1b"/><text x="48" y="45" font-family="Segoe Print, Comic Sans MS, cursive" font-size="10" font-weight="700" fill="#f4f4f4" text-anchor="middle">సినిమా</text>`,
     leastcount: `<rect width="96" height="64" fill="#22603a"/>
       <g transform="rotate(-10 36 34)"><rect x="22" y="12" width="28" height="40" rx="3" fill="#fff"/><text x="27" y="23" font-family="Georgia" font-size="9" font-weight="700" fill="#c8102e">A♥</text></g>
       <g transform="rotate(8 58 32)"><rect x="44" y="10" width="28" height="40" rx="3" fill="#fff"/><text x="49" y="21" font-family="Georgia" font-size="9" font-weight="700" fill="#111">5♣</text></g>`,
@@ -91,6 +102,7 @@ function thumb(id) {
 $('#copyLink').innerHTML = `${icon('link')} Copy invite link`;
 $('#leaveBtn').innerHTML = `${icon('logout')} Leave room`;
 $('#chatSend').innerHTML = icon('send');
+$('#charadesThumb').innerHTML = thumb('charades');
 
 function gameRow(g, opts = {}) {
   const tag = opts.button ? 'button' : 'div';
@@ -140,11 +152,12 @@ $('#nameInput').addEventListener('keydown', e => e.key === 'Enter' && ($('#codeI
 // Rejoin automatically after refresh / reconnect
 socket.on('connect', () => {
   const code = localStorage.getItem('gh_room');
-  if (code) socket.emit('join', { code, token }, res => { if (res.error) { localStorage.removeItem('gh_room'); showHome(); } });
+  if (code && $('#charades').classList.contains('hidden')) socket.emit('join', { code, token }, res => { if (res.error) { localStorage.removeItem('gh_room'); showHome(); } });
 });
 
 function showHome() {
   S = null;
+  $('#charades').classList.add('hidden');
   $('#home').classList.remove('hidden');
   $('#room').classList.add('hidden');
   $('#roomChip').classList.add('hidden');
@@ -181,6 +194,7 @@ socket.on('state', state => {
   const prevGame = S && S.game;
   S = state;
   $('#home').classList.add('hidden');
+  $('#charades').classList.add('hidden');
   $('#room').classList.remove('hidden');
   $('#roomChip').classList.remove('hidden');
   $('#roomChip').innerHTML = `${icon('link')} Room <b>${S.room.code}</b>`;
@@ -931,3 +945,297 @@ handlers.leastcount = d => {
     if (confirm(`Call SHOW with ${S.game.myTotal}? If someone has equal or lower, you get +${S.game.penalty}.`)) act({ type: 'show' });
   }
 };
+
+/* ======================= Sequence & 13-Card Rummy ======================= */
+const RSUITS = ['♠', '♥', '♦', '♣'];
+const RRANKS = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const KIND_LABEL = { pure: 'Pure sequence', sequence: 'Sequence', set: 'Set', invalid: '' };
+ui.rsel = new Set();
+
+function rcard(c, opts = {}) {
+  if (!c) return '<div class="playing-card back"></div>';
+  const g = S.game;
+  if (c.r === 0) {
+    const inner = '<div>★</div><div class="suit-big">JOKER</div><div class="r2">★</div>';
+    return opts.button
+      ? `<button class="playing-card printed-joker ${opts.sel ? 'sel' : ''}" data-game="rummy" data-rcard="${c.id}" ${opts.disabled ? 'disabled' : ''}>${inner}</button>`
+      : `<div class="playing-card printed-joker">${inner}</div>`;
+  }
+  const s = RSUITS[c.s], r = RRANKS[c.r];
+  const red = c.s === 1 || c.s === 2;
+  const wild = g.wildCard && c.r === g.wildCard.r && !opts.noJoker;
+  const cls = `playing-card ${red ? 'red' : ''} ${wild ? 'joker' : ''} ${opts.sel ? 'sel' : ''}`;
+  const inner = `<div>${r}${s}</div><div class="suit-big">${s}</div><div class="r2">${r}${s}</div>`;
+  if (opts.button) return `<button class="${cls}" ${opts.attrs || `data-game="rummy" data-rcard="${c.id}"`} ${opts.disabled ? 'disabled' : ''}>${inner}</button>`;
+  return `<div class="${cls}">${inner}</div>`;
+}
+
+function rummyGroups(groups, opts = {}) {
+  return `<div class="meld-row">${groups.map((grp, gi) => `<div class="meld ${grp.kind}">
+      <div class="meld-cards">${grp.cards.map(c => rcard(c, opts.interactive ? { button: true, sel: ui.rsel.has(c.id) } : {})).join('')}</div>
+      <div class="meld-label">
+        ${grp.kind === 'invalid' ? `<span class="muted">${grp.cards.length} card${grp.cards.length === 1 ? '' : 's'}</span>` : `<span class="kind">${icon('check')} ${KIND_LABEL[grp.kind]}</span>`}
+        ${opts.interactive && ui.rsel.size && !grp.cards.every(c => ui.rsel.has(c.id)) ? `<button class="btn btn-sm" data-game="rummy" data-addto="${gi}">Move here</button>` : ''}
+        ${opts.interactive && opts.canReveal && grp.kind === 'pure' ? `<button class="btn btn-sm btn-gold" data-game="rummy" data-reveal="${gi}">Show → see joker</button>` : ''}
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function sendArrangement(groups) {
+  act({ type: 'arrange', groups: groups.filter(g => g.length) });
+}
+
+renderers.rummy = () => {
+  const g = S.game;
+  const myTurn = g.turnId === S.you;
+  const ended = g.phase !== 'play';
+  const hand = g.myGroups.flatMap(x => x.cards);
+  for (const id of [...ui.rsel]) if (!hand.some(c => c.id === id)) ui.rsel.delete(id);
+
+  const seats = g.players.filter(p => p.id !== S.you).map(p => `<div class="seat ${p.id === g.turnId ? 'active' : ''}">
+      ${avatar(p.name)}<span><b>${esc(p.name)}</b><small>${p.out ? (p.wrongShow ? 'wrong show' : 'dropped') : `${p.cardCount} cards`}${g.hiddenJoker && p.revealed ? ' · sees joker' : ''}</small></span></div>`).join('');
+
+  if (ended) {
+    const w = g.result.winnerId;
+    const others = g.players.map(p => `<div class="end-hand">
+        <div class="who">${avatar(p.name)} <b>${esc(p.name)}</b> <span class="${p.id === w ? 'plus' : 'minus'}">${p.id === w ? 'Declared · 0' : `+${g.roundPoints[p.id]}`}</span>${p.out ? ` <span class="muted">(${p.wrongShow ? 'wrong show' : 'dropped'})</span>` : ''}</div>
+        ${rummyGroups(p.groups)}</div>`).join('');
+    const table = scoreboard(g.scores, { lowestWins: true, extra: { title: 'This round', value: id => `+${g.roundPoints[id]}` } });
+    const best = Math.min(...Object.values(g.scores));
+    const champs = Object.keys(g.scores).filter(id => g.scores[id] === best);
+    return {
+      tone: 'win',
+      turn: w ? `${esc(nameOf(w))} declared and wins the round` : 'Round over',
+      body: `<div class="felt"><div class="table-area"><div class="slot"><div class="label">Joker</div>${rcard(g.wildCard, { noJoker: true })}</div></div></div>
+        ${g.phase === 'over' ? resultBanner(`${champs.map(nameOf).map(esc).join(' & ')} win${champs.length > 1 ? '' : 's'} with ${best} points`) : ''}
+        <div class="end-hands">${others}</div>
+        ${table}
+        <div class="actions">${g.phase === 'over' ? rematchBtn() : `<button class="btn btn-primary btn-lg" data-next>Next round ${icon('arrow')}</button>`}</div>`,
+    };
+  }
+
+  let turn, tone = '';
+  if (g.myOut) turn = 'You are out of this round — watch the others finish';
+  else if (!myTurn) turn = `${esc(nameOf(g.turnId))} is playing`;
+  else if (g.step === 'draw') { turn = 'Pick a card from the deck or the open pile'; tone = 'mine'; }
+  else { turn = 'Throw a card — or select your last card and Declare'; tone = 'mine'; }
+
+  const canDraw = myTurn && g.step === 'draw' && !g.myOut;
+  const deck = canDraw ? '<button class="playing-card back" data-game="rummy" data-draw="deck" aria-label="Pick from deck"></button>' : rcard(null);
+  const open = g.openCard ? rcard(g.openCard, canDraw ? { button: true, attrs: 'data-game="rummy" data-draw="pile" aria-label="Pick the open card"' } : {}) : '<div class="label">empty</div>';
+  const joker = g.wildCard
+    ? rcard(g.wildCard, { noJoker: true })
+    : '<div class="playing-card back hidden-joker"><span>?</span></div>';
+
+  const one = ui.rsel.size === 1;
+  const canThrow = myTurn && g.step === 'discard' && !g.myOut;
+  const canReveal = g.hiddenJoker && !g.myRevealed && !g.myOut;
+  const tools = `<div class="actions">
+      <button class="btn" data-game="rummy" data-sort>${icon('shuffle')} Sort</button>
+      <button class="btn" data-game="rummy" data-group ${ui.rsel.size >= 2 ? '' : 'disabled'}>Group selected</button>
+      ${canThrow ? `<button class="btn btn-primary" data-game="rummy" data-throw ${one ? '' : 'disabled'}>Throw</button>
+        <button class="btn btn-gold" data-game="rummy" data-declare ${one ? '' : 'disabled'}>Declare</button>` : ''}
+      ${canDraw ? `<button class="btn btn-ghost" data-game="rummy" data-drop>Drop</button>` : ''}
+    </div>`;
+
+  return {
+    tone,
+    turn,
+    body: `<div class="seat-strip">${seats}</div>
+      <div class="felt">
+        <div class="table-area">
+          <div class="slot"><div class="label">${g.wildCard ? 'Joker' : 'Joker (hidden)'}</div>${joker}</div>
+          <div class="slot"><div class="label">Deck · ${g.deckCount}</div>${deck}</div>
+          <div class="slot"><div class="label">Open card</div>${open}</div>
+        </div>
+      </div>
+      <h3 class="hand-title">Your hand <span class="muted">· tap cards to select</span></h3>
+      ${rummyGroups(g.myGroups, { interactive: true, canReveal })}
+      ${tools}
+      <div class="log-line">${g.log.slice(-2).map(esc).join(' · ')}</div>
+      <p class="hint">${esc(g.rulesText)} ${g.hiddenJoker ? 'Show a pure sequence to see the joker. ' : ''}Drop before picking: 20 (first turn) or 40. Wrong declare: 80. Lowest total after ${g.totalRounds} rounds wins.</p>`,
+  };
+};
+renderers.sequence = renderers.rummy;
+
+handlers.rummy = d => {
+  const g = S.game;
+  const groups = g.myGroups.map(x => x.cards.map(c => c.id));
+  const without = ids => groups.map(gr => gr.filter(id => !ids.includes(id)));
+  if ('rcard' in d) {
+    const id = +d.rcard;
+    ui.rsel.has(id) ? ui.rsel.delete(id) : ui.rsel.add(id);
+    render();
+  } else if ('draw' in d) act({ type: 'draw', from: d.draw });
+  else if ('group' in d) {
+    const ids = groups.flat().filter(id => ui.rsel.has(id));
+    ui.rsel.clear();
+    sendArrangement([...without(ids), ids]);
+  } else if ('addto' in d) {
+    const ids = groups.flat().filter(id => ui.rsel.has(id));
+    const next = without(ids);
+    next[+d.addto].push(...ids);
+    ui.rsel.clear();
+    sendArrangement(next);
+  } else if ('sort' in d) {
+    // one group per suit, jokers on their own, each sorted by number
+    const cards = g.myGroups.flatMap(x => x.cards);
+    const bySuit = [[], [], [], [], []];
+    for (const c of cards) bySuit[c.r === 0 ? 4 : c.s].push(c);
+    ui.rsel.clear();
+    sendArrangement(bySuit.map(arr => arr.sort((a, b) => a.r - b.r).map(c => c.id)));
+  } else if ('reveal' in d) act({ type: 'reveal', group: +d.reveal });
+  else if ('throw' in d) { act({ type: 'discard', card: [...ui.rsel][0] }); ui.rsel.clear(); }
+  else if ('declare' in d) {
+    if (confirm('Declare? The selected card is closed and your other 13 cards must all be in valid groups. A wrong declare costs 80 points.')) {
+      act({ type: 'declare', card: [...ui.rsel][0] });
+      ui.rsel.clear();
+    }
+  } else if ('drop' in d) {
+    if (confirm('Drop out of this round?')) act({ type: 'drop' });
+  }
+};
+handlers.sequence = handlers.rummy;
+
+/* ======================= Dumb Charades (offline movie picker) ======================= */
+const CH = {
+  movies: null,
+  mode: (() => { try { return localStorage.getItem('ch_mode') || 'easy'; } catch { return 'easy'; } })(),
+  queue: [],
+  current: null,
+  shown: false,
+  secs: 90,
+  left: 90,
+  timer: null,
+  teams: [0, 0],
+  team: 0,
+};
+
+async function loadMovies() {
+  if (CH.movies) return CH.movies;
+  CH.movies = await (await fetch('data/telugu-movies.json')).json();
+  return CH.movies;
+}
+
+function chPool() {
+  return CH.mode === 'easy' ? CH.movies.filter(m => m.e) : CH.movies;
+}
+
+function chNext() {
+  if (!CH.queue.length) {
+    const pool = chPool().slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    CH.queue = pool;
+  }
+  CH.current = CH.queue.pop();
+  CH.shown = false;
+}
+
+function chBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.25, 0.5].forEach(t => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.2, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2);
+    });
+  } catch {}
+}
+
+function chStop() { clearInterval(CH.timer); CH.timer = null; }
+
+function renderCharades() {
+  const el = $('#charadesBody');
+  if (!CH.movies) { el.innerHTML = '<p class="muted center">Loading movies…</p>'; return; }
+  const pool = chPool();
+  const m = CH.current;
+  const mm = String(Math.floor(CH.left / 60)), ss = String(CH.left % 60).padStart(2, '0');
+  el.innerHTML = `
+    <div class="ch-toolbar">
+      <div class="seg" role="group" aria-label="Movie list">
+        <button class="${CH.mode === 'easy' ? 'on' : ''}" data-ch="mode-easy">Easy</button>
+        <button class="${CH.mode === 'all' ? 'on' : ''}" data-ch="mode-all">All movies</button>
+      </div>
+      <span class="muted">${pool.length.toLocaleString()} Telugu movies</span>
+    </div>
+
+    <div class="clap ${CH.shown ? 'open' : ''}">
+      <div class="clap-top"></div>
+      <div class="clap-body">
+        ${!m ? '<div class="clap-hint">Tap <b>New movie</b> to start</div>'
+          : CH.shown ? `<div class="clap-title">${esc(m.t)}</div><div class="clap-year">${m.y}</div>`
+          : '<div class="clap-hint">Only the actor should look.<br>Tap <b>Show</b> to see the movie.</div>'}
+      </div>
+    </div>
+
+    <div class="actions">
+      ${m ? `<button class="btn btn-lg" data-ch="toggle">${CH.shown ? 'Hide' : 'Show'}</button>` : ''}
+      <button class="btn btn-primary btn-lg" data-ch="next">New movie</button>
+    </div>
+
+    <div class="ch-timer ${CH.left <= 10 && CH.timer ? 'low' : ''} ${CH.left === 0 ? 'done' : ''}">
+      <div class="time">${mm}:${ss}</div>
+      <div class="actions" style="margin-top:6px">
+        <button class="btn" data-ch="${CH.timer ? 'pause' : 'start'}">${CH.timer ? `${icon('pause')} Pause` : `${icon('play')} Start`}</button>
+        <button class="btn btn-ghost" data-ch="reset">${icon('rotate')} Reset</button>
+        <div class="seg">${[60, 90, 120].map(s => `<button class="${CH.secs === s ? 'on' : ''}" data-ch="secs-${s}">${s}s</button>`).join('')}</div>
+      </div>
+    </div>
+
+    <div class="ch-teams">
+      ${[0, 1].map(t => `<div class="ch-team ${CH.team === t ? 'active' : ''}">
+        <div class="tname">Team ${t ? 'B' : 'A'}${CH.team === t ? ' · acting' : ''}</div>
+        <div class="tscore">${CH.teams[t]}</div>
+        <div class="actions" style="margin-top:4px"><button class="btn btn-sm" data-ch="minus-${t}">−1</button><button class="btn btn-sm btn-primary" data-ch="plus-${t}">+1</button></div>
+      </div>`).join('')}
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary btn-lg" data-ch="guessed">${icon('check')} Guessed it!</button>
+      <button class="btn btn-lg" data-ch="switch">Next team ${icon('arrow')}</button>
+    </div>
+    <p class="hint">Movie names come from Wikipedia's year-by-year lists of Telugu films. Easy = films from 1995 onward that have their own Wikipedia page.</p>`;
+}
+
+$('#charades').addEventListener('click', e => {
+  const b = e.target.closest('[data-ch]');
+  if (!b) return;
+  const a = b.dataset.ch;
+  if (a.startsWith('mode-')) {
+    CH.mode = a.slice(5);
+    try { localStorage.setItem('ch_mode', CH.mode); } catch {}
+    CH.queue = [];
+    CH.current = null;
+  } else if (a === 'next') { chNext(); }
+  else if (a === 'toggle') CH.shown = !CH.shown;
+  else if (a === 'start') {
+    if (CH.left === 0) CH.left = CH.secs;
+    CH.timer = setInterval(() => {
+      CH.left = Math.max(0, CH.left - 1);
+      if (CH.left === 0) { chStop(); chBeep(); }
+      renderCharades();
+    }, 1000);
+  } else if (a === 'pause') chStop();
+  else if (a === 'reset') { chStop(); CH.left = CH.secs; }
+  else if (a.startsWith('secs-')) { chStop(); CH.secs = +a.slice(5); CH.left = CH.secs; }
+  else if (a.startsWith('plus-')) CH.teams[+a.slice(5)]++;
+  else if (a.startsWith('minus-')) CH.teams[+a.slice(6)] = Math.max(0, CH.teams[+a.slice(6)] - 1);
+  else if (a === 'guessed') { CH.teams[CH.team]++; chStop(); CH.left = CH.secs; chNext(); }
+  else if (a === 'switch') { CH.team = 1 - CH.team; chStop(); CH.left = CH.secs; chNext(); }
+  renderCharades();
+});
+
+function showCharades() {
+  $('#home').classList.add('hidden');
+  $('#room').classList.add('hidden');
+  $('#charades').classList.remove('hidden');
+  document.title = 'Dumb Charades — GameHub';
+  renderCharades();
+  loadMovies().then(renderCharades).catch(() => { $('#charadesBody').innerHTML = '<p class="form-error center">Could not load the movie list.</p>'; });
+}
+$('#openCharades').onclick = () => { history.pushState(null, '', '?charades'); showCharades(); };
+$('#charadesBack').onclick = () => { chStop(); history.pushState(null, '', '/'); $('#charades').classList.add('hidden'); showHome(); };
+if (params.has('charades')) showCharades();
+
+// Cache the app so Dumb Charades keeps working without internet after the first visit
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

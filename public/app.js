@@ -673,6 +673,8 @@ renderers.show = () => {
       <span class="word">${esc(c.word)}</span></button>`).join('');
   const pills = g.players.map(p => `<span class="pill ${p.picked ? 'ok' : ''}">${p.picked ? icon('check') : icon('hand')} ${esc(p.name)}</span>`).join('');
   const words = [...new Set(g.players.map(p => p.word))].map(esc).join(' · ');
+  // chits always move to the next player in joining order, and the last player passes to the first
+  const order = [...g.players, g.players[0]].map(p => `<span class="${p.id === S.you ? 'me' : ''}">${esc(p.name)}</span>`).join(' → ');
   let turn, tone = 'mine';
   if (g.canShow) { turn = 'You have four of a kind — press SHOW!'; tone = 'alert'; }
   else if (g.myPick != null) { turn = 'Passing… waiting for everyone to choose'; tone = ''; }
@@ -683,6 +685,7 @@ renderers.show = () => {
     body: `<div class="table-top"><div class="show-hand">${hand}</div></div>
       <div class="actions sticky-actions"><button class="btn btn-gold btn-xl big-show" data-game="show" data-show ${g.canShow ? '' : 'disabled'}>SHOW</button></div>
       <div class="pass-status">${pills}</div>
+      <p class="pass-order">Passing order: ${order}</p>
       <p class="hint">Pass ${g.passes + 1} · chits in play: ${words}. All chits move at once when everyone has chosen. Tap your chosen chit again to change it.</p>`,
   };
 };

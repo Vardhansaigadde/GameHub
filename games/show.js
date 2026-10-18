@@ -2,7 +2,7 @@
 //   Every player writes one word (any name — a film, a fruit, a friend...).
 //   Each word is copied onto 4 chits, all chits are mixed and dealt 4 per player.
 //   Everyone picks one chit to pass; once all have picked, the chits move to the next
-//   player at the same time. Repeat.
+//   player in joining order (last player passes to the first) at the same time. Repeat.
 //   Collect 4 chits with the same word -> press SHOW (1st place).
 //   Then everyone else races to press SHOW — 2nd, 3rd, 4th... in the order they press.
 const { shuffle, findPlayer } = require('./util');

@@ -12,6 +12,9 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (req, res) => res.send('ok'));
 
+const gameList = () => Object.values(games).map(g => ({ id: g.id, name: g.name, minPlayers: g.minPlayers, maxPlayers: g.maxPlayers, blurb: g.blurb }));
+app.get('/api/games', (req, res) => res.json(gameList()));
+
 const MAX_PLAYERS = 8;
 const ROOM_IDLE_MS = 30 * 60 * 1000; // delete rooms nobody is connected to for 30 min
 
@@ -44,7 +47,7 @@ function publicRoom(room) {
     inGame: !!room.state,
     players: room.players.map(p => ({ id: p.id, name: p.name, connected: !!p.socketId })),
     chat: room.chat.slice(-50),
-    games: Object.values(games).map(g => ({ id: g.id, name: g.name, minPlayers: g.minPlayers, maxPlayers: g.maxPlayers, blurb: g.blurb })),
+    games: gameList(),
   };
 }
 

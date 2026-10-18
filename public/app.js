@@ -17,11 +17,92 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.remove('hidden');
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => t.classList.add('hidden'), 2600);
+  toast.timer = setTimeout(() => t.classList.add('hidden'), 2800);
 }
-
 const done = res => res && (res.error || res.message) && toast(res.error || res.message);
 const act = payload => socket.emit('action', payload, done);
+
+/* ---------- Icons (Lucide paths) ---------- */
+const ICON_PATHS = {
+  link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  crown: '<path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3l4.27-3.67a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.51-.3z"/><path d="M5 21h14"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+  flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
+  rotate: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  shuffle: '<path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="M2 6h1.6c1.4 0 2.8.8 3.4 2"/><path d="M22 18h-6.1c-1.4 0-2.6-.7-3.3-1.7l-.5-.7"/>',
+  play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+  pause: '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  equal: '<line x1="5" x2="19" y1="9" y2="9"/><line x1="5" x2="19" y1="15" y2="15"/>',
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  pen: '<path d="M12 20h9"/><path d="M16.38 3.62a1 1 0 0 1 3 3L7.37 18.64a2 2 0 0 1-.85.5l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .5-.85z"/>',
+  eraser: '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
+  hand: '<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+};
+const icon = (name, cls = '') => `<svg class="icon ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name]}</svg>`;
+
+/* ---------- Avatars (initials, like chess.com default avatars) ---------- */
+const AV_COLORS = ['#7d5bbe', '#3f8f5c', '#c25450', '#3b7dc4', '#c9822f', '#a5476f', '#2f8f8a', '#7c6a46'];
+function avatar(name, opts = {}) {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const initials = name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?';
+  return `<span class="avatar" style="background:${AV_COLORS[h % AV_COLORS.length]}">${esc(initials)}${opts.presence ? '<span class="presence"></span>' : ''}</span>`;
+}
+const avatarOf = id => avatar(nameOf(id));
+
+/* ---------- Game thumbnails (drawn, not emoji) ---------- */
+function thumb(id) {
+  const T = {
+    housie: `<rect width="96" height="64" fill="#1f5fa8"/><rect x="6" y="9" width="84" height="46" fill="#fff"/>
+      ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => `<line x1="${6 + i * 9.33}" y1="15" x2="${6 + i * 9.33}" y2="55" stroke="#1f5fa8" stroke-width=".8"/>`).join('')}
+      <rect x="6" y="9" width="84" height="6" fill="#1f5fa8"/><line x1="6" y1="28.3" x2="90" y2="28.3" stroke="#1f5fa8" stroke-width=".8"/><line x1="6" y1="41.6" x2="90" y2="41.6" stroke="#1f5fa8" stroke-width=".8"/>
+      <g font-family="Arial" font-weight="700" font-size="7" fill="#111" text-anchor="middle"><text x="10.7" y="24.5">4</text><text x="29.3" y="24.5">27</text><text x="57.3" y="24.5">53</text><text x="20" y="37.8">12</text><text x="48" y="37.8">41</text><text x="85" y="37.8">88</text><text x="38.7" y="51">36</text><text x="66.7" y="51">70</text></g>
+      <circle cx="29.3" cy="22" r="4.6" fill="#e6285a" opacity=".55"/><circle cx="48" cy="35.3" r="4.6" fill="#e6285a" opacity=".55"/>`,
+    ashtachamma: `<rect width="96" height="64" fill="#b98552"/><rect x="24" y="4" width="56" height="56" fill="none" stroke="#4a2c14" stroke-width="1.6"/>
+      ${[1, 2, 3, 4].map(i => `<line x1="${24 + i * 11.2}" y1="4" x2="${24 + i * 11.2}" y2="60" stroke="#4a2c14" stroke-width="1"/><line x1="24" y1="${4 + i * 11.2}" x2="80" y2="${4 + i * 11.2}" stroke="#4a2c14" stroke-width="1"/>`).join('')}
+      ${[[2, 0], [2, 4], [0, 2], [4, 2], [2, 2]].map(([r, c]) => { const x = 24 + c * 11.2, y = 4 + r * 11.2; return `<path d="M${x + 2} ${y + 2}L${x + 9.2} ${y + 9.2}M${x + 9.2} ${y + 2}L${x + 2} ${y + 9.2}" stroke="#4a2c14" stroke-width="1"/>`; }).join('')}
+      <circle cx="29.6" cy="21" r="3.6" fill="#d23b3b"/><circle cx="74.4" cy="43.4" r="3.6" fill="#2f6fd0"/><circle cx="52" cy="54.6" r="3.6" fill="#d23b3b"/>
+      <ellipse cx="11" cy="22" rx="4" ry="6" fill="#f3e8cf"/><ellipse cx="11" cy="40" rx="4" ry="6" fill="#d3b47c"/>`,
+    dadi: `<rect width="96" height="64" fill="#b98552"/><g fill="none" stroke="#3e2410" stroke-width="1.6"><rect x="22" y="4" width="56" height="56"/><rect x="31" y="13" width="38" height="38"/><rect x="40" y="22" width="20" height="20"/><path d="M50 4v18M50 42v18M22 32h18M60 32h18"/></g>
+      <circle cx="22" cy="4" r="3.6" fill="#f3efe6"/><circle cx="50" cy="13" r="3.6" fill="#f3efe6"/><circle cx="60" cy="32" r="3.6" fill="#f3efe6"/><circle cx="78" cy="60" r="3.6" fill="#1f1c19"/><circle cx="31" cy="32" r="3.6" fill="#1f1c19"/><circle cx="40" cy="42" r="3.6" fill="#1f1c19"/>`,
+    show: `<rect width="96" height="64" fill="#6d4a2e"/>
+      <g font-family="Segoe Print, Comic Sans MS, cursive" font-size="6.5" font-weight="700" fill="#23307a" text-anchor="middle">
+      <g transform="rotate(-8 24 34)"><rect x="8" y="22" width="32" height="22" fill="#fbf6e6"/><text x="24" y="36">Mango</text></g>
+      <g transform="rotate(4 50 30)"><rect x="34" y="18" width="32" height="22" fill="#fbf6e6"/><text x="50" y="32">Mango</text></g>
+      <g transform="rotate(10 74 36)"><rect x="58" y="24" width="32" height="22" fill="#fbf6e6"/><text x="74" y="38">Kiwi</text></g></g>`,
+    bingo: `<rect width="96" height="64" fill="#fbf8ef"/>${[0, 1, 2, 3, 4, 5].map(i => `<line x1="0" y1="${6 + i * 11}" x2="96" y2="${6 + i * 11}" stroke="#b8d1e6" stroke-width=".8"/>`).join('')}<line x1="14" y1="0" x2="14" y2="64" stroke="#e46a6a"/>
+      <g stroke="#23307a" stroke-width="1" fill="none"><rect x="30" y="8" width="50" height="50"/>${[1, 2, 3, 4].map(i => `<line x1="${30 + i * 10}" y1="8" x2="${30 + i * 10}" y2="58"/><line x1="30" y1="${8 + i * 10}" x2="80" y2="${8 + i * 10}"/>`).join('')}</g>
+      <line x1="30" y1="13" x2="80" y2="13" stroke="#c62828" stroke-width="1.6"/><line x1="30" y1="8" x2="80" y2="58" stroke="#c62828" stroke-width="1.6"/>`,
+    ramsita: `<rect width="96" height="64" fill="#6d4a2e"/>
+      ${[[14, 18, -12], [38, 30, 8], [60, 14, -4], [70, 38, 14], [30, 42, -6]].map(([x, y, r]) => `<g transform="rotate(${r} ${x + 10} ${y + 7})"><rect x="${x}" y="${y}" width="20" height="14" fill="#f6f0df"/><line x1="${x + 10}" y1="${y}" x2="${x + 10}" y2="${y + 14}" stroke="#d6cbb0"/></g>`).join('')}`,
+    leastcount: `<rect width="96" height="64" fill="#22603a"/>
+      <g transform="rotate(-10 36 34)"><rect x="22" y="12" width="28" height="40" rx="3" fill="#fff"/><text x="27" y="23" font-family="Georgia" font-size="9" font-weight="700" fill="#c8102e">A♥</text></g>
+      <g transform="rotate(8 58 32)"><rect x="44" y="10" width="28" height="40" rx="3" fill="#fff"/><text x="49" y="21" font-family="Georgia" font-size="9" font-weight="700" fill="#111">5♣</text></g>`,
+  };
+  return `<svg viewBox="0 0 96 64" aria-hidden="true">${T[id] || '<rect width="96" height="64" fill="#3c3a37"/>'}</svg>`;
+}
+
+/* ---------- Static chrome ---------- */
+$('#copyLink').innerHTML = `${icon('link')} Copy invite link`;
+$('#leaveBtn').innerHTML = `${icon('logout')} Leave room`;
+$('#chatSend').innerHTML = icon('send');
+
+function gameRow(g, opts = {}) {
+  const tag = opts.button ? 'button' : 'div';
+  return `<${tag} class="game-row ${opts.selected ? 'selected' : ''}" ${opts.button ? `data-select="${g.id}" ${opts.disabled ? 'disabled' : ''}` : ''}>
+    <span class="thumb">${thumb(g.id)}</span>
+    <span><h4>${esc(g.name)}</h4><p>${esc(g.blurb)}</p><span class="players-needed">${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players</span></span>
+  </${tag}>`;
+}
+
+fetch('/api/games').then(r => r.json()).then(list => {
+  $('#catalog').innerHTML = list.map(g => gameRow(g)).join('');
+}).catch(() => {});
 
 /* ---------- Home ---------- */
 $('#nameInput').value = localStorage.getItem('gh_name') || '';
@@ -30,7 +111,7 @@ if (params.get('room')) $('#codeInput').value = params.get('room').toUpperCase()
 
 function getName() {
   const name = $('#nameInput').value.trim();
-  if (!name) { $('#homeError').textContent = 'Enter your name first'; $('#nameInput').focus(); return null; }
+  if (!name) { $('#homeError').textContent = 'Enter your name first.'; $('#nameInput').focus(); return null; }
   localStorage.setItem('gh_name', name);
   return name;
 }
@@ -50,10 +131,11 @@ $('#joinBtn').onclick = () => {
   const name = getName();
   const code = $('#codeInput').value.trim().toUpperCase();
   if (!name) return;
-  if (code.length !== 4) { $('#homeError').textContent = 'Room code has 4 letters'; return; }
+  if (code.length !== 4) { $('#homeError').textContent = 'Room codes have 4 letters.'; return; }
   socket.emit('join', { code, name, token }, enterRoom);
 };
 $('#codeInput').addEventListener('keydown', e => e.key === 'Enter' && $('#joinBtn').click());
+$('#nameInput').addEventListener('keydown', e => e.key === 'Enter' && ($('#codeInput').value.trim() ? $('#joinBtn') : $('#createBtn')).click());
 
 // Rejoin automatically after refresh / reconnect
 socket.on('connect', () => {
@@ -65,7 +147,8 @@ function showHome() {
   S = null;
   $('#home').classList.remove('hidden');
   $('#room').classList.add('hidden');
-  $('#roomBadge').classList.add('hidden');
+  $('#roomChip').classList.add('hidden');
+  document.title = 'GameHub — play with friends';
 }
 
 $('#leaveBtn').onclick = () => {
@@ -80,11 +163,11 @@ const inviteLink = () => `${location.origin}/?room=${S.room.code}`;
 function copyInvite() {
   const link = inviteLink();
   (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
-    .then(() => toast('Invite link copied! Send it to your friends.'))
+    .then(() => toast('Invite link copied — send it to your friends'))
     .catch(() => prompt('Copy this link:', link));
 }
 $('#copyLink').onclick = copyInvite;
-$('#roomBadge').onclick = copyInvite;
+$('#roomChip').onclick = copyInvite;
 
 $('#chatForm').onsubmit = e => {
   e.preventDefault();
@@ -99,368 +182,135 @@ socket.on('state', state => {
   S = state;
   $('#home').classList.add('hidden');
   $('#room').classList.remove('hidden');
-  $('#roomBadge').classList.remove('hidden');
-  $('#roomBadge').textContent = 'Room ' + S.room.code;
+  $('#roomChip').classList.remove('hidden');
+  $('#roomChip').innerHTML = `${icon('link')} Room <b>${S.room.code}</b>`;
 
-  // reset local UI bits when a new game / round starts
-  const fresh = S.game && S.game.called ? S.game.called.length === 0 : '';
-  const key = S.game ? `${S.game.gameId}:${S.game.round || ''}:${S.game.phase === 'arrange'}:${fresh}` : 'lobby';
+  // reset local-only UI bits whenever a new game or round starts
+  const g = S.game;
+  const fresh = g && g.called ? g.called.length === 0 : '';
+  const key = g ? `${g.gameId}:${g.round || ''}:${g.phase === 'arrange' || g.phase === 'words'}:${fresh}` : 'lobby';
   if (key !== ui.lastGameKey) { ui.arrange = Array(25).fill(null); ui.selected.clear(); ui.marks.clear(); ui.dadiSel = null; ui.lastGameKey = key; }
+  if (g && g.gameId === 'leastcount') for (const c of [...ui.selected]) if (!g.myHand.includes(c)) ui.selected.delete(c);
   syncAutoCall();
-  if (S.game && S.game.gameId === 'show') {
-    for (const c of [...ui.selected]) if (!S.game.myHand.includes(c)) ui.selected.delete(c);
-  }
-  if (S.game && prevGame && S.game.turnId === S.you && prevGame.turnId !== S.you) document.title = '🔔 Your turn — GameHub';
-  else if (!S.game || S.game.turnId !== S.you) document.title = 'GameHub';
+
+  const myTurnNow = g && g.turnId === S.you;
+  if (myTurnNow && !(prevGame && prevGame.turnId === S.you)) document.title = '● Your turn — GameHub';
+  else if (!myTurnNow) document.title = `Room ${S.room.code} — GameHub`;
 
   renderSide();
   render();
 });
 
 function renderSide() {
+  $('#playerCount').textContent = `${S.room.players.length}/8`;
   $('#playerList').innerHTML = S.room.players.map(p => `
-    <li class="${p.connected ? '' : 'off'}">
-      <span class="dot"></span>
-      <span>${esc(p.name)}</span>
-      ${p.id === S.room.hostId ? '<span class="tag">HOST</span>' : ''}
-      ${p.id === S.you ? '<span class="me">(you)</span>' : ''}
-      ${isHost() && !S.room.inGame && p.id !== S.you ? `<button class="kick" data-kick="${p.id}">✕</button>` : ''}
+    <li class="${p.connected ? '' : 'offline'}">
+      ${avatar(p.name, { presence: true })}
+      <span class="pname">${esc(p.name)}</span>
+      ${p.id === S.room.hostId ? `<span class="host-badge" title="Host">${icon('crown')}</span>` : ''}
+      ${p.id === S.you ? '<span class="you">you</span>' : ''}
+      ${isHost() && !S.room.inGame && p.id !== S.you ? `<button class="btn kick" data-kick="${p.id}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}">${icon('x')}</button>` : ''}
     </li>`).join('');
 
   const log = $('#chatLog');
   const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
   log.innerHTML = S.room.chat.map(m => m.from
-    ? `<div><b>${esc(m.from)}:</b> ${esc(m.text)}</div>`
-    : `<div class="sys">${esc(m.text)}</div>`).join('');
+    ? `<div><b>${esc(m.from)}</b> ${esc(m.text)}</div>`
+    : `<div class="sys">${esc(m.text)}</div>`).join('') || '<div class="sys">No messages yet.</div>';
   if (atBottom || S.room.chat.length !== ui.chatCount) log.scrollTop = log.scrollHeight;
   ui.chatCount = S.room.chat.length;
 }
 
 $('#playerList').onclick = e => {
-  const id = e.target.dataset.kick;
-  if (id) socket.emit('kick', { playerId: id });
+  const b = e.target.closest('[data-kick]');
+  if (b) socket.emit('kick', { playerId: b.dataset.kick });
 };
 
+/* ---------- Frame ---------- */
+const renderers = {};
+const handlers = {};
+
 function render() {
-  const stage = $('#stage');
-  if (!S.game) stage.innerHTML = renderLobby();
-  else stage.innerHTML = `<div class="card">${gameHeader()}${renderers[S.game.gameId]()}</div>`;
+  // keep anything the player is typing when someone else's move re-renders the page
+  const typing = $('#stage input[id]');
+  const keep = typing && { id: typing.id, value: typing.value, focused: document.activeElement === typing };
+  $('#stage').innerHTML = S.game ? renderGame() : renderLobby();
+  const again = keep && document.getElementById(keep.id);
+  if (again) { again.value = keep.value; if (keep.focused) again.focus(); }
 }
 
-const EMOJI = { housie: '🎟️', ashtachamma: '🐚', dadi: '⚪', bingo: '🔢', ramsita: '🏹', show: '🃏' };
-
-function gameHeader() {
-  const g = S.room.games.find(x => x.id === S.game.gameId);
-  const round = S.game.round ? `<span class="pill">Round ${S.game.round} / ${S.game.totalRounds}</span>` : '';
-  return `<div class="game-head">
-    <h2>${EMOJI[g.id]} ${esc(g.name)} ${round}</h2>
-    ${isHost() ? '<button data-end class="ghost">End game</button>' : ''}
+function renderGame() {
+  const g = S.game;
+  const info = S.room.games.find(x => x.id === g.gameId);
+  const r = renderers[g.gameId]();
+  const round = g.round && g.totalRounds ? `<span class="round">Round ${g.round} of ${g.totalRounds}</span>` : '';
+  return `<div class="game">
+    <div class="game-bar">
+      <span class="title"><span class="thumb-mini">${thumb(g.gameId)}</span>${esc(info.name)}</span>${round}
+      <span class="spacer"></span>
+      ${isHost() ? `<button class="btn btn-sm btn-ghost" data-end>${icon('flag')} End game</button>` : ''}
+    </div>
+    <div class="turn-bar ${r.tone || ''}">${r.tone === 'mine' ? '<span class="tag">Your turn</span>' : ''}<span>${r.turn}</span></div>
+    <div class="game-body">${r.body}</div>
   </div>`;
 }
 
 function renderLobby() {
   const n = S.room.players.length;
-  const tiles = S.room.games.map(g => `
-    <button class="game-tile ${g.id === S.room.gameId ? 'selected' : ''}" data-select="${g.id}" ${isHost() ? '' : 'disabled'}>
-      <div class="emoji">${EMOJI[g.id] || '🎮'}</div>
-      <h4>${esc(g.name)}</h4>
-      <p>${esc(g.blurb)}</p>
-      <div class="count">${g.minPlayers}-${g.maxPlayers} players</div>
-    </button>`).join('');
   const g = S.room.games.find(x => x.id === S.room.gameId);
   const ok = n >= g.minPlayers && n <= g.maxPlayers;
-  return `<div class="card lobby">
-    <h2>Lobby</h2>
-    <p class="subtle">Share code <b>${S.room.code}</b> or the invite link with friends. ${isHost() ? 'Pick a game and start!' : 'Waiting for the host to start…'}</p>
-    <div class="game-grid">${tiles}</div>
-    ${isHost()
-      ? `<div class="actions"><button class="primary big" data-start ${ok ? '' : 'disabled'}>Start ${esc(g.name)}</button></div>
-         ${ok ? '' : `<p class="subtle" style="text-align:center">${esc(g.name)} needs ${g.minPlayers}-${g.maxPlayers} players — you have ${n}.</p>`}`
-      : `<p class="subtle" style="text-align:center">Host picked <b>${esc(g.name)}</b>.</p>`}
+  const rows = S.room.games.map(x => gameRow(x, { button: true, selected: x.id === S.room.gameId, disabled: !isHost() })).join('');
+  return `<div class="game lobby">
+    <div class="game-bar"><span class="title">Lobby</span><span class="spacer"></span><span class="round">${n} player${n === 1 ? '' : 's'} here</span></div>
+    <div class="game-body">
+      <h2>${isHost() ? 'Choose a game' : `Waiting for ${esc(nameOf(S.room.hostId))} to start`}</h2>
+      <div class="share-box">
+        <span class="muted">Room code</span><span class="code">${S.room.code}</span><span class="spacer" style="flex:1"></span>
+        <button class="btn btn-sm" data-copy>${icon('link')} Copy invite link</button>
+      </div>
+      <div class="catalog-list">${rows}</div>
+      ${isHost()
+        ? `<div class="actions"><button class="btn btn-primary btn-lg" data-start ${ok ? '' : 'disabled'}>${icon('play')} Play ${esc(g.name)}</button></div>
+           ${ok ? '' : `<p class="hint">${esc(g.name)} needs ${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players — ${n} in the room.</p>`}`
+        : `<p class="hint">Selected: <b>${esc(g.name)}</b></p>`}
+    </div>
   </div>`;
 }
 
-/* ---------- Click handling (event delegation) ---------- */
+function resultBanner(text) {
+  return `<div class="result-banner">${icon('trophy', 'trophy')}<h3>${text}</h3></div>`;
+}
+
+function scoreboard(scores, opts = {}) {
+  const ids = Object.keys(scores).sort((a, b) => (opts.lowestWins ? scores[a] - scores[b] : scores[b] - scores[a]));
+  return `<table class="scoreboard">
+    <tr><th></th><th>Player</th>${opts.extra ? `<th class="num">${opts.extra.title}</th>` : ''}<th class="num">Total</th></tr>
+    ${ids.map((id, i) => `<tr class="${id === S.you ? 'me' : ''}">
+      <td class="rank">${i + 1}</td>
+      <td><span class="pcell">${avatarOf(id)}${esc(nameOf(id))}</span></td>
+      ${opts.extra ? `<td class="num">${opts.extra.value(id)}</td>` : ''}
+      <td class="num"><b>${scores[id]}</b></td></tr>`).join('')}
+  </table>`;
+}
+
+const rematchBtn = () => (isHost() ? `<button class="btn btn-primary btn-lg" data-rematch>${icon('rotate')} Play again</button>` : '');
+const tilt = i => `--tilt:${[-3, 2, -1.5, 3, -2.5, 1.5, -1, 2.5][i % 8]}deg`;
+
+/* ---------- Click handling ---------- */
 $('#stage').addEventListener('click', e => {
   const el = e.target.closest('button');
   if (!el || el.disabled) return;
   const d = el.dataset;
   if ('select' in d) socket.emit('selectGame', { gameId: d.select });
   else if ('start' in d) socket.emit('start', null, done);
+  else if ('copy' in d) copyInvite();
   else if ('end' in d) { if (confirm('End this game for everyone and go back to the lobby?')) socket.emit('endGame'); }
   else if ('rematch' in d) act({ type: 'rematch' });
   else if ('next' in d) act({ type: 'next' });
   else if (d.game && handlers[d.game]) handlers[d.game](d, el);
 });
 
-/* ---------- Bingo ---------- */
-const LETTERS = ['B', 'I', 'N', 'G', 'O'];
-
-function bingoGrid(board, called, opts = {}) {
-  const cut = new Set(called);
-  const last = called[called.length - 1];
-  return `<div class="bingo-grid ${opts.small ? 'small' : ''}">${board.map((n, i) => {
-    if (n == null) return `<button class="cell empty" data-game="bingo" data-place="${i}">tap</button>`;
-    const cls = ['cell', cut.has(n) ? 'cut' : '', n === last ? 'last' : ''].join(' ');
-    if (opts.clickable && !cut.has(n)) return `<button class="${cls}" data-game="bingo" data-call="${n}">${n}</button>`;
-    if (opts.arranging) return `<button class="${cls}" data-game="bingo" data-unplace="${i}">${n}</button>`;
-    return `<div class="${cls}">${n}</div>`;
-  }).join('')}</div>`;
-}
-
-const lettersBar = lines => `<div class="bingo-letters">${LETTERS.map((l, i) => `<span class="${i < lines ? 'on' : ''}">${l}</span>`).join('')}</div>`;
-
-const renderers = {};
-const handlers = {};
-
-renderers.bingo = () => {
-  const g = S.game;
-  const me = g.players.find(p => p.id === S.you);
-
-  if (g.phase === 'arrange') {
-    if (g.myBoard) {
-      const waiting = g.players.filter(p => !p.ready).map(p => esc(p.name)).join(', ');
-      return `<div class="status">Board locked ✅ Waiting for: ${waiting}</div>
-        ${bingoGrid(g.myBoard, [])}
-        <div class="actions"><button data-game="bingo" data-unready>Change my board</button></div>`;
-    }
-    const next = ui.arrange.filter(x => x != null).length + 1;
-    const full = next > 25;
-    return `<div class="status">${full ? 'Board ready! Lock it in.' : `Tap boxes to place your numbers — next: <b>${next}</b>`}</div>
-      ${bingoGrid(ui.arrange, [], { arranging: true })}
-      <div class="actions">
-        <button data-game="bingo" data-random>🎲 Random fill</button>
-        <button data-game="bingo" data-clear>Clear</button>
-        <button class="primary" data-game="bingo" data-ready ${full ? '' : 'disabled'}>Lock board</button>
-      </div>
-      <p class="subtle" style="text-align:center">Tip: tap a placed number to remove it.</p>`;
-  }
-
-  const scoreRows = g.players.map(p => `<tr><td>${esc(p.name)}${p.id === S.you ? ' (you)' : ''}</td><td class="num"><b>${LETTERS.slice(0, p.lines).join('') || '–'}</b> (${p.lines}/5)</td></tr>`).join('');
-
-  if (g.phase === 'over') {
-    const names = g.winners.map(nameOf).map(esc).join(' & ');
-    const won = g.winners.includes(S.you);
-    return `<div class="confetti">${won ? '🎉🏆🎉' : '🎊'}</div>
-      <div class="status ${won ? 'you' : ''}">${won ? 'BINGO! You win!' : `${names} won!`}</div>
-      <div class="boards">${g.players.map(p => `<div class="b"><b>${esc(p.name)}</b> · ${p.lines} lines${bingoGrid(p.board, g.called, { small: true })}</div>`).join('')}</div>
-      ${isHost() ? '<div class="actions"><button class="primary big" data-rematch>Play again</button></div>' : ''}`;
-  }
-
-  const myTurn = g.turnId === S.you;
-  return `<div class="status ${myTurn ? 'you' : ''}">${myTurn ? 'Your turn — tap a number to call it!' : `${esc(nameOf(g.turnId))} is calling…`}
-      ${g.lastCalled ? ` · Last called: <b>${g.lastCalled}</b>` : ''}</div>
-    ${lettersBar(me.lines)}
-    ${bingoGrid(g.myBoard, g.called, { clickable: myTurn })}
-    <table class="score-table">${scoreRows}</table>
-    <div class="called-list">${g.called.map(n => `<span>${n}</span>`).join('')}</div>`;
-};
-
-handlers.bingo = d => {
-  if ('place' in d) {
-    const next = ui.arrange.filter(x => x != null).length + 1;
-    if (next <= 25) ui.arrange[+d.place] = next;
-    render();
-  } else if ('unplace' in d) {
-    // remove the number and shift the higher ones down so numbering stays 1..n
-    const removed = ui.arrange[+d.unplace];
-    ui.arrange = ui.arrange.map(n => (n == null || n === removed ? null : n > removed ? n - 1 : n));
-    render();
-  } else if ('random' in d) {
-    const nums = [...Array(25)].map((_, i) => i + 1).sort(() => Math.random() - 0.5);
-    ui.arrange = nums;
-    render();
-  } else if ('clear' in d) {
-    ui.arrange = Array(25).fill(null);
-    render();
-  } else if ('ready' in d) {
-    act({ type: 'ready', board: ui.arrange });
-  } else if ('unready' in d) {
-    ui.arrange = S.game.myBoard.slice();
-    act({ type: 'unready' });
-  } else if ('call' in d) {
-    act({ type: 'call', number: +d.call });
-  }
-};
-
-/* ---------- Ramudu-Seetha ---------- */
-function scoreTable(scores, extraCol, lowestWins) {
-  const rows = S.room.players
-    .filter(p => p.id in scores)
-    .sort((a, b) => (lowestWins ? scores[a.id] - scores[b.id] : scores[b.id] - scores[a.id]));
-  return `<table class="score-table">
-    <tr><th>Player</th>${extraCol ? `<th class="num">${extraCol.title}</th>` : ''}<th class="num">Total</th></tr>
-    ${rows.map(p => `<tr><td>${esc(p.name)}${p.id === S.you ? ' (you)' : ''}</td>
-      ${extraCol ? `<td class="num">${extraCol.value(p.id)}</td>` : ''}
-      <td class="num"><b>${scores[p.id]}</b></td></tr>`).join('')}
-  </table>`;
-}
-
-renderers.ramsita = () => {
-  const g = S.game;
-
-  if (g.phase === 'pick') {
-    const picked = !!g.myRole;
-    const chits = g.chits.map((c, i) => {
-      const mine = c.takenBy === S.you;
-      return `<button class="chit ${c.taken ? 'taken' : ''} ${mine ? 'mine' : ''}" data-game="ramsita" data-pick="${i}" ${c.taken || picked ? 'disabled' : ''}>
-        ${mine ? `<div>${esc(c.role.name)}</div><div class="pts">${c.role.points} pts</div>` : '<div>📜</div>'}
-        ${c.taken ? `<div class="who">${esc(nameOf(c.takenBy))}</div>` : ''}
-      </button>`;
-    }).join('');
-    const waiting = g.players.filter(p => !p.picked).map(p => esc(p.name)).join(', ');
-    return `<div class="status ${picked ? '' : 'you'}">${picked ? `Waiting for: ${waiting}` : 'Pick a chit! 🤞'}</div>
-      <div class="chits">${chits}</div>
-      ${roleLegend(g)}
-      ${scoreTable(g.scores)}`;
-  }
-
-  if (g.phase === 'guess') {
-    const iAmRam = g.ramId === S.you;
-    const top = `<div class="role-card">Your chit: <div class="big-role">${esc(g.myRole.name)}</div>${g.myRole.points} pts
-      ${g.myRole.key === 'seetha' ? '<div class="subtle">Stay calm 🤫 If Ramudu guesses wrong, you steal 1000!</div>' : ''}</div>`;
-    if (iAmRam) {
-      const suspects = g.players.filter(p => p.id !== S.you)
-        .map(p => `<button data-game="ramsita" data-guess="${p.id}">${esc(p.name)}</button>`).join('');
-      return `${top}<div class="status you">🏹 You are Ramudu! Who is Seetha?</div><div class="suspects">${suspects}</div>
-        <p class="subtle" style="text-align:center">Use the chat to question everyone first 😉</p>`;
-    }
-    return `${top}<div class="status">🏹 <b>${esc(nameOf(g.ramId))}</b> is Ramudu and is searching for Seetha…</div>
-      ${roleLegend(g)}${scoreTable(g.scores)}`;
-  }
-
-  // reveal / over
-  const seetha = g.players.find(p => p.role && p.role.key === 'seetha');
-  const banner = g.correct
-    ? `🎯 ${esc(nameOf(g.ramId))} found Seetha (${esc(seetha.name)})!`
-    : `😈 Wrong! ${esc(nameOf(g.ramId))} picked ${esc(nameOf(g.guessedId))}. Seetha was ${esc(seetha.name)} — she steals 1000!`;
-  const roleOfId = id => g.players.find(p => p.id === id).role;
-  const table = scoreTable(g.scores, { title: 'Chit / this round', value: id => `${esc(roleOfId(id).name)} · +${g.roundPoints[id]}` });
-
-  if (g.phase === 'over') {
-    const best = Math.max(...Object.values(g.scores));
-    const winners = Object.keys(g.scores).filter(id => g.scores[id] === best);
-    return `<div class="status">${banner}</div>
-      <div class="confetti">🏆</div>
-      <div class="status ${winners.includes(S.you) ? 'you' : ''}">${winners.map(nameOf).map(esc).join(' & ')} win${winners.length > 1 ? '' : 's'} with ${best} points!</div>
-      ${table}
-      ${isHost() ? '<div class="actions"><button class="primary big" data-rematch>Play again</button></div>' : ''}`;
-  }
-  return `<div class="status">${banner}</div>${table}
-    <div class="actions"><button class="primary big" data-next>Next round ▶</button></div>`;
-};
-
-function roleLegend(g) {
-  return `<p class="subtle" style="text-align:center;font-size:.85rem">Chits: ${g.roles.map(r => `${esc(r.name)} (${r.points})`).join(' · ')}</p>`;
-}
-
-handlers.ramsita = d => {
-  if ('pick' in d) act({ type: 'pick', index: +d.pick });
-  else if ('guess' in d) act({ type: 'guess', targetId: d.guess });
-};
-
-/* ---------- Show ---------- */
-const SUITS = ['♠', '♥', '♦', '♣'];
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const cRank = c => (c % 13) + 1;
-
-function cardHtml(c, opts = {}) {
-  if (c == null) return `<div class="playing-card back"></div>`;
-  const r = RANKS[c % 13], s = SUITS[Math.floor(c / 13)];
-  const red = s === '♥' || s === '♦';
-  const joker = S.game && cRank(c) === S.game.jokerRank && !opts.noJoker;
-  const cls = `playing-card ${red ? 'red' : ''} ${joker ? 'joker' : ''} ${opts.sel ? 'sel' : ''}`;
-  const inner = `<div>${r}${s}</div><div class="suit-big">${s}</div><div class="r2">${r}${s}</div>`;
-  if (opts.button) return `<button class="${cls}" data-game="show" ${opts.attrs || `data-card="${c}"`} ${opts.disabled ? 'disabled' : ''}>${inner}</button>`;
-  return `<div class="${cls}">${inner}</div>`;
-}
-
-renderers.show = () => {
-  const g = S.game;
-  const myTurn = g.turnId === S.you;
-  const ended = g.phase === 'roundOver' || g.phase === 'over';
-
-  const opponents = g.players.filter(p => p.id !== S.you).map(p => `
-    <div class="opp ${p.id === g.turnId && !ended ? 'turn' : ''}">
-      <div><b>${esc(p.name)}</b></div>
-      <div>🃏 ${p.cardCount} card${p.cardCount === 1 ? '' : 's'}</div>
-    </div>`).join('');
-
-  if (ended) {
-    const r = g.result;
-    const callerName = esc(nameOf(r.callerId));
-    const banner = r.success
-      ? `✅ ${callerName} called SHOW with ${r.totals[r.callerId]} — lowest! Scores 0.`
-      : `❌ ${callerName} called SHOW with ${r.totals[r.callerId]} but wasn't lowest! +${g.penalty} penalty.`;
-    const hands = g.players.map(p => `<div class="opp"><b>${esc(p.name)}</b> · ${r.totals[p.id]} pts
-      <div class="hand mini-hand">${p.hand.map(c => cardHtml(c)).join('')}</div></div>`).join('');
-    const table = scoreTable(g.scores, { title: 'This round', value: id => `+${r.points[id]}` }, true);
-    if (g.phase === 'over') {
-      const best = Math.min(...Object.values(g.scores));
-      const winners = Object.keys(g.scores).filter(id => g.scores[id] === best);
-      return `<div class="status">${banner}</div><div class="opponents">${hands}</div>
-        <div class="confetti">🏆</div>
-        <div class="status ${winners.includes(S.you) ? 'you' : ''}">${winners.map(nameOf).map(esc).join(' & ')} win${winners.length > 1 ? '' : 's'} with the lowest score (${best})!</div>
-        ${table}
-        ${isHost() ? '<div class="actions"><button class="primary big" data-rematch>Play again</button></div>' : ''}`;
-    }
-    return `<div class="status">${banner}</div><div class="opponents">${hands}</div>${table}
-      <div class="actions"><button class="primary big" data-next>Next round ▶</button></div>`;
-  }
-
-  let status;
-  if (!myTurn) status = `${esc(nameOf(g.turnId))} is playing…`;
-  else if (g.phase === 'throw') status = 'Your turn: select card(s) to throw — or call SHOW!';
-  else status = 'Now pick a card: from the deck or the open card';
-
-  const selectedRanks = [...ui.selected].map(cRank);
-  const hand = g.myHand.map(c => {
-    // once you select a card you can only add cards of the same rank
-    const blocked = !myTurn || g.phase !== 'throw' || (selectedRanks.length && !ui.selected.has(c) && cRank(c) !== selectedRanks[0]);
-    return cardHtml(c, { button: true, sel: ui.selected.has(c), disabled: blocked });
-  }).join('');
-
-  const canDraw = myTurn && g.phase === 'draw';
-  const deckSlot = canDraw
-    ? `<button class="playing-card back" data-game="show" data-draw="deck" title="Pick from deck"></button>`
-    : cardHtml(null);
-  const openSlot = g.openCard == null ? '<div class="subtle">empty</div>'
-    : cardHtml(g.openCard, { button: canDraw, attrs: 'data-draw="pile" title="Pick this card"' });
-
-  return `<div class="opponents">${opponents}</div>
-    <div class="status ${myTurn ? 'you' : ''}">${status}</div>
-    <div class="table-area">
-      <div class="slot"><div class="label">Joker (counts 0)</div>${cardHtml(g.jokerCard, { noJoker: true })}</div>
-      <div class="slot"><div class="label">Deck (${g.deckCount})</div>${deckSlot}</div>
-      <div class="slot"><div class="label">Open card</div>${openSlot}</div>
-      ${g.pending ? `<div class="slot"><div class="label">${esc(nameOf(g.turnId))} threw</div><div class="hand mini-hand" style="padding:0">${g.pending.map(c => cardHtml(c)).join('')}</div></div>` : ''}
-    </div>
-    <div class="hand">${hand}</div>
-    <p style="text-align:center">Your hand total: <b>${g.myTotal}</b></p>
-    ${myTurn && g.phase === 'throw' ? `<div class="actions">
-      <button class="primary" data-game="show" data-throw ${ui.selected.size ? '' : 'disabled'}>Throw ${ui.selected.size || ''} card${ui.selected.size === 1 ? '' : 's'}</button>
-      <button data-game="show" data-show style="border-color:var(--accent2)">📢 SHOW (${g.myTotal})</button>
-    </div>` : ''}
-    <div class="log">${g.log.slice(-3).map(esc).join(' · ')}</div>
-    <p class="subtle" style="text-align:center;font-size:.8rem">A=1 · J=11 · Q=12 · K=13 · Joker rank = 0. Lowest total score after ${g.totalRounds} rounds wins.</p>`;
-};
-
-handlers.show = d => {
-  if ('card' in d) {
-    const c = +d.card;
-    ui.selected.has(c) ? ui.selected.delete(c) : ui.selected.add(c);
-    render();
-  } else if ('throw' in d) {
-    act({ type: 'throw', cards: [...ui.selected] });
-    ui.selected.clear();
-  } else if ('draw' in d) {
-    act({ type: 'draw', from: d.draw });
-  } else if ('show' in d) {
-    if (confirm(`Call SHOW with ${S.game.myTotal}? If someone has equal or lower, you get +${S.game.penalty}.`)) act({ type: 'show' });
-  }
-};
-
-/* ---------- Housie ---------- */
+/* ======================= Housie ======================= */
 // The host's browser drives auto-calling so the server stays simple.
 let autoTimer = null;
 function syncAutoCall() {
@@ -469,49 +319,61 @@ function syncAutoCall() {
   if (!want && autoTimer) { clearInterval(autoTimer); autoTimer = null; }
 }
 
+const BALL_COLORS = ['#d63c3c', '#e07b24', '#d6b11f', '#3e9b4f', '#2f86c9', '#3b4fb8', '#8a44b5', '#c23d8a', '#555'];
+const ballColor = n => BALL_COLORS[Math.min(8, Math.floor((n === 90 ? 89 : n) / 10))];
+const ball = (n, sm) => `<div class="ball ${sm ? 'sm' : ''} ${n ? '' : 'empty'}" style="--ball:${n ? ballColor(n) : '#bbb'}"><span>${n || '—'}</span></div>`;
+const ticketNo = id => String([...id].reduce((h, c) => (h * 33 + c.charCodeAt(0)) % 997, 7)).padStart(3, '0');
+
 function ticketHtml(ticket, called, opts = {}) {
   const cut = new Set(called);
-  return `<div class="ticket ${opts.small ? 'small' : ''}">${ticket.map(row => row.map(n => {
+  const cells = ticket.flatMap(row => row.map(n => {
     if (n == null) return '<div class="tcell blank"></div>';
-    const marked = opts.interactive ? ui.marks.has(n) : cut.has(n);
-    const cls = `tcell ${marked ? 'marked' : ''}`;
-    return opts.interactive ? `<button class="${cls}" data-game="housie" data-mark="${n}">${n}</button>` : `<div class="${cls}">${n}</div>`;
-  }).join('')).join('')}</div>`;
+    const daub = opts.interactive ? ui.marks.has(n) : cut.has(n);
+    return opts.interactive
+      ? `<button class="tcell ${daub ? 'daub' : ''}" data-game="housie" data-mark="${n}" aria-pressed="${daub}">${n}</button>`
+      : `<div class="tcell ${daub ? 'daub' : ''}">${n}</div>`;
+  })).join('');
+  return `<div class="ticket ${opts.small ? 'small' : ''}">
+    <div class="ticket-head"><span>TAMBOLA</span><span>No. ${ticketNo(opts.owner || S.you)}</span></div>
+    <div class="ticket-grid">${cells}</div>
+  </div>`;
 }
 
 renderers.housie = () => {
   const g = S.game;
   const calledSet = new Set(g.called);
-  const board = `<div class="num-board">${[...Array(90)].map((_, i) => `<span class="${calledSet.has(i + 1) ? 'on' : ''} ${g.lastCalled === i + 1 ? 'last' : ''}">${i + 1}</span>`).join('')}</div>`;
-  const prizes = g.prizes.map(p => p.winnerId
-    ? `<button disabled class="prize won">🏆 ${esc(p.name)}<br><small>${esc(nameOf(p.winnerId))}</small></button>`
-    : `<button class="prize" data-game="housie" data-claim="${p.key}" ${g.phase === 'play' ? '' : 'disabled'}>${esc(p.name)}<br><small>Claim!</small></button>`).join('');
-  const hostControls = isHost() && g.phase === 'play' ? `<div class="actions">
-      <button class="primary" data-game="housie" data-call>📣 Call next number</button>
-      <button data-game="housie" data-auto="${g.auto ? 0 : 1}">${g.auto ? '⏸ Stop auto-call' : '▶ Auto-call every 5s'}</button>
-    </div>` : '';
+  const board = `<div class="num-board" aria-label="Called numbers">${[...Array(90)].map((_, i) => `<span class="${calledSet.has(i + 1) ? 'on' : ''} ${g.lastCalled === i + 1 ? 'last' : ''}">${i + 1}</span>`).join('')}</div>`;
+  const prizes = `<table class="prize-table">${g.prizes.map(p => `<tr><td><b>${esc(p.name)}</b></td><td>${p.winnerId
+    ? `<span class="won-by">${icon('trophy')} ${esc(nameOf(p.winnerId))}</span>`
+    : g.phase === 'play' ? `<button class="btn btn-sm btn-gold" data-game="housie" data-claim="${p.key}">Claim</button>` : '<span class="muted">—</span>'}</td></tr>`).join('')}</table>`;
 
   if (g.phase === 'over') {
     const full = g.prizes.find(p => p.key === 'full').winnerId;
-    const winnerTickets = g.players.filter(p => g.prizes.some(z => z.winnerId === p.id))
-      .map(p => `<div class="b"><b>${esc(p.name)}</b>${ticketHtml(p.ticket, g.called, { small: true })}</div>`).join('');
-    return `<div class="confetti">🎉🎟️🎉</div>
-      <div class="status ${full === S.you ? 'you' : ''}">Housie over! ${full ? `Full House: ${esc(nameOf(full))}` : 'All numbers called.'}</div>
-      <div class="prizes">${prizes}</div>
-      <div class="boards">${winnerTickets}</div>
-      ${isHost() ? '<div class="actions"><button class="primary big" data-rematch>Play again</button></div>' : ''}`;
+    const tickets = g.players.filter(p => g.prizes.some(z => z.winnerId === p.id))
+      .map(p => `<div><div class="who">${esc(p.name)}</div>${ticketHtml(p.ticket, g.called, { small: true, owner: p.id })}</div>`).join('');
+    return {
+      tone: 'win',
+      turn: full ? `Full House — ${esc(nameOf(full))}!` : 'All 90 numbers called.',
+      body: `${resultBanner(full === S.you ? 'You got Full House!' : 'Game over')}${prizes}<div class="boards">${tickets}</div><div class="actions">${rematchBtn()}</div>`,
+    };
   }
 
-  return `<div class="housie-top">
-      <div class="big-number">${g.lastCalled || '–'}</div>
-      <div class="subtle">${g.called.length ? `${g.called.length} called · ${g.remaining} left` : isHost() ? 'Call the first number!' : 'Waiting for the host to call…'}${g.auto ? ' · auto-calling' : ''}</div>
-    </div>
-    ${hostControls}
-    <h3 style="margin-top:14px">Your ticket <span class="subtle" style="text-transform:none;letter-spacing:0">— tap numbers to mark them</span></h3>
-    ${ticketHtml(g.myTicket, g.called, { interactive: true })}
-    <div class="prizes">${prizes}</div>
-    <div class="log">${g.log.slice(-3).map(esc).join(' · ')}</div>
-    ${board}`;
+  const recent = g.called.slice(-6, -1).reverse().map(n => ball(n, true)).join('');
+  const host = isHost() ? `<div class="actions">
+      <button class="btn btn-primary btn-lg" data-game="housie" data-call ${g.auto ? 'disabled' : ''}>Call next number</button>
+      <button class="btn btn-lg" data-game="housie" data-auto="${g.auto ? 0 : 1}">${g.auto ? `${icon('pause')} Stop auto` : `${icon('play')} Auto every 5s`}</button>
+    </div>` : '';
+  return {
+    tone: isHost() && !g.called.length ? 'mine' : '',
+    turn: g.lastCalled ? `Number <b>${g.lastCalled}</b> called${g.auto ? ' · auto-calling' : ''}` : isHost() ? 'You are the caller — call the first number' : `Waiting for ${esc(nameOf(S.room.hostId))} to call the first number`,
+    body: `<div class="housie-head">${ball(g.lastCalled)}<div><div class="recent">${recent}</div><div class="called-count">${g.called.length} called · ${g.remaining} left</div></div></div>
+      ${host}
+      ${ticketHtml(g.myTicket, g.called, { interactive: true })}
+      <p class="hint">Tap a number on your ticket to daub it. Claim a prize when it's complete — a wrong claim is a Bogey.</p>
+      ${prizes}
+      <div class="log-line">${g.log.slice(-2).map(esc).join(' · ')}</div>
+      ${board}`,
+  };
 };
 
 handlers.housie = d => {
@@ -525,54 +387,69 @@ handlers.housie = d => {
   else if ('claim' in d) act({ type: 'claim', prize: d.claim });
 };
 
-/* ---------- Ashta Chamma ---------- */
-const PAWN_COLORS = ['#ff5d73', '#5ab0ff', '#3ddc97', '#ffd23f'];
+/* ======================= Ashta Chamma ======================= */
+const SEAT_COLORS = ['#d23b3b', '#2f6fd0', '#2f9e55', '#e0a81f'];
+const tokenHtml = (color, attrs = '') => attrs
+  ? `<button class="token" style="--c:${color}" ${attrs}></button>`
+  : `<span class="token" style="--c:${color}"></span>`;
 
 renderers.ashtachamma = () => {
   const g = S.game;
   const safe = new Set(g.safe);
   const homes = {};
-  g.players.forEach(p => { homes[p.home.join(',')] = p.color; });
+  g.players.forEach(p => { homes[p.home.join(',')] = SEAT_COLORS[p.color]; });
+  const myMoves = new Set(g.legal);
+
   const cells = [];
   for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
-    const pawns = [];
+    const here = [];
     g.players.forEach(p => p.pawns.forEach(pw => {
-      if (pw.cell[0] !== r || pw.cell[1] !== c) return;
-      const style = `background:${PAWN_COLORS[p.color]}`;
-      pawns.push(p.id === S.you && g.legal.includes(pw.i)
-        ? `<button class="pawn movable" style="${style}" data-game="ashtachamma" data-pawn="${pw.i}" title="Move this pawn"></button>`
-        : `<span class="pawn" style="${style}"></span>`);
+      if (!pw.cell || pw.cell[0] !== r || pw.cell[1] !== c) return;
+      const col = SEAT_COLORS[p.color];
+      here.push(p.id === S.you && myMoves.has(pw.i) ? tokenHtml(col, `data-game="ashtachamma" data-pawn="${pw.i}" aria-label="Move pawn"`) : tokenHtml(col));
     }));
     const key = `${r},${c}`;
-    const homeStyle = key in homes ? `style="border-color:${PAWN_COLORS[homes[key]]}"` : '';
-    const inner = r >= 1 && r <= 3 && c >= 1 && c <= 3 ? 'inner' : '';
-    cells.push(`<div class="acell ${inner} ${safe.has(key) ? 'safe' : ''} ${key === '2,2' ? 'centre' : ''}" ${homeStyle}>${pawns.join('')}</div>`);
+    const cls = ['acell', safe.has(key) ? 'safe' : '', key === '2,2' ? 'centre' : '', key in homes ? 'home' : ''].join(' ');
+    cells.push(`<div class="${cls}" ${key in homes ? `style="--seat:${homes[key]}"` : ''}>${here.join('')}</div>`);
   }
 
-  const shells = g.shells ? `<div class="shells">${g.shells.map(up => `<span class="shell ${up ? 'up' : ''}"></span>`).join('')}</div>` : '';
-  const legend = g.players.map(p => `<div class="opp ${p.id === g.turnId ? 'turn' : ''}">
-      <span class="pawn" style="background:${PAWN_COLORS[p.color]}"></span> <b>${esc(p.name)}</b>${p.id === S.you ? ' (you)' : ''}
-      <div>🏠 ${p.finished}/4 · ${p.hasCut ? '⚔️ can enter inner ring' : 'needs a cut'}</div></div>`).join('');
+  const yards = g.players.map(p => {
+    const col = SEAT_COLORS[p.color];
+    const waiting = p.pawns.filter(pw => pw.pos === -1).map(pw => (p.id === S.you && myMoves.has(pw.i)
+      ? tokenHtml(col, `data-game="ashtachamma" data-pawn="${pw.i}" aria-label="Bring pawn onto the board"`) : tokenHtml(col))).join('');
+    return `<div class="yard ${p.id === g.turnId ? 'active' : ''}">
+      <span class="token" style="--c:${col}"></span>
+      <span class="name">${esc(p.name)}${p.id === S.you ? ' (you)' : ''}<small>${p.finished}/4 home · ${p.hasCut ? 'can enter inner ring' : 'needs a cut'}</small></span>
+      <span class="tokens">${waiting}</span>
+    </div>`;
+  }).join('');
 
-  let status;
-  if (g.phase === 'over') status = g.winnerId === S.you ? '🏆 You win!' : `🏆 ${esc(nameOf(g.winnerId))} wins!`;
-  else if (g.turnId !== S.you) status = `${esc(nameOf(g.turnId))}'s turn…`;
-  else if (g.phase === 'roll') status = 'Your turn — throw the shells!';
-  else status = `You threw ${g.roll}. Tap a glowing pawn to move it.`;
+  const shells = (g.shells || [true, false, true, false]).map(up => `<span class="cowrie ${g.shells ? (up ? 'up' : 'down') : 'down'}"></span>`).join('');
+  const rollName = g.roll === 8 ? 'Ashta — 8' : g.roll === 4 ? 'Chamma — 4' : g.roll ? `${g.roll}` : '';
+  const myTurn = g.turnId === S.you;
 
-  return `<div class="opponents">${legend}</div>
-    <div class="status ${g.turnId === S.you || g.winnerId === S.you ? 'you' : ''}">${status}</div>
-    <div class="ashta-wrap">
-      <div class="ashta-board">${cells.join('')}</div>
+  let turn, tone = '';
+  if (g.phase === 'over') { turn = g.winnerId === S.you ? 'You win!' : `${esc(nameOf(g.winnerId))} wins!`; tone = 'win'; }
+  else if (!myTurn) turn = `${esc(nameOf(g.turnId))} is ${g.phase === 'roll' ? 'throwing' : 'moving'}`;
+  else if (g.phase === 'roll') { turn = 'Throw the shells'; tone = 'mine'; }
+  else { turn = `You threw ${rollName}. Choose a pawn to move.`; tone = 'mine'; }
+
+  return {
+    tone,
+    turn,
+    body: `<div class="ashta-wrap">
+      <div class="ashta-board wood"><div class="ashta-grid">${cells.join('')}</div></div>
       <div class="ashta-side">
-        ${shells}
-        ${g.roll ? `<div class="big-number">${g.roll}</div>` : ''}
-        ${g.turnId === S.you && g.phase === 'roll' ? '<button class="primary big" data-game="ashtachamma" data-roll>🐚 Throw shells</button>' : ''}
-        ${g.phase === 'over' && isHost() ? '<button class="primary big" data-rematch>Play again</button>' : ''}
+        <div class="shell-tray table-top">${shells}</div>
+        <div class="throw-result">${rollName || '&nbsp;'}</div>
+        ${myTurn && g.phase === 'roll' ? '<button class="btn btn-primary btn-lg btn-block" data-game="ashtachamma" data-roll>Throw shells</button>' : ''}
+        ${g.phase === 'over' ? rematchBtn() : ''}
+        <div class="yard-list">${yards}</div>
       </div>
     </div>
-    <div class="log">${g.log.slice(-3).map(esc).join(' · ')}</div>
-    <p class="subtle" style="text-align:center;font-size:.8rem">1-3 shells up = move 1-3 · all 4 up = Chamma (4) · none up = Ashta (8). 4, 8 and cuts give another throw. ✖ squares are safe. Cut a pawn before entering the inner ring.</p>`;
+    <div class="log-line">${g.log.slice(-2).map(esc).join(' · ')}</div>
+    <p class="hint">Shells up: 1–3 move that many · all 4 = Chamma (4) · none = Ashta (8). Pawns enter the board only on a 4 or 8. 4, 8 and cutting a pawn give another throw. Crossed squares are safe; cut a pawn before entering the inner ring.</p>`,
+  };
 };
 
 handlers.ashtachamma = d => {
@@ -580,8 +457,7 @@ handlers.ashtachamma = d => {
   else if ('pawn' in d) act({ type: 'move', pawn: +d.pawn });
 };
 
-/* ---------- Dadi ---------- */
-// [x, y] on a 7x7 grid for point ring*8+k (k clockwise from top-left)
+/* ======================= Dadi ======================= */
 function dadiXY(p) {
   const r = Math.floor(p / 8), k = p % 8, lo = r, hi = 6 - r;
   return [[lo, lo], [3, lo], [hi, lo], [hi, 3], [hi, hi], [3, hi], [lo, hi], [lo, 3]][k];
@@ -593,7 +469,7 @@ renderers.dadi = () => {
   const meP = g.players[g.me];
   const placing = meP && meP.toPlace > 0;
   const flying = meP && !placing && meP.onBoard === 3;
-  const unit = 50, pad = 30, size = unit * 6 + pad * 2;
+  const unit = 52, pad = 28, size = unit * 6 + pad * 2;
   const xy = p => dadiXY(p).map(v => pad + v * unit);
 
   let targets = [];
@@ -605,49 +481,82 @@ renderers.dadi = () => {
   let lines = '';
   for (let r = 0; r < 3; r++) {
     const a = pad + r * unit, b = size - pad - r * unit;
-    lines += `<rect x="${a}" y="${a}" width="${b - a}" height="${b - a}" />`;
+    lines += `<rect x="${a}" y="${a}" width="${b - a}" height="${b - a}"/>`;
   }
   const m = pad + 3 * unit;
-  lines += `<line x1="${m}" y1="${pad}" x2="${m}" y2="${pad + 2 * unit}" /><line x1="${m}" y1="${size - pad}" x2="${m}" y2="${size - pad - 2 * unit}" />`;
-  lines += `<line x1="${pad}" y1="${m}" x2="${pad + 2 * unit}" y2="${m}" /><line x1="${size - pad}" y1="${m}" x2="${size - pad - 2 * unit}" y2="${m}" />`;
+  lines += `<line x1="${m}" y1="${pad}" x2="${m}" y2="${pad + 2 * unit}"/><line x1="${m}" y1="${size - pad}" x2="${m}" y2="${size - pad - 2 * unit}"/>`;
+  lines += `<line x1="${pad}" y1="${m}" x2="${pad + 2 * unit}" y2="${m}"/><line x1="${size - pad}" y1="${m}" x2="${size - pad - 2 * unit}" y2="${m}"/>`;
 
-  const COLORS = ['#f2f0ff', '#ff8a3d'];
   const points = g.board.map((owner, p) => {
     const [x, y] = xy(p);
     let clickable = false;
-    if (myTurn) {
+    if (myTurn && g.phase === 'play') {
       if (g.mustRemove) clickable = g.removable.includes(p);
       else if (placing) clickable = owner == null;
       else clickable = owner === g.me || targets.includes(p);
     }
-    let cls = '';
-    if (g.mustRemove && clickable) cls = 'removable';
-    if (ui.dadiSel === p) cls = 'selected';
-    if (targets.includes(p)) cls = 'target';
-    const last = g.lastMove.includes(p) ? '<circle r="22" class="last-ring" />' : '';
+    const isTarget = targets.includes(p);
     const piece = owner == null
-      ? `<circle r="${targets.includes(p) || (placing && clickable) ? 9 : 6}" class="dot ${cls}" />`
-      : `<circle r="17" fill="${COLORS[owner]}" class="piece ${cls}" />`;
-    return `<g transform="translate(${x},${y})" ${clickable ? `class="clickable" data-point="${p}"` : ''}>${last}<circle r="24" fill="transparent" />${piece}</g>`;
+      ? `<circle r="${isTarget ? 10 : 7}" class="hole ${isTarget ? 'target' : placing && clickable ? 'placeable' : ''}"/>`
+      : `<circle r="19" fill="url(#marble${owner})" filter="url(#shadow)"/>`;
+    const rings = (g.lastMove.includes(p) ? '<circle r="24" class="last-ring"/>' : '')
+      + (ui.dadiSel === p ? '<circle r="23" class="sel-ring"/>' : '')
+      + (g.mustRemove && clickable ? '<circle r="23" class="rm-ring"/>' : '');
+    return `<g transform="translate(${x},${y})" ${clickable ? `class="clickable" data-point="${p}" role="button" aria-label="Point ${p + 1}"` : ''}><circle r="26" fill="transparent"/>${piece}${rings}</g>`;
   }).join('');
 
-  let status;
-  if (g.phase === 'over') status = g.winnerId === S.you ? '🏆 You win!' : `🏆 ${esc(nameOf(g.winnerId))} wins!`;
-  else if (!myTurn) status = `${esc(nameOf(g.turnId))}'s turn…`;
-  else if (g.mustRemove) status = 'Mill! 🎯 Tap an opponent piece to remove it';
-  else if (placing) status = `Place a piece (${meP.toPlace} left)`;
-  else if (ui.dadiSel == null) status = flying ? 'Only 3 left — pick a piece, you can jump anywhere!' : 'Pick a piece to move';
-  else status = 'Tap a green point to move there';
+  const defs = `<defs>
+    <radialGradient id="marble0" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#ebe5d9"/><stop offset="1" stop-color="#a39b8e"/></radialGradient>
+    <radialGradient id="marble1" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#7a7570"/><stop offset=".5" stop-color="#2a2724"/><stop offset="1" stop-color="#0b0a09"/></radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-opacity=".55"/></filter>
+  </defs>`;
 
-  const info = g.players.map((p, i) => `<div class="opp ${p.id === g.turnId ? 'turn' : ''}">
-      <span class="pawn" style="background:${COLORS[i]}"></span> <b>${esc(p.name)}</b>${p.id === S.you ? ' (you)' : ''}
-      <div>${p.toPlace ? `${p.toPlace} to place · ` : ''}${p.onBoard} on board</div></div>`).join('');
+  let turn, tone = '';
+  if (g.phase === 'over') {
+    tone = 'win';
+    turn = g.result === 'draw' ? `Draw — ${esc(g.drawReason)}` : g.winnerId === S.you ? 'You win!' : `${esc(nameOf(g.winnerId))} wins!`;
+  } else if (!myTurn) turn = `${esc(nameOf(g.turnId))} is thinking…`;
+  else {
+    tone = 'mine';
+    if (g.mustRemove) { turn = 'Mill! Remove one of your opponent\'s pieces'; tone = 'alert'; }
+    else if (placing) turn = `Place a piece — ${meP.toPlace} left`;
+    else if (ui.dadiSel == null) turn = flying ? 'Three pieces left — you can jump to any empty point' : 'Pick a piece to move';
+    else turn = 'Move to a highlighted point';
+  }
 
-  return `<div class="opponents">${info}</div>
-    <div class="status ${myTurn || g.winnerId === S.you ? 'you' : ''}">${status}</div>
-    <svg class="dadi" viewBox="0 0 ${size} ${size}"><g class="lines">${lines}</g>${points}</svg>
-    ${g.phase === 'over' && isHost() ? '<div class="actions"><button class="primary big" data-rematch>Play again</button></div>' : ''}
-    <p class="subtle" style="text-align:center;font-size:.8rem">Place all 9, then slide along lines. 3 in a row = remove an opponent piece. Under 3 pieces or stuck = you lose.</p>`;
+  const seats = g.players.map((p, i) => `<div class="seat ${p.id === g.turnId ? 'active' : ''}">
+      <span class="marble-key ${i === 0 ? 'w' : 'b'}"></span>
+      <span><b>${esc(p.name)}</b>${p.id === S.you ? ' (you)' : ''}<small>${p.toPlace ? `${p.toPlace} to place · ` : ''}${p.onBoard} on board</small></span>
+    </div>`).join('');
+
+  let drawUi = '';
+  if (g.phase === 'play') {
+    if (g.drawOfferBy && g.drawOfferBy !== S.you) {
+      drawUi = `<div class="draw-offer">${esc(nameOf(g.drawOfferBy))} offers a draw
+        <button class="btn btn-sm btn-primary" data-game="dadi" data-draw="acceptDraw">${icon('check')} Accept</button>
+        <button class="btn btn-sm" data-game="dadi" data-draw="declineDraw">${icon('x')} Decline</button></div>`;
+    } else if (g.drawOfferBy === S.you) {
+      drawUi = '<p class="hint">Draw offered — waiting for your opponent.</p>';
+    } else {
+      drawUi = `<div class="actions"><button class="btn btn-sm btn-ghost" data-game="dadi" data-draw="offerDraw">${icon('equal')} Offer draw</button></div>`;
+    }
+  }
+  const quietNote = g.phase === 'play' && g.quiet >= g.quietLimit - 20
+    ? `<p class="hint">${g.quiet}/${g.quietLimit} moves without a capture — the game is drawn at ${g.quietLimit}.</p>` : '';
+
+  return {
+    tone,
+    turn,
+    body: `<div class="seat-strip">${seats}</div>
+      <div class="dadi-board wood"><svg viewBox="0 0 ${size} ${size}">${defs}<g class="lines">${lines}</g>${points}</svg></div>
+      ${drawUi}${quietNote}
+      ${g.phase === 'over' ? `<div class="actions">${rematchBtn()}</div>` : ''}
+      <p class="hint">Place all 9, then slide along the lines. Three in a row removes an opponent piece. Fewer than 3 pieces or no move = you lose.</p>`,
+  };
+};
+
+handlers.dadi = d => {
+  if ('draw' in d) act({ type: d.draw });
 };
 
 // SVG points aren't buttons, so Dadi gets its own click listener
@@ -660,3 +569,365 @@ $('#stage').addEventListener('click', e => {
   if (g.board[p] === g.me) { ui.dadiSel = ui.dadiSel === p ? null : p; return render(); }
   if (ui.dadiSel != null) { act({ type: 'move', from: ui.dadiSel, to: p }); ui.dadiSel = null; }
 });
+
+/* ======================= Show (chits) ======================= */
+renderers.show = () => {
+  const g = S.game;
+  const n = g.players.length;
+  const myIdx = g.players.findIndex(p => p.id === S.you);
+  const nextName = esc(g.players[(myIdx + 1) % n].name);
+  const placeOf = id => g.ranking.findIndex(r => r.id === id);
+  const ord = k => ['1st', '2nd', '3rd'][k] || `${k + 1}th`;
+
+  if (g.phase === 'words') {
+    const pills = g.players.map(p => `<span class="pill ${p.wrote ? 'ok' : ''}">${p.wrote ? icon('check') : icon('pen')} ${esc(p.name)}</span>`).join('');
+    if (!g.myWord) {
+      return {
+        tone: 'mine',
+        turn: 'Write one word — it will go on 4 chits',
+        body: `<form class="word-form" data-word-form>
+            <input id="wordInput" maxlength="14" placeholder="e.g. Mango, Bahubali, Goa…" autocomplete="off" aria-label="Your word">
+            <button class="btn btn-primary" type="submit">${icon('pen')} Write</button>
+          </form>
+          <p class="hint">Any name works — a film, a fruit, a place. Every player's word becomes 4 chits; all chits get mixed and dealt.</p>
+          <div class="pass-status">${pills}</div>`,
+      };
+    }
+    return {
+      turn: 'Waiting for everyone to write their word',
+      body: `<div class="table-top"><div class="chit-row"><div class="chit" style="${tilt(1)}"><span class="word">${esc(g.myWord)}</span></div></div></div>
+        <div class="pass-status">${pills}</div>`,
+    };
+  }
+
+  const raceList = (withPoints) => `<ol class="race-list">${g.ranking.map((r, k) => `<li>
+      <span class="place">${ord(k)}</span>${avatarOf(r.id)}<b>${esc(nameOf(r.id))}</b>
+      <span class="ms">${k === 0 ? 'SHOW!' : r.ms == null ? 'did not press' : `+${(r.ms / 1000).toFixed(2)}s`}${withPoints ? ` · <span class="plus">+${g.roundPoints[r.id]}</span>` : ''}</span></li>`).join('')}</ol>`;
+
+  if (g.phase === 'roundOver' || g.phase === 'over') {
+    const winner = g.ranking[0].id;
+    const winnerWord = g.players.find(p => p.id === winner).hand[0].word;
+    const best = Math.max(...Object.values(g.scores));
+    const champs = Object.keys(g.scores).filter(id => g.scores[id] === best);
+    return {
+      tone: 'win',
+      turn: `${esc(nameOf(winner))} called SHOW with four “${esc(winnerWord)}”`,
+      body: `${g.phase === 'over' ? resultBanner(`${champs.map(nameOf).map(esc).join(' & ')} win${champs.length > 1 ? '' : 's'} with ${best}`) : ''}
+        ${raceList(true)}
+        ${scoreboard(g.scores, { extra: { title: 'This round', value: id => `<span class="plus">+${g.roundPoints[id]}</span>` } })}
+        <div class="actions">${g.phase === 'over' ? rematchBtn() : `<button class="btn btn-primary btn-lg" data-next>Next round ${icon('arrow')}</button>`}</div>`,
+    };
+  }
+
+  if (g.phase === 'race') {
+    const mine = placeOf(S.you);
+    const body = `${mine === -1
+      ? '<div class="actions"><button class="btn btn-gold btn-xl big-show" data-game="show" data-show>SHOW!</button></div>'
+      : `<p class="center"><b>You placed ${ord(mine)}</b></p>`}
+      ${raceList(false)}
+      ${isHost() ? '<div class="actions"><button class="btn btn-sm btn-ghost" data-game="show" data-force>End round now</button></div>' : ''}`;
+    return {
+      tone: mine === -1 ? 'alert' : '',
+      turn: mine === -1 ? `${esc(nameOf(g.ranking[0].id))} called SHOW — hit it fast!` : 'Waiting for the others to press SHOW',
+      body,
+    };
+  }
+
+  // pass phase
+  const hand = g.myHand.map((c, i) => `<button class="chit ${g.myPick === c.id ? 'picked' : ''}" style="${tilt(i)}" data-game="show" data-chit="${c.id}" aria-pressed="${g.myPick === c.id}">
+      <span class="word">${esc(c.word)}</span></button>`).join('');
+  const pills = g.players.map(p => `<span class="pill ${p.picked ? 'ok' : ''}">${p.picked ? icon('check') : icon('hand')} ${esc(p.name)}</span>`).join('');
+  const words = [...new Set(g.players.map(p => p.word))].map(esc).join(' · ');
+  let turn, tone = 'mine';
+  if (g.canShow) { turn = 'You have four of a kind — press SHOW!'; tone = 'alert'; }
+  else if (g.myPick != null) { turn = 'Passing… waiting for everyone to choose'; tone = ''; }
+  else turn = `Choose a chit to pass to ${nextName}`;
+  return {
+    tone,
+    turn,
+    body: `<div class="table-top"><div class="show-hand">${hand}</div></div>
+      <div class="actions"><button class="btn btn-gold btn-xl big-show" data-game="show" data-show ${g.canShow ? '' : 'disabled'}>SHOW</button></div>
+      <div class="pass-status">${pills}</div>
+      <p class="hint">Pass ${g.passes + 1} · chits in play: ${words}. All chits move at once when everyone has chosen. Tap your chosen chit again to change it.</p>`,
+  };
+};
+
+handlers.show = (d, el) => {
+  if ('write' in d) {
+    const input = $('#wordInput');
+    const word = input.value.trim();
+    if (!word) return toast('Write a word first');
+    act({ type: 'word', word });
+  } else if ('chit' in d) {
+    const id = +d.chit;
+    act(S.game.myPick === id ? { type: 'unpick' } : { type: 'pick', chit: id });
+  } else if ('show' in d) act({ type: 'show' });
+  else if ('force' in d) act({ type: 'forceEnd' });
+};
+$('#stage').addEventListener('submit', e => {
+  if (!e.target.matches('[data-word-form]')) return;
+  e.preventDefault();
+  handlers.show({ write: '' });
+});
+
+/* ======================= Bingo ======================= */
+const LETTERS = ['B', 'I', 'N', 'G', 'O'];
+
+function bingoGrid(board, called, opts = {}) {
+  const cut = new Set(called);
+  const last = called[called.length - 1];
+  return `<div class="bingo-grid">${board.map((n, i) => {
+    if (n == null) return `<button class="bcell empty" data-game="bingo" data-place="${i}" aria-label="Write next number here">+</button>`;
+    const cls = ['bcell', cut.has(n) ? 'cut' : '', n === last && !opts.small ? 'last' : ''].join(' ');
+    if (opts.clickable && !cut.has(n)) return `<button class="${cls}" data-game="bingo" data-call="${n}">${n}</button>`;
+    if (opts.arranging) return `<button class="${cls}" data-game="bingo" data-unplace="${i}">${n}</button>`;
+    return `<div class="${cls}">${n}</div>`;
+  }).join('')}</div>`;
+}
+const bingoWord = lines => `<div class="bingo-word">${LETTERS.map((l, i) => `<span class="${i < lines ? 'done' : ''}">${l}</span>`).join('')}</div>`;
+
+renderers.bingo = () => {
+  const g = S.game;
+  const me = g.players.find(p => p.id === S.you);
+
+  if (g.phase === 'arrange') {
+    if (g.myBoard) {
+      const waiting = g.players.filter(p => !p.ready).map(p => esc(p.name)).join(', ');
+      return {
+        turn: `Board locked. Waiting for ${waiting}`,
+        body: `<div class="notebook">${bingoWord(0)}${bingoGrid(g.myBoard, [])}</div>
+          <div class="actions"><button class="btn" data-game="bingo" data-unready>${icon('pen')} Change my board</button></div>`,
+      };
+    }
+    const next = ui.arrange.filter(x => x != null).length + 1;
+    const full = next > 25;
+    return {
+      tone: 'mine',
+      turn: full ? 'Board complete — lock it in' : `Write your numbers: tap a box to write <b>${next}</b>`,
+      body: `<div class="notebook">${bingoWord(0)}${bingoGrid(ui.arrange, [], { arranging: true })}</div>
+        <div class="actions">
+          <button class="btn" data-game="bingo" data-random>${icon('shuffle')} Fill randomly</button>
+          <button class="btn" data-game="bingo" data-clear>${icon('eraser')} Clear</button>
+          <button class="btn btn-primary" data-game="bingo" data-ready ${full ? '' : 'disabled'}>${icon('lock')} Lock board</button>
+        </div>
+        <p class="hint">Tap a written number to rub it out.</p>`,
+    };
+  }
+
+  const tally = `<table class="scoreboard"><tr><th></th><th>Player</th><th class="num">Lines</th></tr>${g.players.map((p, i) => `<tr class="${p.id === S.you ? 'me' : ''}">
+      <td class="rank">${i + 1}</td><td><span class="pcell">${avatar(p.name)}${esc(p.name)}</span></td>
+      <td class="num"><span class="lines-tally">${LETTERS.slice(0, p.lines).join('') || '–'}</span> ${p.lines}/5</td></tr>`).join('')}</table>`;
+
+  if (g.phase === 'over') {
+    const won = g.winners.includes(S.you);
+    return {
+      tone: 'win',
+      turn: won ? 'BINGO — you win!' : `${g.winners.map(nameOf).map(esc).join(' & ')} shouted BINGO!`,
+      body: `${resultBanner(won ? 'BINGO!' : `${g.winners.map(nameOf).map(esc).join(' & ')} won`)}
+        <div class="boards">${g.players.map(p => `<div><div class="who">${esc(p.name)} · ${p.lines} lines</div><div class="notebook small">${bingoGrid(p.board, g.called, { small: true })}</div></div>`).join('')}</div>
+        <div class="actions">${rematchBtn()}</div>`,
+    };
+  }
+
+  const myTurn = g.turnId === S.you;
+  return {
+    tone: myTurn ? 'mine' : '',
+    turn: myTurn ? 'Call a number — tap one on your board' : `${esc(nameOf(g.turnId))} is calling${g.lastCalled ? ` · last number <b>${g.lastCalled}</b>` : ''}`,
+    body: `<div class="notebook">${bingoWord(me.lines)}${bingoGrid(g.myBoard, g.called, { clickable: myTurn })}</div>
+      ${tally}
+      <div class="called-row">${g.called.map(n => `<span>${n}</span>`).join('')}</div>`,
+  };
+};
+
+handlers.bingo = d => {
+  if ('place' in d) {
+    const next = ui.arrange.filter(x => x != null).length + 1;
+    if (next <= 25) ui.arrange[+d.place] = next;
+    render();
+  } else if ('unplace' in d) {
+    // rub out a number and shift the higher ones down so numbering stays 1..n
+    const removed = ui.arrange[+d.unplace];
+    ui.arrange = ui.arrange.map(n => (n == null || n === removed ? null : n > removed ? n - 1 : n));
+    render();
+  } else if ('random' in d) {
+    const nums = [...Array(25)].map((_, i) => i + 1);
+    for (let i = nums.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [nums[i], nums[j]] = [nums[j], nums[i]]; }
+    ui.arrange = nums;
+    render();
+  } else if ('clear' in d) {
+    ui.arrange = Array(25).fill(null);
+    render();
+  } else if ('ready' in d) act({ type: 'ready', board: ui.arrange });
+  else if ('unready' in d) { ui.arrange = S.game.myBoard.slice(); act({ type: 'unready' }); }
+  else if ('call' in d) act({ type: 'call', number: +d.call });
+};
+
+/* ======================= Ramudu-Seetha ======================= */
+renderers.ramsita = () => {
+  const g = S.game;
+  const legend = `<p class="legend">Chits: ${g.roles.map(r => `${esc(r.name)} ${r.points}`).join(' · ')}</p>`;
+
+  if (g.phase === 'pick') {
+    const picked = !!g.myRole;
+    const chits = g.chits.map((c, i) => {
+      const mine = c.takenBy === S.you;
+      if (mine) return `<div class="chit mine" style="${tilt(i)}"><span class="word">${esc(c.role.name)}</span><span class="pts">${c.role.points}</span><span class="taker">You</span></div>`;
+      return `<button class="chit folded ${c.taken ? 'taken' : ''}" style="${tilt(i)}" data-game="ramsita" data-pick="${i}" ${c.taken || picked ? 'disabled' : ''} aria-label="Pick chit ${i + 1}">
+        ${c.taken ? `<span class="taker">${esc(nameOf(c.takenBy))}</span>` : ''}</button>`;
+    }).join('');
+    const waiting = g.players.filter(p => !p.picked).map(p => esc(p.name)).join(', ');
+    return {
+      tone: picked ? '' : 'mine',
+      turn: picked ? `Waiting for ${waiting} to pick` : 'Pick a chit',
+      body: `<div class="table-top"><div class="chit-row gap-bottom">${chits}</div></div>${legend}${scoreboard(g.scores)}`,
+    };
+  }
+
+  if (g.phase === 'guess') {
+    const iAmRam = g.ramId === S.you;
+    const slip = `<div class="role-slip paper"><small>Your chit</small><div class="role">${esc(g.myRole.name)}</div><small>${g.myRole.points} points${g.myRole.key === 'seetha' ? ' — stay calm! If Ramudu guesses wrong, you take his 1000.' : ''}</small></div>`;
+    if (iAmRam) {
+      const suspects = g.players.filter(p => p.id !== S.you)
+        .map(p => `<button class="btn btn-lg" data-game="ramsita" data-guess="${p.id}">${avatar(p.name)} ${esc(p.name)}</button>`).join('');
+      return {
+        tone: 'mine',
+        turn: 'You are Ramudu — who is Seetha?',
+        body: `${slip}<div class="suspects">${suspects}</div><p class="hint">Question everyone in the chat before you choose.</p>`,
+      };
+    }
+    return {
+      turn: `${esc(nameOf(g.ramId))} is Ramudu and is looking for Seetha`,
+      body: `${slip}${legend}${scoreboard(g.scores)}`,
+    };
+  }
+
+  const seetha = g.players.find(p => p.role && p.role.key === 'seetha');
+  const turn = g.correct
+    ? `${esc(nameOf(g.ramId))} found Seetha — it was ${esc(seetha.name)}`
+    : `Wrong guess! ${esc(nameOf(g.ramId))} picked ${esc(nameOf(g.guessedId))}. Seetha was ${esc(seetha.name)} and takes 1000.`;
+  const roleOfId = id => g.players.find(p => p.id === id).role;
+  const chits = g.players.map((p, i) => `<div class="chit" style="${tilt(i)}"><span class="word">${esc(p.role.name)}</span><span class="pts">+${g.roundPoints[p.id]}</span><span class="taker">${esc(p.name)}</span></div>`).join('');
+  const table = scoreboard(g.scores, { extra: { title: 'This round', value: id => `${esc(roleOfId(id).name)} <span class="plus">+${g.roundPoints[id]}</span>` } });
+
+  if (g.phase === 'over') {
+    const best = Math.max(...Object.values(g.scores));
+    const winners = Object.keys(g.scores).filter(id => g.scores[id] === best);
+    return {
+      tone: 'win',
+      turn,
+      body: `${resultBanner(`${winners.map(nameOf).map(esc).join(' & ')} win${winners.length > 1 ? '' : 's'} with ${best}`)}${table}<div class="actions">${rematchBtn()}</div>`,
+    };
+  }
+  return {
+    tone: g.correct ? 'win' : 'alert',
+    turn,
+    body: `<div class="table-top"><div class="chit-row gap-bottom">${chits}</div></div>${table}
+      <div class="actions"><button class="btn btn-primary btn-lg" data-next>Next round ${icon('arrow')}</button></div>`,
+  };
+};
+
+handlers.ramsita = d => {
+  if ('pick' in d) act({ type: 'pick', index: +d.pick });
+  else if ('guess' in d) act({ type: 'guess', targetId: d.guess });
+};
+
+/* ======================= Least Count ======================= */
+const SUITS = ['♠', '♥', '♦', '♣'];
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const cRank = c => (c % 13) + 1;
+
+function cardHtml(c, opts = {}) {
+  if (c == null) return '<div class="playing-card back"></div>';
+  const r = RANKS[c % 13], s = SUITS[Math.floor(c / 13)];
+  const red = s === '♥' || s === '♦';
+  const joker = S.game && cRank(c) === S.game.jokerRank && !opts.noJoker;
+  const cls = `playing-card ${red ? 'red' : ''} ${joker ? 'joker' : ''} ${opts.sel ? 'sel' : ''}`;
+  const inner = `<div>${r}${s}</div><div class="suit-big">${s}</div><div class="r2">${r}${s}</div>`;
+  if (opts.button) return `<button class="${cls}" data-game="leastcount" ${opts.attrs || `data-card="${c}"`} ${opts.disabled ? 'disabled' : ''}>${inner}</button>`;
+  return `<div class="${cls}">${inner}</div>`;
+}
+
+renderers.leastcount = () => {
+  const g = S.game;
+  const myTurn = g.turnId === S.you;
+  const ended = g.phase === 'roundOver' || g.phase === 'over';
+
+  const seats = g.players.filter(p => p.id !== S.you).map(p => `<div class="seat ${p.id === g.turnId && !ended ? 'active' : ''}">
+      ${avatar(p.name)}<span><b>${esc(p.name)}</b><small>${p.cardCount} card${p.cardCount === 1 ? '' : 's'}</small></span></div>`).join('');
+
+  if (ended) {
+    const r = g.result;
+    const caller = esc(nameOf(r.callerId));
+    const turn = r.success
+      ? `${caller} called SHOW with ${r.totals[r.callerId]} — lowest, scores 0`
+      : `${caller} called SHOW with ${r.totals[r.callerId]} but wasn't lowest — +${g.penalty} penalty`;
+    const hands = g.players.map(p => `<div class="slot"><div class="label">${esc(p.name)} · ${r.totals[p.id]}</div><div class="hand mini-hand" style="padding-top:0">${p.hand.map(c => cardHtml(c)).join('')}</div></div>`).join('');
+    const table = scoreboard(g.scores, { lowestWins: true, extra: { title: 'This round', value: id => `+${r.points[id]}` } });
+    if (g.phase === 'over') {
+      const best = Math.min(...Object.values(g.scores));
+      const winners = Object.keys(g.scores).filter(id => g.scores[id] === best);
+      return {
+        tone: 'win',
+        turn,
+        body: `<div class="felt"><div class="table-area">${hands}</div></div>${resultBanner(`${winners.map(nameOf).map(esc).join(' & ')} win${winners.length > 1 ? '' : 's'} with ${best}`)}${table}<div class="actions">${rematchBtn()}</div>`,
+      };
+    }
+    return {
+      tone: r.success ? 'win' : 'alert',
+      turn,
+      body: `<div class="felt"><div class="table-area">${hands}</div></div>${table}
+        <div class="actions"><button class="btn btn-primary btn-lg" data-next>Next round ${icon('arrow')}</button></div>`,
+    };
+  }
+
+  let turn;
+  if (!myTurn) turn = `${esc(nameOf(g.turnId))} is playing`;
+  else if (g.phase === 'throw') turn = 'Select card(s) to throw — or call SHOW';
+  else turn = 'Pick a card: from the deck or the open card';
+
+  const selectedRanks = [...ui.selected].map(cRank);
+  const hand = g.myHand.map(c => {
+    const blocked = !myTurn || g.phase !== 'throw' || (selectedRanks.length && !ui.selected.has(c) && cRank(c) !== selectedRanks[0]);
+    return cardHtml(c, { button: true, sel: ui.selected.has(c), disabled: blocked });
+  }).join('');
+
+  const canDraw = myTurn && g.phase === 'draw';
+  const deckSlot = canDraw ? '<button class="playing-card back" data-game="leastcount" data-draw="deck" aria-label="Pick from deck"></button>' : cardHtml(null);
+  const openSlot = g.openCard == null ? '<div class="label">empty</div>' : cardHtml(g.openCard, { button: canDraw, attrs: 'data-draw="pile" aria-label="Pick the open card"' });
+
+  return {
+    tone: myTurn ? 'mine' : '',
+    turn,
+    body: `<div class="seat-strip">${seats}</div>
+      <div class="felt">
+        <div class="table-area">
+          <div class="slot"><div class="label">Joker</div>${cardHtml(g.jokerCard, { noJoker: true })}</div>
+          <div class="slot"><div class="label">Deck · ${g.deckCount}</div>${deckSlot}</div>
+          <div class="slot"><div class="label">Open card</div>${openSlot}</div>
+          ${g.pending ? `<div class="slot"><div class="label">${esc(nameOf(g.turnId))} threw</div><div class="hand mini-hand" style="padding-top:0">${g.pending.map(c => cardHtml(c)).join('')}</div></div>` : ''}
+        </div>
+        <div class="hand">${hand}</div>
+        <div class="hand-total">Hand total <b>${g.myTotal}</b></div>
+      </div>
+      ${myTurn && g.phase === 'throw' ? `<div class="actions">
+        <button class="btn btn-primary btn-lg" data-game="leastcount" data-throw ${ui.selected.size ? '' : 'disabled'}>Throw ${ui.selected.size || ''} card${ui.selected.size === 1 ? '' : 's'}</button>
+        <button class="btn btn-gold btn-lg" data-game="leastcount" data-show>SHOW (${g.myTotal})</button>
+      </div>` : ''}
+      <div class="log-line">${g.log.slice(-3).map(esc).join(' · ')}</div>
+      <p class="hint">A=1 · J=11 · Q=12 · K=13 · Joker rank counts 0. Lowest total after ${g.totalRounds} rounds wins.</p>`,
+  };
+};
+
+handlers.leastcount = d => {
+  if ('card' in d) {
+    const c = +d.card;
+    ui.selected.has(c) ? ui.selected.delete(c) : ui.selected.add(c);
+    render();
+  } else if ('throw' in d) {
+    act({ type: 'throw', cards: [...ui.selected] });
+    ui.selected.clear();
+  } else if ('draw' in d) act({ type: 'draw', from: d.draw });
+  else if ('show' in d) {
+    if (confirm(`Call SHOW with ${S.game.myTotal}? If someone has equal or lower, you get +${S.game.penalty}.`)) act({ type: 'show' });
+  }
+};

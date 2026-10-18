@@ -3,62 +3,77 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GameHub</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+  <meta name="theme-color" content="#262421">
+  <title>GameHub — play with friends</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2381b64c'/><circle cx='11' cy='11' r='3' fill='white'/><circle cx='21' cy='21' r='3' fill='white'/><circle cx='21' cy='11' r='3' fill='white'/><circle cx='11' cy='21' r='3' fill='white'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div class="logo">🎲 GameHub</div>
-    <div id="roomBadge" class="hidden"></div>
+  <header class="topbar">
+    <a class="brand" href="/" id="brandLink">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#81b64c"/><circle cx="11" cy="11" r="3" fill="#fff"/><circle cx="21" cy="21" r="3" fill="#fff"/><circle cx="21" cy="11" r="3" fill="#fff"/><circle cx="11" cy="21" r="3" fill="#fff"/></svg>
+      <span>GameHub</span>
+    </a>
+    <button id="roomChip" class="room-chip hidden" title="Copy invite link"></button>
   </header>
 
   <!-- Home -->
-  <main id="home" class="screen">
-    <section class="hero">
-      <h1>Your favourite games, together — from anywhere</h1>
-      <p>Housie, Ashta Chamma, Dadi, Bingo, Show and Ramudu-Seetha. Create a room, share the code, play live with friends.</p>
-    </section>
-    <section class="card narrow">
-      <label>Your name
-        <input id="nameInput" maxlength="16" placeholder="e.g. Khyati" autocomplete="nickname">
-      </label>
-      <button id="createBtn" class="primary big">Create a room</button>
-      <div class="or">or join a friend</div>
-      <div class="row">
-        <input id="codeInput" maxlength="4" placeholder="CODE" class="code-input">
-        <button id="joinBtn" class="big">Join</button>
-      </div>
-      <p id="homeError" class="error"></p>
-    </section>
+  <main id="home" class="page">
+    <div class="home-grid">
+      <section class="panel play-panel">
+        <div class="panel-body">
+          <h1>Play with friends</h1>
+          <p class="muted">Make a room, send the code, and play together — wherever everyone is.</p>
+          <label class="field">
+            <span>Your name</span>
+            <input id="nameInput" maxlength="16" placeholder="Enter your name" autocomplete="nickname">
+          </label>
+          <button id="createBtn" class="btn btn-primary btn-lg btn-block">Create room</button>
+          <div class="divider"><span>Have a room code?</span></div>
+          <div class="join-row">
+            <input id="codeInput" maxlength="4" placeholder="ABCD" class="code-input" aria-label="Room code" autocapitalize="characters">
+            <button id="joinBtn" class="btn btn-lg">Join</button>
+          </div>
+          <p id="homeError" class="form-error" role="alert"></p>
+        </div>
+      </section>
+
+      <section class="catalog">
+        <h2 class="section-title">Games</h2>
+        <div id="catalog" class="catalog-list"></div>
+      </section>
+    </div>
   </main>
 
-  <!-- Room: lobby + game -->
-  <main id="room" class="screen hidden">
-    <div class="layout">
-      <div id="stage"></div>
-      <aside class="side">
-        <div class="card">
-          <h3>Players</h3>
-          <ul id="playerList" class="players"></ul>
-          <div class="share">
-            <button id="copyLink">📋 Copy invite link</button>
+  <!-- Room -->
+  <main id="room" class="page hidden">
+    <div class="room-grid">
+      <section id="stage"></section>
+      <aside class="sidebar">
+        <div class="panel">
+          <div class="panel-head"><span>Players</span><span id="playerCount" class="muted"></span></div>
+          <ul id="playerList" class="player-list"></ul>
+          <div class="panel-foot">
+            <button id="copyLink" class="btn btn-block"></button>
           </div>
         </div>
-        <div class="card chat">
-          <h3>Chat</h3>
-          <div id="chatLog"></div>
-          <form id="chatForm" class="row">
-            <input id="chatInput" maxlength="300" placeholder="Say something…" autocomplete="off">
-            <button>Send</button>
+        <div class="panel chat">
+          <div class="panel-head"><span>Chat</span></div>
+          <div id="chatLog" class="chat-log" aria-live="polite"></div>
+          <form id="chatForm" class="chat-form">
+            <input id="chatInput" maxlength="300" placeholder="Send a message" autocomplete="off" aria-label="Chat message">
+            <button class="btn btn-icon" aria-label="Send" id="chatSend"></button>
           </form>
         </div>
-        <button id="leaveBtn" class="ghost">Leave room</button>
+        <button id="leaveBtn" class="btn btn-ghost btn-block"></button>
       </aside>
     </div>
   </main>
 
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden" role="status"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="app.js"></script>

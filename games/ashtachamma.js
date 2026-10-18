@@ -1,6 +1,7 @@
 // Ashta Chamma: 5x5 board, 4 pawns each, 4 cowrie shells as dice.
 //   Shells facing up: 1, 2, 3 -> move that many. 4 up -> 4 (Chamma), 0 up -> 8 (Ashta).
 //   Chamma / Ashta, and cutting an opponent, give another throw.
+// Pawns start off the board. A pawn enters on its home square only with a Chamma (4) or Ashta (8).
 // Pawns go around the outer ring anticlockwise, then the inner ring clockwise, then to the centre.
 // You can enter the inner ring only after you have cut (captured) at least one opponent pawn.
 // Home squares (middle of each side) and the centre are safe. First to bring all 4 pawns to the centre wins.
@@ -9,6 +10,7 @@ const { findPlayer } = require('./util');
 const PAWNS = 4;
 const OUTER_LEN = 16;
 const FINISH = 24; // path index of the centre square
+const OFF = -1; // waiting off the board
 
 // Path for the player sitting at the bottom; other seats are rotations of it.
 const BASE_PATH = [
@@ -36,6 +38,7 @@ function legalPawns(s, pi, roll) {
   return p.pawns
     .map((pos, i) => ({ pos, i }))
     .filter(({ pos }) => {
+      if (pos === OFF) return roll === 4 || roll === 8;
       const to = pos + roll;
       if (pos === FINISH || to > FINISH) return false;
       if (to >= OUTER_LEN && !p.hasCut) return false;
@@ -60,7 +63,7 @@ module.exports = {
   setup(players) {
     const seats = SEATS[players.length];
     return {
-      players: players.map((p, i) => ({ id: p.id, name: p.name, seat: seats[i], pawns: Array(PAWNS).fill(0), hasCut: false })),
+      players: players.map((p, i) => ({ id: p.id, name: p.name, seat: seats[i], pawns: Array(PAWNS).fill(OFF), hasCut: false })),
       turn: 0,
       phase: 'roll', // roll -> move -> roll ... | over
       roll: null,
@@ -98,8 +101,14 @@ module.exports = {
       if (s.phase !== 'move' || s.turn !== pi) throw new Error("It's not your turn to move");
       const i = Number(a.pawn);
       if (!legalPawns(s, pi, s.roll).includes(i)) throw new Error("That pawn can't move");
-      me.pawns[i] += s.roll;
       let extra = s.extra;
+      if (me.pawns[i] === OFF) {
+        me.pawns[i] = 0;
+        log(`${me.name} brought a pawn onto the board`);
+        if (extra) { s.phase = 'roll'; s.roll = null; } else nextTurn(s);
+        return;
+      }
+      me.pawns[i] += s.roll;
 
       if (me.pawns[i] === FINISH) {
         log(`🏠 ${me.name}'s pawn reached the centre!`);
@@ -115,10 +124,10 @@ module.exports = {
           for (const [oi, other] of s.players.entries()) {
             if (oi === pi) continue;
             other.pawns.forEach((pos, k) => {
-              if (pos === 0 || pos === FINISH) return;
+              if (pos === OFF || pos === FINISH) return;
               const [or, oc] = cellOf(s, oi, pos);
               if (or === r && oc === c) {
-                other.pawns[k] = 0;
+                other.pawns[k] = OFF;
                 me.hasCut = true;
                 extra = true;
                 log(`⚔️ ${me.name} cut ${other.name}'s pawn!`);
@@ -159,7 +168,8 @@ module.exports = {
         hasCut: p.hasCut,
         home: cellOf(s, idx, 0),
         finished: p.pawns.filter(x => x === FINISH).length,
-        pawns: p.pawns.map((pos, i) => ({ i, pos, cell: cellOf(s, idx, pos) })),
+        waiting: p.pawns.filter(x => x === OFF).length,
+        pawns: p.pawns.map((pos, i) => ({ i, pos, cell: pos === OFF ? null : cellOf(s, idx, pos) })),
       })),
     };
   },

@@ -1,122 +1,130 @@
-// "Show" (a.k.a. Least Count) card game.
-// Each player gets 7 cards. On your turn: throw one card (or several of the same rank),
-// then pick one card from the deck or the previous player's thrown card.
-// One card is opened as the Joker at the start: cards of that rank count 0.
-// Think your hand total is the lowest? Call SHOW instead of throwing.
-//   Lowest -> you score 0, everyone else scores their hand total.
-//   Not lowest -> you get your total + 40 penalty, the actual lowest scores 0.
-// Lowest total score after all rounds wins.
+// Show (chits passing game):
+//   Every player writes one word (any name — a film, a fruit, a friend...).
+//   Each word is copied onto 4 chits, all chits are mixed and dealt 4 per player.
+//   Everyone picks one chit to pass; once all have picked, the chits move to the next
+//   player at the same time. Repeat.
+//   Collect 4 chits with the same word -> press SHOW (1st place).
+//   Then everyone else races to press SHOW — 2nd, 3rd, 4th... in the order they press.
 const { shuffle, findPlayer } = require('./util');
 
-const HAND_SIZE = 7;
-const PENALTY = 40;
+const PER_WORD = 4;
 const ROUNDS = 5;
+const MAX_WORD = 14;
 
-const rank = card => (card % 13) + 1; // 1 = Ace ... 11 J, 12 Q, 13 K
-const cardValue = (card, jokerRank) => (rank(card) === jokerRank ? 0 : rank(card));
-const handTotal = (hand, jokerRank) => hand.reduce((t, c) => t + cardValue(c, jokerRank), 0);
+const rankPoints = (rank, n) => Math.round((1000 * (n - rank)) / n); // 4 players: 1000, 750, 500, 250
 
-function startRound(s) {
-  s.round += 1;
-  const deck = shuffle([...Array(52).keys()]);
-  s.jokerCard = deck.pop();
-  s.jokerRank = rank(s.jokerCard);
-  for (const p of s.players) p.hand = deck.splice(0, HAND_SIZE);
-  s.pile = [deck.pop()];
-  s.deck = deck;
-  s.pending = null; // cards thrown this turn, go on the pile after the draw
-  s.turn = (s.round - 1) % s.players.length;
-  s.phase = 'throw'; // throw -> draw -> throw ... | roundOver | over
-  s.result = null;
-  s.log = [];
+function deal(s) {
+  let id = 0;
+  const chits = shuffle(s.players.flatMap(p => Array.from({ length: PER_WORD }, () => ({ id: id++, word: p.word }))));
+  s.players.forEach((p, i) => {
+    p.hand = chits.slice(i * PER_WORD, (i + 1) * PER_WORD);
+    p.pick = null;
+  });
+  s.passes = 0;
+  s.ranking = [];
+  s.raceStart = null;
+  s.roundPoints = null;
+  s.phase = 'pass';
 }
 
-function addLog(s, text) {
-  s.log.push(text);
-  if (s.log.length > 8) s.log.shift();
+const hasSet = hand => hand.length === PER_WORD && hand.every(c => c.word === hand[0].word);
+
+function finishRound(s) {
+  const n = s.players.length;
+  // anyone who never pressed (e.g. disconnected) is placed last, in seat order
+  for (const p of s.players) if (!s.ranking.some(r => r.id === p.id)) s.ranking.push({ id: p.id, ms: null });
+  s.roundPoints = {};
+  s.ranking.forEach((r, i) => {
+    s.roundPoints[r.id] = rankPoints(i, n);
+    s.scores[r.id] += s.roundPoints[r.id];
+  });
+  s.phase = s.round >= s.totalRounds ? 'over' : 'roundOver';
 }
 
 module.exports = {
   id: 'show',
   name: 'Show',
-  blurb: 'Keep your card total lowest. Throw, pick, and call SHOW when you think you have the least!',
-  minPlayers: 2,
-  maxPlayers: 6,
+  blurb: 'Everyone writes a word on 4 chits. Pass chits around — collect 4 of the same and hit SHOW first!',
+  minPlayers: 3,
+  maxPlayers: 8,
 
   setup(players) {
-    const s = {
-      players: players.map(p => ({ id: p.id, name: p.name, hand: [] })),
+    return {
+      players: players.map(p => ({ id: p.id, name: p.name, word: null, hand: [], pick: null })),
       scores: Object.fromEntries(players.map(p => [p.id, 0])),
-      round: 0,
+      round: 1,
       totalRounds: ROUNDS,
+      phase: 'words', // words -> pass -> race -> roundOver -> pass ... -> over
+      passes: 0,
+      ranking: [],
     };
-    startRound(s);
-    return s;
   },
 
   action(s, playerId, a, { isHost }) {
     const me = findPlayer(s, playerId);
-    const myTurn = s.players[s.turn].id === playerId;
 
-    if (a.type === 'throw') {
-      if (s.phase !== 'throw' || !myTurn) throw new Error("It's not your turn to throw");
-      const cards = Array.isArray(a.cards) ? a.cards.map(Number) : [];
-      if (!cards.length) throw new Error('Select at least one card');
-      if (new Set(cards).size !== cards.length || !cards.every(c => me.hand.includes(c))) throw new Error('Invalid cards');
-      if (!cards.every(c => rank(c) === rank(cards[0]))) throw new Error('You can only throw cards of the same rank together');
-      if (cards.length === me.hand.length) throw new Error('Keep at least one card in hand');
-      me.hand = me.hand.filter(c => !cards.includes(c));
-      s.pending = cards;
-      s.phase = 'draw';
+    if (a.type === 'word') {
+      if (s.phase !== 'words') throw new Error('Words are already locked');
+      const word = String(a.word || '').trim().replace(/\s+/g, ' ').slice(0, MAX_WORD);
+      if (!word) throw new Error('Write a word first');
+      if (s.players.some(p => p !== me && p.word && p.word.toLowerCase() === word.toLowerCase())) {
+        throw new Error('Someone already wrote that — pick another word');
+      }
+      me.word = word;
+      if (s.players.every(p => p.word)) deal(s);
       return;
     }
 
-    if (a.type === 'draw') {
-      if (s.phase !== 'draw' || !myTurn) throw new Error("It's not your turn to pick");
-      let card;
-      if (a.from === 'pile') {
-        if (!s.pile.length) throw new Error('No card to pick there');
-        card = s.pile.pop();
-        addLog(s, `${me.name} picked the open card`);
-      } else {
-        if (!s.deck.length) {
-          s.deck = shuffle(s.pile);
-          s.pile = [];
-        }
-        card = s.deck.pop();
-        addLog(s, `${me.name} picked from the deck`);
+    if (a.type === 'pick') {
+      if (s.phase !== 'pass') throw new Error('Not passing now');
+      const chit = me.hand.find(c => c.id === Number(a.chit));
+      if (!chit) throw new Error('Pick one of your chits');
+      me.pick = chit.id;
+      if (s.players.every(p => p.pick != null)) {
+        // everyone hands their chit to the next player at the same moment
+        const outgoing = s.players.map(p => p.hand.find(c => c.id === p.pick));
+        s.players.forEach((p, i) => {
+          p.hand = p.hand.filter(c => c.id !== p.pick);
+          p.hand.push(outgoing[(i - 1 + s.players.length) % s.players.length]);
+          p.pick = null;
+        });
+        s.passes++;
       }
-      me.hand.push(card);
-      s.pile.push(...s.pending);
-      s.pending = null;
-      s.turn = (s.turn + 1) % s.players.length;
-      s.phase = 'throw';
+      return;
+    }
+
+    if (a.type === 'unpick') {
+      if (s.phase !== 'pass') throw new Error('Not passing now');
+      me.pick = null;
       return;
     }
 
     if (a.type === 'show') {
-      if (s.phase !== 'throw' || !myTurn) throw new Error('You can call SHOW only at the start of your turn');
-      const totals = Object.fromEntries(s.players.map(p => [p.id, handTotal(p.hand, s.jokerRank)]));
-      const mine = totals[playerId];
-      const lowestOther = Math.min(...s.players.filter(p => p.id !== playerId).map(p => totals[p.id]));
-      const success = mine < lowestOther;
-      const points = {};
-      for (const p of s.players) points[p.id] = totals[p.id];
-      if (success) {
-        points[playerId] = 0;
-      } else {
-        points[playerId] = mine + PENALTY;
-        for (const p of s.players) if (p.id !== playerId && totals[p.id] === lowestOther) points[p.id] = 0;
+      if (s.ranking.some(r => r.id === playerId)) throw new Error('You already pressed SHOW');
+      if (s.phase === 'pass') {
+        if (!hasSet(me.hand)) throw new Error('You need 4 chits with the same word to call SHOW');
+        s.phase = 'race';
+        s.raceStart = Date.now();
+        s.ranking.push({ id: playerId, ms: 0 });
+        return;
       }
-      for (const [id, pts] of Object.entries(points)) s.scores[id] += pts;
-      s.result = { callerId: playerId, success, totals, points };
-      s.phase = s.round >= s.totalRounds ? 'over' : 'roundOver';
+      if (s.phase !== 'race') throw new Error('Not now');
+      s.ranking.push({ id: playerId, ms: Date.now() - s.raceStart });
+      if (s.ranking.length === s.players.length) finishRound(s);
+      return;
+    }
+
+    if (a.type === 'forceEnd') {
+      if (!isHost) throw new Error('Only the host can do that');
+      if (s.phase !== 'race') throw new Error('No race running');
+      finishRound(s);
       return;
     }
 
     if (a.type === 'next') {
       if (s.phase !== 'roundOver') throw new Error('Round not finished');
-      startRound(s);
+      s.round++;
+      deal(s);
       return;
     }
 
@@ -137,22 +145,20 @@ module.exports = {
       phase: s.phase,
       round: s.round,
       totalRounds: s.totalRounds,
-      turnId: s.players[s.turn].id,
-      jokerCard: s.jokerCard,
-      jokerRank: s.jokerRank,
-      myHand: me ? me.hand.slice().sort((a, b) => rank(a) - rank(b) || a - b) : [],
-      myTotal: me ? handTotal(me.hand, s.jokerRank) : 0,
-      openCard: s.pile.length ? s.pile[s.pile.length - 1] : null,
-      pending: s.pending,
-      deckCount: s.deck.length,
+      myWord: me ? me.word : null,
+      myHand: me ? me.hand : [],
+      myPick: me ? me.pick : null,
+      canShow: !!me && s.phase === 'pass' && hasSet(me.hand),
+      passes: s.passes,
+      ranking: s.ranking,
+      roundPoints: s.roundPoints,
       scores: s.scores,
-      result: s.result,
-      log: s.log,
-      penalty: PENALTY,
       players: s.players.map(p => ({
         id: p.id,
         name: p.name,
-        cardCount: p.hand.length,
+        wrote: !!p.word,
+        word: s.phase === 'words' ? null : p.word,
+        picked: p.pick != null,
         hand: ended ? p.hand : undefined,
       })),
     };

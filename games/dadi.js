@@ -3,9 +3,12 @@
 //   2. Move: slide a piece to a connected empty point. With only 3 pieces left you can jump anywhere.
 //   Three in a line (a "mill") -> remove one opponent piece (not from a mill, unless all are in mills).
 // You lose when you have fewer than 3 pieces or no legal move.
+// Draws: a player can offer a draw and the other can accept it, and the game is drawn
+// automatically after 50 moves in a row with no piece removed.
 const { findPlayer } = require('./util');
 
 const PIECES = 9;
+const QUIET_LIMIT = 50;
 
 // Point index = ring * 8 + k, ring 0 = outer. k goes clockwise from the top-left corner:
 // 0 TL, 1 TM, 2 TR, 3 RM, 4 BR, 5 BM, 6 BL, 7 LM
@@ -47,6 +50,11 @@ function endTurn(s) {
   if (lost) {
     s.phase = 'over';
     s.winner = 1 - c;
+    s.result = 'win';
+  } else if (s.quiet >= QUIET_LIMIT) {
+    s.phase = 'over';
+    s.result = 'draw';
+    s.drawReason = `${QUIET_LIMIT} moves without a piece being removed`;
   }
 }
 
@@ -67,6 +75,9 @@ module.exports = {
       phase: 'play', // play | over
       winner: null,
       lastMove: [],
+      quiet: 0, // moves since the last removal (movement phase only)
+      drawOffer: null, // player index who offered a draw
+      result: null, // 'win' | 'draw'
     };
   },
 
@@ -82,6 +93,23 @@ module.exports = {
       return;
     }
 
+    if (a.type === 'offerDraw' || a.type === 'acceptDraw' || a.type === 'declineDraw') {
+      if (s.phase !== 'play') throw new Error('Game over');
+      if (a.type === 'offerDraw') {
+        if (s.drawOffer != null) throw new Error('A draw offer is already open');
+        s.drawOffer = me;
+      } else {
+        if (s.drawOffer == null || s.drawOffer === me) throw new Error('No draw offer to answer');
+        if (a.type === 'acceptDraw') {
+          s.phase = 'over';
+          s.result = 'draw';
+          s.drawReason = 'agreed by both players';
+        }
+        s.drawOffer = null;
+      }
+      return;
+    }
+
     if (s.phase !== 'play' || s.turn !== me) throw new Error("It's not your turn");
 
     if (a.type === 'remove') {
@@ -90,6 +118,7 @@ module.exports = {
       if (!removable(s, 1 - me).includes(p)) throw new Error("You can't remove that piece");
       s.board[p] = null;
       s.mustRemove = false;
+      s.quiet = 0;
       s.lastMove = [p];
       endTurn(s);
       return;
@@ -115,6 +144,8 @@ module.exports = {
       s.board[from] = null;
       s.board[to] = me;
       s.lastMove = [from, to];
+      s.quiet++;
+      if (s.drawOffer === 1 - me) s.drawOffer = null; // moving on declines the offer
     } else {
       throw new Error('Unknown action');
     }
@@ -139,6 +170,11 @@ module.exports = {
       adjacency: ADJ,
       lastMove: s.lastMove,
       winnerId: s.winner == null ? null : s.players[s.winner].id,
+      result: s.result,
+      drawReason: s.drawReason || null,
+      drawOfferBy: s.drawOffer == null ? null : s.players[s.drawOffer].id,
+      quiet: s.quiet,
+      quietLimit: QUIET_LIMIT,
       players: s.players.map((p, i) => ({
         id: p.id,
         name: p.name,

@@ -314,12 +314,17 @@ function renderLobby() {
         <span class="muted">Room code</span><span class="code">${S.room.code}</span><span class="spacer" style="flex:1"></span>
         <button class="btn btn-sm" data-copy>${canShare ? `${icon('share')} Share invite` : `${icon('link')} Copy invite link`}</button>
       </div>
+      <!-- selected game, its settings and the Play button sit above the list so phones don't scroll for them -->
+      <div class="selected-game">
+        <div class="sel-head"><span class="thumb">${thumb(g.id)}</span><div><small class="muted">Selected game</small><b>${esc(g.name)}</b></div></div>
+        ${isHost() && g.options ? optionsHtml(g) : ''}
+        ${isHost()
+          ? `<div class="actions"><button class="btn btn-primary btn-lg" data-start ${ok ? '' : 'disabled'}>${icon('play')} Play ${esc(g.name)}</button></div>
+             ${ok ? '' : `<p class="hint">${esc(g.name)} needs ${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players — ${n} in the room.</p>`}`
+          : ''}
+      </div>
+      ${isHost() ? '<h3 class="hand-title">All games</h3>' : ''}
       <div class="catalog-list">${rows}</div>
-      ${isHost() && g.options ? optionsHtml(g) : ''}
-      ${isHost()
-        ? `<div class="actions"><button class="btn btn-primary btn-lg" data-start ${ok ? '' : 'disabled'}>${icon('play')} Play ${esc(g.name)}</button></div>
-           ${ok ? '' : `<p class="hint">${esc(g.name)} needs ${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players — ${n} in the room.</p>`}`
-        : `<p class="hint">Selected: <b>${esc(g.name)}</b></p>`}
     </div>
   </div>`;
 }
@@ -1331,7 +1336,10 @@ function optionsHtml(g) {
   const chosen = ui_opts[g.id] || {};
   return `<div class="options">${g.options.map(o => {
     const cur = String(chosen[o.key] ?? o.default);
-    return `<div class="opt"><span class="opt-label">${esc(o.label)}</span><div class="seg">${o.choices.map((c, i) => `<button class="${String(c) === cur ? 'on' : ''}" data-opt="${g.id}:${o.key}" data-val="${c}">${esc(o.labels ? o.labels[i] : `${c}${o.suffix || ''}`)}</button>`).join('')}</div></div>`;
+    const custom = o.custom
+      ? `<label class="opt-custom">${esc(o.custom.prefix || '')}<input type="number" inputmode="numeric" id="opt-${g.id}-${o.key}" data-optinput="${g.id}:${o.key}" min="${o.custom.min}" max="${o.custom.max}" step="${o.custom.step}" value="${esc(cur)}" aria-label="${esc(o.label)} (custom)">${esc(o.custom.suffix || '')}</label>`
+      : '';
+    return `<div class="opt"><span class="opt-label">${esc(o.label)}</span><div class="seg">${o.choices.map((c, i) => `<button class="${String(c) === cur ? 'on' : ''}" data-opt="${g.id}:${o.key}" data-val="${c}">${esc(o.labels ? o.labels[i] : `${c}${o.suffix || ''}`)}</button>`).join('')}</div>${custom}</div>`;
   }).join('')}</div>`;
 }
 
@@ -1346,3 +1354,15 @@ function tickCountdowns() {
   }
 }
 setInterval(tickCountdowns, 200);
+
+// typed option values (e.g. a custom purse); kept within the option's limits
+$('#stage').addEventListener('change', e => {
+  const el = e.target.closest('[data-optinput]');
+  if (!el) return;
+  const [gid, key] = el.dataset.optinput.split(':');
+  const min = +el.min, max = +el.max, step = +el.step || 1;
+  let v = Math.round((+el.value || min) / step) * step;
+  v = Math.min(max, Math.max(min, v));
+  ui_opts[gid] = { ...(ui_opts[gid] || {}), [key]: v };
+  render();
+});

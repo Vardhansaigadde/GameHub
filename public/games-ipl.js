@@ -47,7 +47,8 @@ renderers.ipl = () => {
       tone: me.team ? '' : 'mine',
       turn: me.team ? `You are ${esc(myTeam.name)}. Waiting for others to pick…` : 'Pick your franchise',
       body: `<div class="team-grid">${tiles}</div>
-        <p class="hint">Purse ${money(g.opts.purse * 100)} each · squad up to ${g.opts.squad} · max ${g.opts.overseas} overseas · ${g.lotCount} players · ${g.opts.timer}s bid timer</p>
+        <div class="purse-banner"><span class="muted">Each team's purse</span><b>${money(g.opts.purse * 100)}</b></div>
+        <p class="hint">Squad up to ${g.opts.squad} · max ${g.opts.overseas} overseas · ${g.lotCount} players · ${g.opts.timer}s bid timer</p>
         <p class="hint">No turns: everyone bids at the same time. Each bid resets the clock to full — when it runs out, the highest bidder gets the player.</p>
         ${isHost() ? `<div class="actions sticky-actions"><button class="btn btn-primary btn-lg" data-game="ipl" data-begin ${ready ? '' : 'disabled'}>${icon('gavel')} Start the auction</button></div>` : ''}`,
     };

@@ -22,6 +22,7 @@ const TEAMS = [
   { id: 'lsg', name: 'Lucknow Super Giants', short: 'LSG', color: '#0057A8', ink: '#ffffff' },
 ];
 
+const PURSE_MIN = 10, PURSE_MAX = 500; // crore
 const TIMERS = [10, 15, 20, 30]; // seconds the host can choose; every bid resets the clock to full
 const SOLD_MS = 4500;    // SOLD / UNSOLD announcement
 const SET_ORDER = ['Batter', 'All-rounder', 'Wicket-keeper', 'Fast bowler', 'Spinner'];
@@ -67,7 +68,8 @@ module.exports = {
   maxPlayers: 8,
   options: [
     { key: 'size', label: 'Players in auction', choices: [40, 80, 'full'], labels: ['Quick · 40', 'Standard · 80', 'Full'], default: 40 },
-    { key: 'purse', label: 'Purse', choices: [60, 100, 120], labels: ['₹60 Cr', '₹100 Cr', '₹120 Cr'], default: 100 },
+    // quick picks, or the host types any amount (₹ crore per team)
+    { key: 'purse', label: 'Purse per team', choices: [50, 100, 120, 150], labels: ['₹50 Cr', '₹100 Cr', '₹120 Cr', '₹150 Cr'], default: 100, custom: { min: PURSE_MIN, max: PURSE_MAX, step: 5, prefix: '₹', suffix: 'Cr' } },
     { key: 'squad', label: 'Max squad', choices: [11, 15, 18], default: 15 },
     { key: 'timer', label: 'Bid timer', choices: TIMERS, default: 15, suffix: 's' },
   ],
@@ -75,7 +77,8 @@ module.exports = {
 
   setup(players, opts = {}) {
     const size = opts.size === 'full' ? 'full' : [40, 80].includes(Number(opts.size)) ? Number(opts.size) : 40;
-    const purse = [60, 100, 120].includes(Number(opts.purse)) ? Number(opts.purse) : 100;
+    const asked = Math.round(Number(opts.purse));
+    const purse = asked >= PURSE_MIN && asked <= PURSE_MAX ? asked : 100;
     const squad = [11, 15, 18].includes(Number(opts.squad)) ? Number(opts.squad) : 15;
     const timer = TIMERS.includes(Number(opts.timer)) ? Number(opts.timer) : 15;
     return {

@@ -795,7 +795,13 @@ button, a, .clickable, [role="button"] { touch-action: manipulation; -webkit-tap
 .cur-bid { font-size: 2.4rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .cur-team { display: flex; align-items: center; gap: 8px; font-weight: 700; min-height: 26px; }
 .clock { margin: 4px 0; }
-.going { height: 18px; color: #e08a3c; font-weight: 900; font-size: .9rem; }
+.clock-row { display: flex; align-items: baseline; gap: 10px; }
+.clock-secs { font-size: 1.4rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.clock-secs .low { color: var(--red); }
+.going { color: #e08a3c; font-weight: 900; font-size: .9rem; }
+.timer-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: .85rem; font-weight: 700; }
+.timer-note { font-size: .8rem; margin-top: 6px; }
+.turn-bar.live { background: #2e3a24; border-left-color: var(--green); }
 .bid-btn { background: var(--tc); color: var(--ti); box-shadow: 0 4px 0 rgba(0, 0, 0, .45); width: 100%; margin-top: 4px; }
 .bid-btn:hover:not(:disabled) { filter: brightness(1.1); background: var(--tc); }
 .bid-btn:disabled { background: var(--raised); color: var(--muted); opacity: 1; font-size: 1rem; }

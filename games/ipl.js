@@ -1,7 +1,8 @@
 // IPL Auction: each player runs a franchise and bids for real cricketers.
 //   1. Everyone picks a team (CSK, MI, RCB…).
-//   2. Players come up one by one (marquee set first, then by role). Bid with the team's purse.
-//      Every bid resets the clock; when it runs out the player is SOLD (or UNSOLD).
+//   2. Players come up one by one (marquee set first, then by role). There are no turns —
+//      everyone can bid at any time. The host sets the bid timer; every bid resets it to full.
+//      When it runs out the player is SOLD to the highest bidder (or UNSOLD if nobody bid).
 //   3. Squad limits: max squad size and max overseas players.
 const { shuffle, findPlayer, cue } = require('./util');
 
@@ -21,8 +22,7 @@ const TEAMS = [
   { id: 'lsg', name: 'Lucknow Super Giants', short: 'LSG', color: '#0057A8', ink: '#ffffff' },
 ];
 
-const OPEN_MS = 12000;   // time for the first bid
-const BID_MS = 8000;     // clock after each bid
+const TIMERS = [10, 15, 20, 30]; // seconds the host can choose; every bid resets the clock to full
 const SOLD_MS = 4500;    // SOLD / UNSOLD announcement
 const SET_ORDER = ['Batter', 'All-rounder', 'Wicket-keeper', 'Fast bowler', 'Spinner'];
 const SET_NAMES = { Marquee: 'Marquee', Batter: 'Batters', 'All-rounder': 'All-rounders', 'Wicket-keeper': 'Wicket-keepers', 'Fast bowler': 'Fast bowlers', Spinner: 'Spinners' };
@@ -54,7 +54,7 @@ function nextLot(s) {
     return;
   }
   s.phase = 'bidding';
-  s.timerAt = Date.now() + OPEN_MS;
+  s.timerAt = Date.now() + s.opts.timer * 1000;
 }
 
 const player = id => POOL.find(p => p.id === id);
@@ -69,6 +69,7 @@ module.exports = {
     { key: 'size', label: 'Players in auction', choices: [40, 80, 'full'], labels: ['Quick · 40', 'Standard · 80', 'Full'], default: 40 },
     { key: 'purse', label: 'Purse', choices: [60, 100, 120], labels: ['₹60 Cr', '₹100 Cr', '₹120 Cr'], default: 100 },
     { key: 'squad', label: 'Max squad', choices: [11, 15, 18], default: 15 },
+    { key: 'timer', label: 'Bid timer', choices: TIMERS, default: 15, suffix: 's' },
   ],
   TEAMS,
 
@@ -76,9 +77,10 @@ module.exports = {
     const size = opts.size === 'full' ? 'full' : [40, 80].includes(Number(opts.size)) ? Number(opts.size) : 40;
     const purse = [60, 100, 120].includes(Number(opts.purse)) ? Number(opts.purse) : 100;
     const squad = [11, 15, 18].includes(Number(opts.squad)) ? Number(opts.squad) : 15;
+    const timer = TIMERS.includes(Number(opts.timer)) ? Number(opts.timer) : 15;
     return {
       players: players.map(p => ({ id: p.id, name: p.name, team: null, purse: purse * 100, squad: [] })),
-      opts: { size, purse, squad, overseas: Math.min(8, Math.floor(squad / 2)) },
+      opts: { size, purse, squad, timer, overseas: Math.min(8, Math.floor(squad / 2)) },
       phase: 'teams', // teams -> bidding -> sold -> bidding ... -> over
       lots: buildLots(size),
       lotIdx: -1,
@@ -147,8 +149,19 @@ module.exports = {
       s.bid = { by: playerId, amount };
       s.bids.push({ by: playerId, amount });
       if (s.bids.length > 12) s.bids.shift();
-      s.timerAt = Math.max(s.timerAt, Date.now() + BID_MS);
+      s.timerAt = Date.now() + s.opts.timer * 1000; // full clock again after every bid
       cue(s, 'bid');
+      return;
+    }
+
+    if (a.type === 'timer') {
+      if (!isHost) throw new Error('Only the host can change the timer');
+      const secs = Number(a.secs);
+      if (!TIMERS.includes(secs)) throw new Error('Pick a timer length');
+      s.opts.timer = secs;
+      // apply straight away to the player on the block
+      if (s.phase === 'bidding' && !s.paused) s.timerAt = Date.now() + secs * 1000;
+      else if (s.paused) s.paused = secs * 1000;
       return;
     }
 
@@ -157,6 +170,7 @@ module.exports = {
       if (s.phase !== 'bidding') throw new Error('Nothing to pause');
       if (s.paused) { s.timerAt = Date.now() + s.paused; s.paused = null; }
       else { s.paused = Math.max(3000, s.timerAt - Date.now()); s.timerAt = null; }
+      cue(s, 'tap');
       return;
     }
 
@@ -186,6 +200,7 @@ module.exports = {
     return {
       phase: s.phase,
       teams: TEAMS,
+      timers: TIMERS,
       opts: s.opts,
       lotNumber: s.lotIdx + 1,
       lotCount: s.lots.length,

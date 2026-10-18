@@ -47,7 +47,8 @@ renderers.ipl = () => {
       tone: me.team ? '' : 'mine',
       turn: me.team ? `You are ${esc(myTeam.name)}. Waiting for others to pick…` : 'Pick your franchise',
       body: `<div class="team-grid">${tiles}</div>
-        <p class="hint">Purse ${money(g.opts.purse * 100)} each · squad up to ${g.opts.squad} · max ${g.opts.overseas} overseas · ${g.lotCount} players in the auction</p>
+        <p class="hint">Purse ${money(g.opts.purse * 100)} each · squad up to ${g.opts.squad} · max ${g.opts.overseas} overseas · ${g.lotCount} players · ${g.opts.timer}s bid timer</p>
+        <p class="hint">No turns: everyone bids at the same time. Each bid resets the clock to full — when it runs out, the highest bidder gets the player.</p>
         ${isHost() ? `<div class="actions sticky-actions"><button class="btn btn-primary btn-lg" data-game="ipl" data-begin ${ready ? '' : 'disabled'}>${icon('gavel')} Start the auction</button></div>` : ''}`,
     };
   }
@@ -112,10 +113,10 @@ renderers.ipl = () => {
   }).join('');
 
   return {
-    tone: g.phase === 'sold' ? 'win' : why ? '' : 'mine',
+    tone: g.phase === 'sold' ? 'win' : g.paused ? '' : 'live',
     turn: g.phase === 'sold' ? (g.last.unsold ? `${esc(p.name)} — unsold` : `SOLD to ${esc(teamOf(g, g.last.team).name)}!`)
       : g.paused ? 'Auction paused by the host'
-      : lead ? `${esc(lead.name)} leads at ${money(g.bid.amount)}` : `Bidding opens at ${money(Math.round(p.base * 100))}`,
+      : lead ? `Open bidding — ${esc(lead.name)} leads at ${money(g.bid.amount)}` : `Open bidding — anyone can bid ${money(Math.round(p.base * 100))}`,
     body: `<div class="ipl-top"><span class="set-chip">${esc(g.set || '')}</span><span class="muted">Player ${g.lotNumber} of ${g.lotCount}</span>${g.upcoming.length ? `<span class="muted next-up">Next: ${g.upcoming.map(esc).join(', ')}</span>` : ''}</div>
       <div class="auction">
         <div class="lot-card">
@@ -132,11 +133,12 @@ renderers.ipl = () => {
           <div class="cur-label">${g.bid ? 'Current bid' : 'No bids yet'}</div>
           <div class="cur-bid">${g.bid ? money(g.bid.amount) : money(Math.round(p.base * 100))}</div>
           <div class="cur-team">${lead ? `${tbadge(lead)} ${esc(lead.name)}` : '<span class="muted">Opening bid at base price</span>'}</div>
-          ${g.phase === 'bidding' && !g.paused ? `<div class="clock"><div class="timebar"><span data-deadline="${g.timerAt}" data-total="12000"></span></div><div class="going" data-going="${g.timerAt}"></div></div>` : ''}
+          ${g.phase === 'bidding' && !g.paused ? `<div class="clock"><div class="clock-row"><span class="clock-secs"><span data-deadline="${g.timerAt}"></span>s</span><span class="going" data-going="${g.timerAt}"></span></div><div class="timebar"><span data-deadline="${g.timerAt}" data-total="${g.opts.timer * 1000}"></span></div></div>` : ''}
           <button class="btn btn-xl bid-btn" style="--tc:${myTeam.color};--ti:${myTeam.ink}" data-game="ipl" data-bid="${g.bid ? g.bid.amount : ''}" ${why ? 'disabled' : ''}>
             ${why ? esc(why) : `Bid ${money(g.nextBid)}`}
           </button>
           <ul class="bid-feed">${feed}</ul>
+          ${isHost() ? `<div class="timer-row"><span class="muted">Bid timer</span><div class="seg">${g.timers.map(t => `<button class="${g.opts.timer === t ? 'on' : ''}" data-game="ipl" data-timer="${t}">${t}s</button>`).join('')}</div></div>` : `<div class="timer-note muted">Bid timer ${g.opts.timer}s · every bid resets it</div>`}
           ${isHost() ? `<div class="actions host-row"><button class="btn btn-sm" data-game="ipl" data-pause>${g.paused ? `${icon('play')} Resume` : `${icon('pause')} Pause`}</button><button class="btn btn-sm btn-ghost" data-game="ipl" data-end>End auction</button></div>` : ''}
         </div>
       </div>
@@ -150,6 +152,7 @@ handlers.ipl = d => {
   else if ('begin' in d) act({ type: 'begin' });
   else if ('bid' in d) act({ type: 'bid', on: d.bid === '' ? null : +d.bid });
   else if ('pause' in d) act({ type: 'pause' });
+  else if ('timer' in d) act({ type: 'timer', secs: +d.timer });
   else if ('end' in d) { if (confirm('End the auction now?')) act({ type: 'end' }); }
 };
 

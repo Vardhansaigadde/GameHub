@@ -5,7 +5,7 @@
 //   player in joining order (last player passes to the first) at the same time. Repeat.
 //   Collect 4 chits with the same word -> press SHOW (1st place).
 //   Then everyone else races to press SHOW — 2nd, 3rd, 4th... in the order they press.
-const { shuffle, findPlayer } = require('./util');
+const { shuffle, findPlayer, cue } = require('./util');
 
 const PER_WORD = 4;
 const ROUNDS = 5;
@@ -30,6 +30,7 @@ function deal(s) {
 const hasSet = hand => hand.length === PER_WORD && hand.every(c => c.word === hand[0].word);
 
 function finishRound(s) {
+  cue(s, 'win');
   const n = s.players.length;
   // anyone who never pressed (e.g. disconnected) is placed last, in seat order
   for (const p of s.players) if (!s.ranking.some(r => r.id === p.id)) s.ranking.push({ id: p.id, ms: null });
@@ -89,6 +90,7 @@ module.exports = {
           p.pick = null;
         });
         s.passes++;
+        cue(s, 'paper');
       }
       return;
     }
@@ -105,6 +107,7 @@ module.exports = {
         if (!hasSet(me.hand)) throw new Error('You need 4 chits with the same word to call SHOW');
         s.phase = 'race';
         s.raceStart = Date.now();
+        cue(s, 'buzzer');
         s.ranking.push({ id: playerId, ms: 0 });
         return;
       }

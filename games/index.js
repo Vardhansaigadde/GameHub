@@ -1,11 +1,17 @@
-const housie = require('./housie');
-const ashtachamma = require('./ashtachamma');
-const dadi = require('./dadi');
-const show = require('./show');
-const bingo = require('./bingo');
-const ramsita = require('./ramsita');
-const leastcount = require('./leastcount');
-const sequence = require('./sequence');
-const rummy = require('./rummy');
+const list = [
+  require('./ipl'),
+  require('./pictionary'),
+  require('./housie'),
+  require('./ashtachamma'),
+  require('./dadi'),
+  require('./show'),
+  require('./emojimovie'),
+  require('./mostlikely'),
+  require('./sequence'),
+  require('./rummy'),
+  require('./bingo'),
+  require('./ramsita'),
+  require('./leastcount'),
+];
 
-module.exports = Object.fromEntries([housie, ashtachamma, dadi, show, sequence, rummy, bingo, ramsita, leastcount].map(g => [g.id, g]));
+module.exports = Object.fromEntries(list.map(g => [g.id, g]));

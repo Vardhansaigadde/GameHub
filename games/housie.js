@@ -1,7 +1,7 @@
 // Housie / Tambola: everyone gets a 3x9 ticket with 15 numbers (1-90).
 // The host calls numbers (one by one, or automatically). Players tap to mark numbers
 // and claim prizes. Claims are checked against the called numbers — a wrong claim is a "Bogey!".
-const { shuffle, findPlayer } = require('./util');
+const { shuffle, findPlayer, cue } = require('./util');
 
 const PRIZES = [
   { key: 'early5', name: 'Early Five' },
@@ -87,6 +87,7 @@ module.exports = {
       if (s.phase !== 'play') throw new Error('Game over');
       if (!s.bag.length) { s.phase = 'over'; return; }
       s.called.push(s.bag.pop());
+      cue(s, 'call');
       if (!s.bag.length) s.phase = 'over';
       return;
     }
@@ -104,9 +105,11 @@ module.exports = {
       if (s.winners[prize.key]) throw new Error(`${prize.name} is already won`);
       if (!isValidClaim(me.ticket, prize.key, s.called)) {
         log(`🚫 ${me.name} claimed ${prize.name} — BOGEY!`);
+        cue(s, 'fail');
         return { message: `Bogey! Not all your ${prize.name} numbers are called yet.` };
       }
       s.winners[prize.key] = playerId;
+      cue(s, 'win');
       log(`🏆 ${me.name} won ${prize.name}!`);
       if (prize.key === 'full') { s.phase = 'over'; s.auto = false; }
       return;

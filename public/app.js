@@ -6,6 +6,8 @@ const token = localStorage.getItem('gh_token') || (crypto.randomUUID ? crypto.ra
 localStorage.setItem('gh_token', token);
 
 let S = null; // latest { room, game, you }
+const afterRender = []; // hooks run after every render (e.g. to re-mount the drawing canvas)
+const ui_opts = {}; // host's chosen options per game, e.g. { pictionary: { rounds: 3 } }
 // phones get the native share sheet (WhatsApp etc.) instead of copy-to-clipboard
 const canShare = !!navigator.share && matchMedia('(pointer: coarse)').matches;
 const ui = { arrange: Array(25).fill(null), selected: new Set(), marks: new Set(), dadiSel: null, lastGameKey: null, chatCount: 0 };
@@ -86,6 +88,10 @@ function thumb(id) {
       <line x1="30" y1="13" x2="80" y2="13" stroke="#c62828" stroke-width="1.6"/><line x1="30" y1="8" x2="80" y2="58" stroke="#c62828" stroke-width="1.6"/>`,
     ramsita: `<rect width="96" height="64" fill="#6d4a2e"/>
       ${[[14, 18, -12], [38, 30, 8], [60, 14, -4], [70, 38, 14], [30, 42, -6]].map(([x, y, r]) => `<g transform="rotate(${r} ${x + 10} ${y + 7})"><rect x="${x}" y="${y}" width="20" height="14" fill="#f6f0df"/><line x1="${x + 10}" y1="${y}" x2="${x + 10}" y2="${y + 14}" stroke="#d6cbb0"/></g>`).join('')}`,
+    ipl: `<rect width="96" height="64" fill="#0b1f4d"/><circle cx="48" cy="70" r="46" fill="#123a8a"/><rect x="30" y="10" width="36" height="44" rx="4" fill="#f4f1ea"/><circle cx="48" cy="25" r="7" fill="#c9a26b"/><path d="M36 46c2-8 22-8 24 0" fill="#1e88e5"/><rect x="8" y="40" width="22" height="12" rx="6" fill="#F9CD05"/><text x="19" y="49" font-family="Arial" font-size="7" font-weight="900" fill="#1c2a6b" text-anchor="middle">CSK</text><rect x="66" y="40" width="22" height="12" rx="6" fill="#D1001C"/><text x="77" y="49" font-family="Arial" font-size="7" font-weight="900" fill="#fff" text-anchor="middle">RCB</text><text x="48" y="61" font-family="Arial" font-size="7" font-weight="900" fill="#f2c14e" text-anchor="middle">SOLD ₹18 Cr</text>`,
+    pictionary: `<rect width="96" height="64" fill="#fff"/><path d="M18 46c6-18 16-26 24-10s14 4 20-8 12-6 16 6" fill="none" stroke="#1e88e5" stroke-width="3" stroke-linecap="round"/><circle cx="30" cy="20" r="7" fill="#fdd835"/><path d="M60 52 82 30l5 5-22 22-7 2z" fill="#e53935"/><rect x="0" y="0" width="96" height="64" fill="none" stroke="#ddd"/>`,
+    emojimovie: `<rect width="96" height="64" fill="#3c3a37"/><rect x="10" y="12" width="76" height="40" rx="6" fill="#262421"/><text x="48" y="39" font-size="17" text-anchor="middle">🪰😡🔪</text>`,
+    mostlikely: `<rect width="96" height="64" fill="#2e3a24"/><rect x="10" y="10" width="76" height="12" rx="3" fill="#81b64c"/><rect x="10" y="27" width="56" height="8" rx="2" fill="#95c45f"/><rect x="10" y="39" width="34" height="8" rx="2" fill="#6d9f43"/><rect x="10" y="51" width="18" height="8" rx="2" fill="#537a2f"/><circle cx="78" cy="31" r="4" fill="#f2c14e"/>`,
     sequence: `<rect width="96" height="64" fill="#22603a"/>
       <g transform="rotate(-16 30 40)"><rect x="18" y="16" width="24" height="34" rx="3" fill="#fff"/><text x="22" y="26" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">5♥</text></g>
       <g transform="rotate(-4 46 38)"><rect x="34" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="38" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">6♥</text></g>
@@ -163,6 +169,7 @@ socket.on('connect', () => {
 
 function showHome() {
   S = null;
+  $('#reactDock').classList.add('hidden');
   $('#charades').classList.add('hidden');
   $('#home').classList.remove('hidden');
   $('#room').classList.add('hidden');
@@ -203,6 +210,9 @@ $('#chatForm').onsubmit = e => {
 socket.on('state', state => {
   const prevGame = S && S.game;
   S = state;
+  ui.skew = state.now ? state.now - Date.now() : 0; // server clock minus ours, for countdowns
+  const g0 = S.game;
+  if (g0 && g0.cue && (!prevGame || prevGame.gameId !== g0.gameId || !prevGame.cue || prevGame.cue.n !== g0.cue.n) && prevGame) window.SFX && SFX.play(g0.cue.type);
   $('#home').classList.add('hidden');
   $('#charades').classList.add('hidden');
   $('#room').classList.remove('hidden');
@@ -221,6 +231,7 @@ socket.on('state', state => {
   if (myTurnNow && !(prevGame && prevGame.turnId === S.you)) {
     document.title = '● Your turn — GameHub';
     if (prevGame && navigator.vibrate) navigator.vibrate(120);
+    if (prevGame && window.SFX) SFX.play('turn');
   }
   else if (!myTurnNow) document.title = `Room ${S.room.code} — GameHub`;
 
@@ -268,6 +279,8 @@ function render() {
   const typing = $('#stage input[id]');
   const keep = typing && { id: typing.id, value: typing.value, focused: document.activeElement === typing };
   $('#stage').innerHTML = S.game ? renderGame() : renderLobby();
+  for (const f of afterRender) f();
+  tickCountdowns();
   const again = keep && document.getElementById(keep.id);
   if (again) { again.value = keep.value; if (keep.focused) again.focus(); }
 }
@@ -302,6 +315,7 @@ function renderLobby() {
         <button class="btn btn-sm" data-copy>${canShare ? `${icon('share')} Share invite` : `${icon('link')} Copy invite link`}</button>
       </div>
       <div class="catalog-list">${rows}</div>
+      ${isHost() && g.options ? optionsHtml(g) : ''}
       ${isHost()
         ? `<div class="actions"><button class="btn btn-primary btn-lg" data-start ${ok ? '' : 'disabled'}>${icon('play')} Play ${esc(g.name)}</button></div>
            ${ok ? '' : `<p class="hint">${esc(g.name)} needs ${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players — ${n} in the room.</p>`}`
@@ -335,7 +349,8 @@ $('#stage').addEventListener('click', e => {
   if (!el || el.disabled) return;
   const d = el.dataset;
   if ('select' in d) socket.emit('selectGame', { gameId: d.select });
-  else if ('start' in d) socket.emit('start', null, done);
+  else if ('start' in d) socket.emit('start', { options: ui_opts[S.room.gameId] || {} }, done);
+  else if ('opt' in d) { const [gid, key] = d.opt.split(':'); ui_opts[gid] = { ...(ui_opts[gid] || {}), [key]: d.val }; render(); }
   else if ('copy' in d) copyInvite();
   else if ('end' in d) { if (confirm('End this game for everyone and go back to the lobby?')) socket.emit('endGame'); }
   else if ('rematch' in d) act({ type: 'rematch' });
@@ -1310,3 +1325,24 @@ async function syncWakeLock() {
 }
 document.addEventListener('visibilitychange', syncWakeLock);
 $('#openCharades').addEventListener('click', syncWakeLock);
+
+/* ======================= Game options & countdowns ======================= */
+function optionsHtml(g) {
+  const chosen = ui_opts[g.id] || {};
+  return `<div class="options">${g.options.map(o => {
+    const cur = String(chosen[o.key] ?? o.default);
+    return `<div class="opt"><span class="opt-label">${esc(o.label)}</span><div class="seg">${o.choices.map((c, i) => `<button class="${String(c) === cur ? 'on' : ''}" data-opt="${g.id}:${o.key}" data-val="${c}">${esc(o.labels ? o.labels[i] : `${c}${o.suffix || ''}`)}</button>`).join('')}</div></div>`;
+  }).join('')}</div>`;
+}
+
+const serverNow = () => Date.now() + (ui.skew || 0);
+// Elements with data-deadline show seconds left; data-total turns them into a shrinking bar.
+function tickCountdowns() {
+  for (const el of document.querySelectorAll('[data-deadline]')) {
+    const left = Math.max(0, +el.dataset.deadline - serverNow());
+    if (el.dataset.total) el.style.width = `${Math.min(100, (left / +el.dataset.total) * 100)}%`;
+    else el.textContent = Math.ceil(left / 1000);
+    el.classList.toggle('low', left < 5000);
+  }
+}
+setInterval(tickCountdowns, 200);

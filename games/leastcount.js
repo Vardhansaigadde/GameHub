@@ -6,7 +6,7 @@
 //   Lowest -> you score 0, everyone else scores their hand total.
 //   Not lowest -> you get your total + 40 penalty, the actual lowest scores 0.
 // Lowest total score after all rounds wins.
-const { shuffle, findPlayer } = require('./util');
+const { shuffle, findPlayer, cue } = require('./util');
 
 const HAND_SIZE = 7;
 const PENALTY = 40;
@@ -68,6 +68,7 @@ module.exports = {
       me.hand = me.hand.filter(c => !cards.includes(c));
       s.pending = cards;
       s.phase = 'draw';
+      cue(s, 'card');
       return;
     }
 
@@ -110,6 +111,7 @@ module.exports = {
       }
       for (const [id, pts] of Object.entries(points)) s.scores[id] += pts;
       s.result = { callerId: playerId, success, totals, points };
+      cue(s, success ? 'win' : 'fail');
       s.phase = s.round >= s.totalRounds ? 'over' : 'roundOver';
       return;
     }

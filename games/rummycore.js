@@ -7,7 +7,7 @@
 //   sequence       - same, but jokers may fill gaps
 //   set ("dummy")  - 3 or 4 cards of the same number in different suits (jokers may fill in)
 // Each game passes a `rules` object that decides which mix of groups wins.
-const { shuffle, findPlayer } = require('./util');
+const { shuffle, findPlayer, cue } = require('./util');
 
 const HAND = 13;
 const MAX_POINTS = 80;
@@ -202,6 +202,7 @@ function createGame(cfg) {
         const g = groupsOf(me)[Number(a.group)];
         if (!g || !isPureSequence(g)) throw new Error('Show a pure sequence (3+ in a row, same suit, no joker)');
         me.revealed = true;
+        cue(s, 'reveal');
         log(s, `${me.name} showed a pure sequence and can now see the joker`);
         return { message: `The joker is ${['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][s.wildRank]} — those cards are wild for you now` };
       }
@@ -238,6 +239,7 @@ function createGame(cfg) {
         }
         me.hand.push(card);
         me.drew = true;
+        cue(s, 'card');
         normalize(me);
         s.step = 'discard';
         return;
@@ -252,6 +254,7 @@ function createGame(cfg) {
 
         if (a.type === 'discard') {
           s.pile.push(card);
+          cue(s, 'card');
           advance(s);
           return;
         }
@@ -269,10 +272,12 @@ function createGame(cfg) {
           me.wrongShow = true;
           s.roundPoints[me.id] = WRONG_SHOW;
           log(s, `${me.name} made a wrong show (+${WRONG_SHOW}): ${problem}`);
+          cue(s, 'fail');
           advance(s);
           return { message: `Wrong show — ${problem}. +${WRONG_SHOW} points.` };
         }
         log(s, `${me.name} declared!`);
+        cue(s, 'win');
         endRound(s, me);
         return;
       }

@@ -5,7 +5,7 @@
 // You lose when you have fewer than 3 pieces or no legal move.
 // Draws: a player can offer a draw and the other can accept it, and the game is drawn
 // automatically after 50 moves in a row with no piece removed.
-const { findPlayer } = require('./util');
+const { findPlayer, cue } = require('./util');
 
 const PIECES = 9;
 const QUIET_LIMIT = 50;
@@ -51,6 +51,7 @@ function endTurn(s) {
     s.phase = 'over';
     s.winner = 1 - c;
     s.result = 'win';
+    cue(s, 'win');
   } else if (s.quiet >= QUIET_LIMIT) {
     s.phase = 'over';
     s.result = 'draw';
@@ -117,6 +118,7 @@ module.exports = {
       const p = Number(a.point);
       if (!removable(s, 1 - me).includes(p)) throw new Error("You can't remove that piece");
       s.board[p] = null;
+      cue(s, 'cut');
       s.mustRemove = false;
       s.quiet = 0;
       s.lastMove = [p];
@@ -132,6 +134,7 @@ module.exports = {
       if (!(to >= 0 && to < 24) || s.board[to] != null) throw new Error('Pick an empty point');
       s.board[to] = me;
       s.placed[me]++;
+      cue(s, 'place');
       s.lastMove = [to];
     } else if (a.type === 'move') {
       if (s.placed[me] < PIECES) throw new Error('Place all your pieces first');
@@ -144,6 +147,7 @@ module.exports = {
       s.board[from] = null;
       s.board[to] = me;
       s.lastMove = [from, to];
+      cue(s, 'place');
       s.quiet++;
       if (s.drawOffer === 1 - me) s.drawOffer = null; // moving on declines the offer
     } else {

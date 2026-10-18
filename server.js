@@ -12,7 +12,7 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (req, res) => res.send('ok'));
 
-const gameList = () => Object.values(games).map(g => ({ id: g.id, name: g.name, minPlayers: g.minPlayers, maxPlayers: g.maxPlayers, blurb: g.blurb }));
+const gameList = () => Object.values(games).map(g => ({ id: g.id, name: g.name, minPlayers: g.minPlayers, maxPlayers: g.maxPlayers, blurb: g.blurb, options: g.options || null }));
 app.get('/api/games', (req, res) => res.json(gameList()));
 
 const MAX_PLAYERS = 8;
@@ -59,9 +59,32 @@ function broadcast(room) {
     if (room.state) {
       game = games[room.gameId].view(room.state, p.id);
       game.gameId = room.gameId;
+      game.cue = room.state.cue || null; // sound cue: { n, type } — clients play it when n changes
+      game.timerAt = room.state.timerAt || null;
     }
-    io.to(p.socketId).emit('state', { room: pub, game, you: p.id });
+    io.to(p.socketId).emit('state', { room: pub, game, you: p.id, now: Date.now() });
   }
+  scheduleTimer(room);
+}
+
+// Games with a countdown set state.timerAt; when it passes, the server calls game.onTimer(state).
+function scheduleTimer(room) {
+  clearTimeout(room.tick);
+  const game = room.state && games[room.gameId];
+  if (!game || !game.onTimer || !room.state.timerAt) return;
+  room.tick = setTimeout(() => {
+    if (!room.state || !room.state.timerAt) return;
+    if (Date.now() < room.state.timerAt) return scheduleTimer(room);
+    room.state.timerAt = null;
+    game.onTimer(room.state);
+    broadcast(room);
+  }, Math.max(0, room.state.timerAt - Date.now()) + 20);
+}
+
+// Late joiners / refreshes get any streamed data the game keeps (e.g. the drawing so far)
+function syncStream(room, player) {
+  const game = room.state && games[room.gameId];
+  if (game && game.streamSync && player.socketId) io.to(player.socketId).emit('stream', { sync: true, items: game.streamSync(room.state) });
 }
 
 function scheduleCleanup(room) {
@@ -147,6 +170,7 @@ io.on('connection', socket => {
     attach(socket, room, player);
     reply(cb, { code: room.code });
     broadcast(room);
+    syncStream(room, player);
   });
 
   socket.on('leave', () => detach(socket, true));
@@ -159,7 +183,7 @@ io.on('connection', socket => {
     broadcast(room);
   });
 
-  socket.on('start', (_, cb) => {
+  socket.on('start', (opts, cb) => {
     const { room, player } = current(socket);
     if (!room) return reply(cb, { error: 'Not in a room' });
     if (room.hostId !== player.id) return reply(cb, { error: 'Only the host can start' });
@@ -168,7 +192,7 @@ io.on('connection', socket => {
     if (n < game.minPlayers || n > game.maxPlayers) {
       return reply(cb, { error: `${game.name} needs ${game.minPlayers}-${game.maxPlayers} players (you have ${n}).` });
     }
-    room.state = game.setup(room.players.map(p => ({ id: p.id, name: p.name })));
+    room.state = game.setup(room.players.map(p => ({ id: p.id, name: p.name })), (opts && opts.options) || {});
     addChat(room, null, `${player.name} started ${game.name}!`);
     reply(cb, {});
     broadcast(room);
@@ -189,6 +213,7 @@ io.on('connection', socket => {
   socket.on('endGame', () => {
     const { room, player } = current(socket);
     if (!room || room.hostId !== player.id || !room.state) return;
+    clearTimeout(room.tick);
     room.state = null;
     // drop players who left during the game
     room.players = room.players.filter(p => p.socketId);
@@ -207,6 +232,27 @@ io.on('connection', socket => {
       io.to(target.socketId).emit('kicked');
     }
     broadcast(room);
+  });
+
+  // Fast, high-volume game data (drawing strokes) — relayed to everyone else, not via full state
+  socket.on('stream', data => {
+    const { room, player } = current(socket);
+    const game = room && room.state && games[room.gameId];
+    if (!game || !game.stream) return;
+    let out;
+    try { out = game.stream(room.state, player.id, data); } catch { return; }
+    if (!out) return;
+    for (const p of room.players) if (p.socketId && p !== player) io.to(p.socketId).emit('stream', out);
+  });
+
+  // Floating emoji reactions, rate-limited per socket
+  const REACTIONS = ['😂', '🔥', '👏', '😮', '😡', '❤️', '🤣', '👀'];
+  let lastReact = 0;
+  socket.on('react', ({ emoji } = {}) => {
+    const { room, player } = current(socket);
+    if (!room || !REACTIONS.includes(emoji) || Date.now() - lastReact < 350) return;
+    lastReact = Date.now();
+    for (const p of room.players) if (p.socketId) io.to(p.socketId).emit('react', { emoji, from: player.name, id: player.id });
   });
 
   socket.on('chat', ({ text } = {}) => {

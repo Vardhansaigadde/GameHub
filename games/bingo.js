@@ -1,7 +1,7 @@
 // Classic notebook Bingo: everyone writes 1-25 on a 5x5 grid, players take turns
 // calling a number, everyone cuts it. Each full row/column/diagonal = one letter
 // of B-I-N-G-O. First to 5 lines wins.
-const { shuffle, findPlayer } = require('./util');
+const { shuffle, findPlayer, cue } = require('./util');
 
 const SIZE = 5;
 const WIN_LINES = 5;
@@ -69,6 +69,7 @@ module.exports = {
       if (!(n >= 1 && n <= 25) || s.called.includes(n)) throw new Error('Pick a number that is not cut yet');
       s.called.push(n);
       s.winners = s.players.filter(p => countLines(p.board, s.called) >= WIN_LINES).map(p => p.id);
+      cue(s, s.winners.length ? 'win' : 'call');
       if (s.winners.length) s.phase = 'over';
       else s.turn = (s.turn + 1) % s.players.length;
       return;

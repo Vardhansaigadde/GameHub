@@ -1,7 +1,7 @@
 // Ramudu-Seetha chits game: everyone picks a folded chit. Ramudu reveals himself and
 // must guess who has Seetha. Guess right -> Ramudu keeps his 1000 points.
 // Guess wrong -> Seetha steals the 1000. Everyone else scores their chit's points.
-const { shuffle, findPlayer } = require('./util');
+const { shuffle, findPlayer, cue } = require('./util');
 
 const ROLES = [
   { key: 'ramudu', name: 'Ramudu', points: 1000 },
@@ -59,6 +59,7 @@ module.exports = {
       const chit = s.chits[a.index];
       if (!chit || chit.takenBy) throw new Error('That chit is taken');
       chit.takenBy = playerId;
+      cue(s, 'paper');
       if (s.chits.every(c => c.takenBy)) s.phase = 'guess';
       return;
     }
@@ -71,6 +72,7 @@ module.exports = {
       const seetha = holder(s, 'seetha');
       s.guessedId = a.targetId;
       s.correct = a.targetId === seetha;
+      cue(s, s.correct ? 'win' : 'fail');
       for (const c of s.chits) s.roundPoints[c.takenBy] = c.role.points;
       if (!s.correct) {
         s.roundPoints[seetha] = 1000;

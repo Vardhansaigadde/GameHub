@@ -1,0 +1,146 @@
+# name | role | country | base price (₹ crore, game value) | M = marquee set
+# roles: Batter, Wicket-keeper, All-rounder, Fast bowler, Spinner
+Virat Kohli | Batter | India | 2 | M
+Rohit Sharma | Batter | India | 2 | M
+MS Dhoni | Wicket-keeper | India | 2 | M
+Jasprit Bumrah | Fast bowler | India | 2 | M
+Hardik Pandya | All-rounder | India | 2 | M
+Suryakumar Yadav | Batter | India | 2 | M
+Shubman Gill | Batter | India | 2 | M
+Rishabh Pant | Wicket-keeper | India | 2 | M
+KL Rahul | Wicket-keeper | India | 2 | M
+Ravindra Jadeja | All-rounder | India | 2 | M
+Shreyas Iyer | Batter | India | 2 | M
+Pat Cummins | Fast bowler | Australia | 2 | M
+Jos Buttler | Wicket-keeper | England | 2 | M
+Rashid Khan | Spinner | Afghanistan | 2 | M
+Travis Head | Batter | Australia | 2 | M
+Heinrich Klaasen | Wicket-keeper | South Africa | 2 | M
+Mitchell Starc | Fast bowler | Australia | 2 | M
+Sunil Narine | All-rounder | West Indies | 2 | M
+Andre Russell | All-rounder | West Indies | 2 | M
+Yashasvi Jaiswal | Batter | India | 2 |
+Sanju Samson | Wicket-keeper | India | 2 |
+Ruturaj Gaikwad | Batter | India | 2 |
+Abhishek Sharma | All-rounder | India | 2 |
+Tilak Varma | Batter | India | 2 |
+Ishan Kishan | Wicket-keeper | India | 2 |
+Arshdeep Singh | Fast bowler | India | 2 |
+Mohammed Siraj | Fast bowler | India | 2 |
+Mohammed Shami | Fast bowler | India | 2 |
+Yuzvendra Chahal | Spinner | India | 2 |
+Kuldeep Yadav | Spinner | India | 2 |
+Axar Patel | All-rounder | India | 2 |
+Varun Chakravarthy | Spinner | India | 2 |
+Rinku Singh | Batter | India | 1.5 |
+Shivam Dube | All-rounder | India | 1.5 |
+Sai Sudharsan | Batter | India | 1.5 |
+Glenn Maxwell | All-rounder | Australia | 2 |
+Kagiso Rabada | Fast bowler | South Africa | 2 |
+Trent Boult | Fast bowler | New Zealand | 2 |
+Nicholas Pooran | Wicket-keeper | West Indies | 2 |
+Phil Salt | Wicket-keeper | England | 2 |
+Liam Livingstone | All-rounder | England | 1.5 |
+Josh Hazlewood | Fast bowler | Australia | 2 |
+Jofra Archer | Fast bowler | England | 2 |
+Sam Curran | All-rounder | England | 2 |
+Mitchell Marsh | All-rounder | Australia | 2 |
+Marcus Stoinis | All-rounder | Australia | 1.5 |
+David Miller | Batter | South Africa | 1.5 |
+Quinton de Kock | Wicket-keeper | South Africa | 2 |
+Faf du Plessis | Batter | South Africa | 1.5 |
+David Warner | Batter | Australia | 2 |
+Kane Williamson | Batter | New Zealand | 1.5 |
+Rachin Ravindra | All-rounder | New Zealand | 1.5 |
+Harry Brook | Batter | England | 2 |
+Ben Stokes | All-rounder | England | 2 |
+Cameron Green | All-rounder | Australia | 2 |
+Tim David | Batter | Australia | 1.5 |
+Matheesha Pathirana | Fast bowler | Sri Lanka | 1.5 |
+Wanindu Hasaranga | Spinner | Sri Lanka | 1.5 |
+Noor Ahmad | Spinner | Afghanistan | 1 |
+Aiden Markram | Batter | South Africa | 1.5 |
+Marco Jansen | All-rounder | South Africa | 1.5 |
+Lockie Ferguson | Fast bowler | New Zealand | 1.5 |
+Will Jacks | All-rounder | England | 1.5 |
+Jake Fraser-McGurk | Batter | Australia | 1 |
+Tristan Stubbs | Wicket-keeper | South Africa | 1 |
+Devon Conway | Wicket-keeper | New Zealand | 1.5 |
+Daryl Mitchell | All-rounder | New Zealand | 1 |
+Shimron Hetmyer | Batter | West Indies | 1.5 |
+Bhuvneshwar Kumar | Fast bowler | India | 1.5 |
+Deepak Chahar | Fast bowler | India | 1.5 |
+Washington Sundar | All-rounder | India | 1 |
+Ravi Bishnoi | Spinner | India | 1 |
+Prasidh Krishna | Fast bowler | India | 1 |
+Harshal Patel | Fast bowler | India | 1 |
+T. Natarajan | Fast bowler | India | 1 |
+Avesh Khan | Fast bowler | India | 1 |
+Mukesh Kumar | Fast bowler | India | 0.75 |
+Venkatesh Iyer | All-rounder | India | 1 |
+Nitish Kumar Reddy | All-rounder | India | 1 |
+Riyan Parag | All-rounder | India | 1 |
+Dhruv Jurel | Wicket-keeper | India | 1 |
+Jitesh Sharma | Wicket-keeper | India | 0.75 |
+Prabhsimran Singh | Wicket-keeper | India | 0.75 |
+Shashank Singh | Batter | India | 0.75 |
+Ajinkya Rahane | Batter | India | 1 |
+Mayank Yadav | Fast bowler | India | 0.75 |
+Harshit Rana | Fast bowler | India | 1 |
+Khaleel Ahmed | Fast bowler | India | 0.75 |
+Rahul Tewatia | All-rounder | India | 0.75 |
+Krunal Pandya | All-rounder | India | 1 |
+Devdutt Padikkal | Batter | India | 0.75 |
+Rajat Patidar | Batter | India | 1 |
+Sai Kishore | Spinner | India | 0.75 |
+Tushar Deshpande | Fast bowler | India | 0.75 |
+Shardul Thakur | All-rounder | India | 1 |
+Ravichandran Ashwin | Spinner | India | 1 |
+Ayush Badoni | Batter | India | 0.75 |
+Vaibhav Suryavanshi | Batter | India | 0.3 |
+Priyansh Arya | Batter | India | 0.3 |
+Ashutosh Sharma | Batter | India | 0.5 |
+Naman Dhir | All-rounder | India | 0.3 |
+Anshul Kamboj | Fast bowler | India | 0.3 |
+Akash Deep | Fast bowler | India | 0.75 |
+Umran Malik | Fast bowler | India | 0.75 |
+Rahul Tripathi | Batter | India | 0.75 |
+Nehal Wadhera | Batter | India | 0.5 |
+Abdul Samad | Batter | India | 0.5 |
+Mohit Sharma | Fast bowler | India | 0.5 |
+Sandeep Sharma | Fast bowler | India | 0.75 |
+Rahul Chahar | Spinner | India | 0.75 |
+Shahbaz Ahmed | All-rounder | India | 0.5 |
+Vijay Shankar | All-rounder | India | 0.5 |
+Manish Pandey | Batter | India | 0.5 |
+Prithvi Shaw | Batter | India | 0.75 |
+Moeen Ali | All-rounder | England | 1 |
+Jonny Bairstow | Wicket-keeper | England | 1.5 |
+Gerald Coetzee | Fast bowler | South Africa | 1 |
+Anrich Nortje | Fast bowler | South Africa | 1.5 |
+Maheesh Theekshana | Spinner | Sri Lanka | 1 |
+Mujeeb Ur Rahman | Spinner | Afghanistan | 0.75 |
+Rahmanullah Gurbaz | Wicket-keeper | Afghanistan | 1 |
+Azmatullah Omarzai | All-rounder | Afghanistan | 1 |
+Rovman Powell | Batter | West Indies | 1 |
+Mitchell Santner | Spinner | New Zealand | 1 |
+Glenn Phillips | All-rounder | New Zealand | 1 |
+Josh Inglis | Wicket-keeper | Australia | 1 |
+Nathan Ellis | Fast bowler | Australia | 0.75 |
+Adam Zampa | Spinner | Australia | 1 |
+Ryan Rickelton | Wicket-keeper | South Africa | 1 |
+Mustafizur Rahman | Fast bowler | Bangladesh | 1 |
+Fazalhaq Farooqi | Fast bowler | Afghanistan | 0.75 |
+Naveen-ul-Haq | Fast bowler | Afghanistan | 0.75 |
+Romario Shepherd | All-rounder | West Indies | 0.75 |
+Akeal Hosein | Spinner | West Indies | 0.75 |
+Alzarri Joseph | Fast bowler | West Indies | 1 |
+Jason Holder | All-rounder | West Indies | 1 |
+Dewald Brevis | Batter | South Africa | 0.75 |
+Spencer Johnson | Fast bowler | Australia | 0.75 |
+Kyle Jamieson | Fast bowler | New Zealand | 0.75 |
+Rilee Rossouw | Batter | South Africa | 0.75 |
+Shai Hope | Wicket-keeper | West Indies | 0.75 |
+Mark Wood | Fast bowler | England | 1 |
+Mohammad Nabi | All-rounder | Afghanistan | 0.75 |
+Lungi Ngidi | Fast bowler | South Africa | 0.75 |

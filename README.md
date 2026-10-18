@@ -4,6 +4,10 @@ Play the board, paper and card games we grew up with — **online, with friends 
 
 | Game | Players | How it works |
 |---|---|---|
+| **IPL Auction** | 2–8 | Everyone picks a franchise (CSK, MI, RCB, KKR, SRH, DC, PBKS, RR, GT, LSG) and bids for real cricketers with a purse. Marquee set first, then batters, all-rounders, keepers, fast bowlers and spinners. Every bid resets the clock — "going once, going twice", then a live **SOLD to …** announcement (spoken aloud) with the player's photo. Squad and overseas limits; host can pause or end. |
+| **Draw & Guess** | 2–8 | skribbl-style: the drawer picks 1 of 4 random words (a Telugu movie, a food or an everyday thing) and draws it with pens, colours, fill, eraser and undo. Others type guesses — faster guesses score more, the drawer scores for each correct guess, and letters are revealed as hints. Works with a finger on phones. |
+| **Emoji Movie Guess** | 2–8 | A Telugu movie as emojis (🪰😡🔪 = *Eega*). Type the name — first correct answer gets 100, then 80, 65… Small typos are accepted; a hint appears halfway. 88 movies. |
+| **Who's Most Likely To** | 3–8 | Everyone writes their own questions ("…fall asleep in a movie?"), then votes anonymously on each one. Results are revealed as bars and the winner gets the title. Bonus "mind reader" points for voting with the group. |
 | **Housie** | 2–8 | Tambola. Everyone gets a printed-style ticket; the host calls numbers (or turns on auto-call). Daub your numbers and claim Early Five, Top/Middle/Bottom Line, Four Corners and Full House. Wrong claim = Bogey! |
 | **Ashta Chamma** | 2–4 | Throw 4 cowrie shells (1–3, Chamma = 4, Ashta = 8). Pawns start off the board and enter only on a 4 or 8. Race round the outer ring, then the inner ring, to the centre. Cut an opponent before entering the inner ring. 4, 8 and cuts give another throw. |
 | **Dadi** | 2 | Nine Men's Morris. Place 9 pieces, then slide them. Three in a line removes an opponent piece; with 3 left you can jump. Under 3 pieces or stuck = you lose. Offer a draw any time; the game is also drawn after 50 moves with no capture. |
@@ -14,7 +18,7 @@ Play the board, paper and card games we grew up with — **online, with friends 
 | **Ramudu‑Seetha** | 3–6 | Everyone picks a folded chit. Ramudu (1000) must find Seetha. Right guess → Ramudu keeps 1000. Wrong → Seetha takes it. Others score their chit (Lakshmanudu 800, Hanumanthudu 500, Bharathudu 300, Shatrughnudu 200). 5 rounds. |
 | **Least Count** | 2–6 | 7 cards each, one Joker rank counts 0. Throw a card (or several of the same rank), then pick from the deck or the open card. Call SHOW when you think your total is lowest — wrong call = +40. Lowest score after 5 rounds wins. |
 
-There's also a chat box in every room.
+Every room has chat, **emoji reactions** that float across everyone's screen, and **sounds** (dice, cards, bids, SOLD gavel, correct guesses…) with a mute button in the top bar.
 
 ### Dumb Charades (Telugu movies)
 
@@ -51,3 +55,7 @@ Note: the free plan sleeps after ~15 minutes with no one playing, so the first v
 ## Adding a new game
 
 Each game is one file in `games/` with `setup`, `action` and `view` functions, plus a renderer in `public/app.js`. Register it in `games/index.js`.
+
+## IPL player data
+
+`public/data/ipl-players.json` is built from `scripts/ipl/players.txt` (names, roles, game base prices) plus Wikipedia for each player's free-licensed photo (Wikimedia Commons, credited on screen), batting/bowling style and age. Edit the list and run `node scripts/ipl/fetch-players.js` to refresh it. Team names are used for fun only — no logos.

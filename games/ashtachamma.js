@@ -5,7 +5,7 @@
 // Pawns go around the outer ring anticlockwise, then the inner ring clockwise, then to the centre.
 // You can enter the inner ring only after you have cut (captured) at least one opponent pawn.
 // Home squares (middle of each side) and the centre are safe. First to bring all 4 pawns to the centre wins.
-const { findPlayer } = require('./util');
+const { findPlayer, cue } = require('./util');
 
 const PAWNS = 4;
 const OUTER_LEN = 16;
@@ -85,6 +85,7 @@ module.exports = {
       s.shells = [0, 1, 2, 3].map(() => Math.random() < 0.5);
       const up = s.shells.filter(Boolean).length;
       s.roll = up === 0 ? 8 : up;
+      cue(s, 'shells');
       s.extra = s.roll === 4 || s.roll === 8;
       const name = s.roll === 8 ? 'ASHTA (8)!' : s.roll === 4 ? 'CHAMMA (4)!' : String(s.roll);
       if (!legalPawns(s, pi, s.roll).length) {
@@ -115,6 +116,7 @@ module.exports = {
         if (me.pawns.every(p => p === FINISH)) {
           s.phase = 'over';
           s.winnerId = me.id;
+          cue(s, 'win');
           return;
         }
         extra = true;
@@ -128,6 +130,7 @@ module.exports = {
               const [or, oc] = cellOf(s, oi, pos);
               if (or === r && oc === c) {
                 other.pawns[k] = OFF;
+                cue(s, 'cut');
                 me.hasCut = true;
                 extra = true;
                 log(`⚔️ ${me.name} cut ${other.name}'s pawn!`);

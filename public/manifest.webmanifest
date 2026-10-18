@@ -1,0 +1,16 @@
+{
+  "name": "GameHub — play with friends",
+  "short_name": "GameHub",
+  "description": "Housie, Ashta Chamma, Dadi, Show, Sequence, Rummy and more — play with friends from anywhere.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#312e2b",
+  "theme_color": "#262421",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -22,6 +22,10 @@ On the home page, **Dumb Charades** gives random Telugu movie names for playing 
 
 The list (`public/data/telugu-movies.json`, 5,360 films from 1931 to 2026) is built from Wikipedia's year-by-year "List of Telugu films of …" pages. Run `npm run movies` to refresh it.
 
+## On phones
+
+GameHub is built for phones too: a bottom tab bar switches between **Game**, **Players** and **Chat** (with an unread badge), the main buttons stay pinned above it, **Share invite** opens WhatsApp and other apps, and your phone vibrates when it's your turn. In Chrome or Safari choose **Add to Home Screen** to install it like an app.
+
 ## Run it on your computer
 
 ```bash

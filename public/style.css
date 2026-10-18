@@ -164,7 +164,7 @@ button.game-row:disabled { cursor: default; opacity: 1; }
 .chat-form input { min-height: 40px; padding: 8px 10px; }
 
 /* ---------- Game frame ---------- */
-.game { background: var(--panel); border-radius: var(--radius); overflow: hidden; }
+.game { background: var(--panel); border-radius: var(--radius); overflow: clip; } /* clip (not hidden) so sticky action bars still work */
 .game-bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--panel-head); flex-wrap: wrap; }
 .game-bar .title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 1.1rem; }
 .game-bar .title .thumb-mini { width: 36px; height: 24px; border-radius: 3px; overflow: hidden; }
@@ -524,3 +524,110 @@ button.playing-card:disabled { opacity: 1; cursor: default; }
 .ch-team.active { border-color: var(--green); }
 .ch-team .tname { font-weight: 800; color: var(--muted); }
 .ch-team .tscore { font-size: 2.4rem; font-weight: 900; line-height: 1.1; }
+
+/* ==========================================================================
+   Phones
+   ========================================================================== */
+button, a, .clickable, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.topbar { padding-top: env(safe-area-inset-top); height: calc(56px + env(safe-area-inset-top)); padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+.tabbar { display: none; }
+.badge { position: absolute; top: 6px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font-size: .7rem; font-weight: 800; display: grid; place-items: center; }
+
+@media (max-width: 900px) {
+  input { font-size: 16px; } /* stops iOS zooming into text boxes */
+  .page { padding: 10px 8px calc(24px + env(safe-area-inset-bottom)); }
+  .topbar { height: calc(50px + env(safe-area-inset-top)); padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .brand { font-size: 1.05rem; }
+
+  .tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 15;
+    background: var(--bg-deep); border-top: 1px solid #1b1a18; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabbar button {
+    flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    min-height: 58px; border: 0; background: transparent; color: var(--faint); font: inherit; font-size: .74rem; font-weight: 700; cursor: pointer;
+  }
+  .tabbar button svg.icon { width: 22px; height: 22px; }
+  .tabbar button.on { color: var(--green-hover); }
+  #room { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  #room[data-tab="game"] .sidebar { display: none; }
+  #room[data-tab="players"] #stage, #room[data-tab="chat"] #stage { display: none; }
+  #room[data-tab="players"] #chatPanel { display: none; }
+  #room[data-tab="chat"] #playersPanel, #room[data-tab="chat"] #leaveBtn { display: none; }
+  #room[data-tab="chat"] .chat-log { height: calc(100dvh - 50px - 58px - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 220px; }
+  .player-list li { padding: 10px 14px; }
+
+  .game { border-radius: 6px; }
+  .game-bar { padding: 8px 10px; gap: 8px; }
+  .game-bar .title { font-size: 1rem; }
+  .game-bar .lbl { display: none; }
+  .game-bar { flex-wrap: nowrap; }
+  .game-bar .round { font-size: .8rem; white-space: nowrap; }
+  .turn-bar { padding: 10px 12px; min-height: 46px; font-size: .95rem; }
+  .game-body { padding: 12px 10px 16px; }
+  .hint { font-size: .78rem; }
+
+  .toast { bottom: calc(72px + env(safe-area-inset-bottom)); }
+  /* main buttons stay reachable above the tab bar */
+  .sticky-actions {
+    position: sticky; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 5;
+    margin: 12px -10px 0; padding: 10px; background: rgba(38, 36, 33, .96);
+    box-shadow: 0 -6px 14px rgba(0, 0, 0, .35);
+  }
+  .sticky-actions .btn-xl { min-height: 52px; }
+
+  .catalog-list { grid-template-columns: 1fr; }
+  .game-row .thumb { width: 80px; height: 54px; }
+  .share-box .code { font-size: 1.25rem; }
+
+  /* Ashta Chamma: throw controls above the board */
+  .ashta-wrap { flex-direction: column; align-items: stretch; gap: 12px; }
+  .ashta-side { display: contents; }
+  .throw-row { order: -1; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .throw-row .shell-tray { padding: 8px 10px; gap: 6px; }
+  .throw-row .cowrie { width: 22px; height: 32px; }
+  .throw-row .btn { width: auto; }
+  .throw-row .throw-result { font-size: 1.05rem; min-width: 0; }
+  .ashta-board { align-self: center; width: min(100%, 420px); padding: 8px; }
+  .yard-list { order: 1; }
+  .token { width: 18px; height: 18px; }
+  button.token { width: 24px; height: 24px; }
+
+  /* Cards */
+  .felt { padding: 12px 6px; }
+  .table-area { gap: 14px; }
+  .playing-card { width: 54px; height: 78px; font-size: .92rem; }
+  .playing-card .suit-big { font-size: 1.35rem; }
+  .meld { padding: 14px 6px 6px; }
+  .meld-cards .playing-card { width: 48px; height: 70px; font-size: .85rem; margin-right: -14px; }
+  .meld-cards { padding-right: 14px; }
+  .meld-row { gap: 8px; }
+  .seat-strip { gap: 6px; margin-bottom: 10px; }
+  .seat { padding: 4px 10px 4px 4px; font-size: .85rem; }
+
+  /* Housie */
+  .ball { width: 74px; height: 74px; }
+  .ball span { font-size: 1.8rem; }
+  .ball::before { inset: 10px; border-width: 4px; }
+  .num-board span { font-size: .7rem; padding: 4px 0; }
+
+  /* Chits */
+  .chit-row { gap: 10px; }
+  .show-hand { gap: 8px; padding-top: 18px; }
+  .show-hand .chit { width: calc(50% - 8px); max-width: 150px; height: 76px; }
+  .table-top { padding: 14px 8px; }
+
+  /* Dadi */
+  .dadi-board { padding: 6px; }
+
+  /* Charades */
+  .clap-body { min-height: 160px; }
+  .ch-timer .time { font-size: 2.4rem; }
+}
+
+@media (max-width: 380px) {
+  .game-row p { display: none; }
+  .meld-cards .playing-card { width: 44px; height: 64px; }
+  .bcell { font-size: 1.3rem; }
+  .tcell { font-size: .85rem; }
+}

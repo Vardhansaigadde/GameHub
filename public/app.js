@@ -6,6 +6,8 @@ const token = localStorage.getItem('gh_token') || (crypto.randomUUID ? crypto.ra
 localStorage.setItem('gh_token', token);
 
 let S = null; // latest { room, game, you }
+// phones get the native share sheet (WhatsApp etc.) instead of copy-to-clipboard
+const canShare = !!navigator.share && matchMedia('(pointer: coarse)').matches;
 const ui = { arrange: Array(25).fill(null), selected: new Set(), marks: new Set(), dadiSel: null, lastGameKey: null, chatCount: 0 };
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -41,6 +43,10 @@ const ICON_PATHS = {
   lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   pen: '<path d="M12 20h9"/><path d="M16.38 3.62a1 1 0 0 1 3 3L7.37 18.64a2 2 0 0 1-.85.5l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .5-.85z"/>',
   eraser: '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
+  dice: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 8h.01M16 16h.01M16 8h.01M8 16h.01M12 12h.01"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
   hand: '<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
 };
 const icon = (name, cls = '') => `<svg class="icon ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name]}</svg>`;
@@ -99,7 +105,7 @@ function thumb(id) {
 }
 
 /* ---------- Static chrome ---------- */
-$('#copyLink').innerHTML = `${icon('link')} Copy invite link`;
+$('#copyLink').innerHTML = canShare ? `${icon('share')} Share invite` : `${icon('link')} Copy invite link`;
 $('#leaveBtn').innerHTML = `${icon('logout')} Leave room`;
 $('#chatSend').innerHTML = icon('send');
 $('#charadesThumb').innerHTML = thumb('charades');
@@ -152,7 +158,7 @@ $('#nameInput').addEventListener('keydown', e => e.key === 'Enter' && ($('#codeI
 // Rejoin automatically after refresh / reconnect
 socket.on('connect', () => {
   const code = localStorage.getItem('gh_room');
-  if (code && $('#charades').classList.contains('hidden')) socket.emit('join', { code, token }, res => { if (res.error) { localStorage.removeItem('gh_room'); showHome(); } });
+  if (code && $('#charades').classList.contains('hidden')) socket.emit('join', { code, token, name: localStorage.getItem('gh_name') || undefined }, res => { if (res.error) { localStorage.removeItem('gh_room'); showHome(); } });
 });
 
 function showHome() {
@@ -175,6 +181,10 @@ socket.on('kicked', () => { localStorage.removeItem('gh_room'); showHome(); toas
 const inviteLink = () => `${location.origin}/?room=${S.room.code}`;
 function copyInvite() {
   const link = inviteLink();
+  if (canShare) {
+    navigator.share({ title: 'GameHub', text: `Join my GameHub room ${S.room.code}`, url: link }).catch(() => {});
+    return;
+  }
   (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
     .then(() => toast('Invite link copied — send it to your friends'))
     .catch(() => prompt('Copy this link:', link));
@@ -208,11 +218,16 @@ socket.on('state', state => {
   syncAutoCall();
 
   const myTurnNow = g && g.turnId === S.you;
-  if (myTurnNow && !(prevGame && prevGame.turnId === S.you)) document.title = '● Your turn — GameHub';
+  if (myTurnNow && !(prevGame && prevGame.turnId === S.you)) {
+    document.title = '● Your turn — GameHub';
+    if (prevGame && navigator.vibrate) navigator.vibrate(120);
+  }
   else if (!myTurnNow) document.title = `Room ${S.room.code} — GameHub`;
 
   renderSide();
   render();
+  renderTabs();
+  syncWakeLock();
 });
 
 function renderSide() {
@@ -232,6 +247,10 @@ function renderSide() {
     ? `<div><b>${esc(m.from)}</b> ${esc(m.text)}</div>`
     : `<div class="sys">${esc(m.text)}</div>`).join('') || '<div class="sys">No messages yet.</div>';
   if (atBottom || S.room.chat.length !== ui.chatCount) log.scrollTop = log.scrollHeight;
+  const myName = nameOf(S.you);
+  const fresh = S.room.chat.filter(m => m.from && m.from !== myName && m.at > (ui.lastChatAt || 0));
+  if (ui.lastChatAt && fresh.length && isPhone() && ui.tab !== 'chat') toast(`${fresh[fresh.length - 1].from}: ${fresh[fresh.length - 1].text}`);
+  ui.lastChatAt = Math.max(ui.lastChatAt || 1, ...S.room.chat.map(m => m.at));
   ui.chatCount = S.room.chat.length;
 }
 
@@ -262,7 +281,7 @@ function renderGame() {
     <div class="game-bar">
       <span class="title"><span class="thumb-mini">${thumb(g.gameId)}</span>${esc(info.name)}</span>${round}
       <span class="spacer"></span>
-      ${isHost() ? `<button class="btn btn-sm btn-ghost" data-end>${icon('flag')} End game</button>` : ''}
+      ${isHost() ? `<button class="btn btn-sm btn-ghost" data-end aria-label="End game">${icon('flag')}<span class="lbl">End game</span></button>` : ''}
     </div>
     <div class="turn-bar ${r.tone || ''}">${r.tone === 'mine' ? '<span class="tag">Your turn</span>' : ''}<span>${r.turn}</span></div>
     <div class="game-body">${r.body}</div>
@@ -280,7 +299,7 @@ function renderLobby() {
       <h2>${isHost() ? 'Choose a game' : `Waiting for ${esc(nameOf(S.room.hostId))} to start`}</h2>
       <div class="share-box">
         <span class="muted">Room code</span><span class="code">${S.room.code}</span><span class="spacer" style="flex:1"></span>
-        <button class="btn btn-sm" data-copy>${icon('link')} Copy invite link</button>
+        <button class="btn btn-sm" data-copy>${canShare ? `${icon('share')} Share invite` : `${icon('link')} Copy invite link`}</button>
       </div>
       <div class="catalog-list">${rows}</div>
       ${isHost()
@@ -373,7 +392,7 @@ renderers.housie = () => {
   }
 
   const recent = g.called.slice(-6, -1).reverse().map(n => ball(n, true)).join('');
-  const host = isHost() ? `<div class="actions">
+  const host = isHost() ? `<div class="actions sticky-actions">
       <button class="btn btn-primary btn-lg" data-game="housie" data-call ${g.auto ? 'disabled' : ''}>Call next number</button>
       <button class="btn btn-lg" data-game="housie" data-auto="${g.auto ? 0 : 1}">${g.auto ? `${icon('pause')} Stop auto` : `${icon('play')} Auto every 5s`}</button>
     </div>` : '';
@@ -454,9 +473,11 @@ renderers.ashtachamma = () => {
     body: `<div class="ashta-wrap">
       <div class="ashta-board wood"><div class="ashta-grid">${cells.join('')}</div></div>
       <div class="ashta-side">
-        <div class="shell-tray table-top">${shells}</div>
-        <div class="throw-result">${rollName || '&nbsp;'}</div>
-        ${myTurn && g.phase === 'roll' ? '<button class="btn btn-primary btn-lg btn-block" data-game="ashtachamma" data-roll>Throw shells</button>' : ''}
+        <div class="throw-row">
+          <div class="shell-tray table-top">${shells}</div>
+          <div class="throw-result">${rollName || '&nbsp;'}</div>
+          ${myTurn && g.phase === 'roll' ? '<button class="btn btn-primary btn-lg btn-block" data-game="ashtachamma" data-roll>Throw shells</button>' : ''}
+        </div>
         ${g.phase === 'over' ? rematchBtn() : ''}
         <div class="yard-list">${yards}</div>
       </div>
@@ -660,7 +681,7 @@ renderers.show = () => {
     tone,
     turn,
     body: `<div class="table-top"><div class="show-hand">${hand}</div></div>
-      <div class="actions"><button class="btn btn-gold btn-xl big-show" data-game="show" data-show ${g.canShow ? '' : 'disabled'}>SHOW</button></div>
+      <div class="actions sticky-actions"><button class="btn btn-gold btn-xl big-show" data-game="show" data-show ${g.canShow ? '' : 'disabled'}>SHOW</button></div>
       <div class="pass-status">${pills}</div>
       <p class="hint">Pass ${g.passes + 1} · chits in play: ${words}. All chits move at once when everyone has chosen. Tap your chosen chit again to change it.</p>`,
   };
@@ -923,7 +944,7 @@ renderers.leastcount = () => {
         <div class="hand">${hand}</div>
         <div class="hand-total">Hand total <b>${g.myTotal}</b></div>
       </div>
-      ${myTurn && g.phase === 'throw' ? `<div class="actions">
+      ${myTurn && g.phase === 'throw' ? `<div class="actions sticky-actions">
         <button class="btn btn-primary btn-lg" data-game="leastcount" data-throw ${ui.selected.size ? '' : 'disabled'}>Throw ${ui.selected.size || ''} card${ui.selected.size === 1 ? '' : 's'}</button>
         <button class="btn btn-gold btn-lg" data-game="leastcount" data-show>SHOW (${g.myTotal})</button>
       </div>` : ''}
@@ -1030,7 +1051,7 @@ renderers.rummy = () => {
   const one = ui.rsel.size === 1;
   const canThrow = myTurn && g.step === 'discard' && !g.myOut;
   const canReveal = g.hiddenJoker && !g.myRevealed && !g.myOut;
-  const tools = `<div class="actions">
+  const tools = `<div class="actions sticky-actions">
       <button class="btn" data-game="rummy" data-sort>${icon('shuffle')} Sort</button>
       <button class="btn" data-game="rummy" data-group ${ui.rsel.size >= 2 ? '' : 'disabled'}>Group selected</button>
       ${canThrow ? `<button class="btn btn-primary" data-game="rummy" data-throw ${one ? '' : 'disabled'}>Throw</button>
@@ -1239,3 +1260,50 @@ if (params.has('charades')) showCharades();
 
 // Cache the app so Dumb Charades keeps working without internet after the first visit
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+/* ======================= Phones ======================= */
+const isPhone = () => matchMedia('(max-width: 900px)').matches;
+ui.tab = 'game';
+ui.chatSeenAt = Date.now();
+
+function renderTabs() {
+  if (!S) return;
+  const myName = nameOf(S.you);
+  if (ui.tab === 'chat') ui.chatSeenAt = Date.now();
+  const unread = S.room.chat.filter(m => m.from && m.from !== myName && m.at > ui.chatSeenAt).length;
+  const label = { game: S.game ? 'Game' : 'Lobby', players: `Players · ${S.room.players.length}`, chat: 'Chat' };
+  const ic = { game: 'dice', players: 'users', chat: 'chat' };
+  for (const b of document.querySelectorAll('#tabbar [data-tab]')) {
+    const t = b.dataset.tab;
+    b.classList.toggle('on', t === ui.tab);
+    b.setAttribute('aria-pressed', t === ui.tab);
+    b.innerHTML = `${icon(ic[t])}<span>${label[t]}</span>${t === 'chat' && unread ? `<span class="badge">${unread > 9 ? '9+' : unread}</span>` : ''}`;
+  }
+  $('#room').dataset.tab = ui.tab;
+}
+
+$('#tabbar').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]');
+  if (!b) return;
+  ui.tab = b.dataset.tab;
+  renderTabs();
+  window.scrollTo(0, 0);
+  if (ui.tab === 'chat') { const log = $('#chatLog'); log.scrollTop = log.scrollHeight; }
+});
+
+// Keep the screen awake while a game or charades is on (phones dim fast otherwise)
+let wakeLock = null;
+async function syncWakeLock() {
+  const want = document.visibilityState === 'visible' && ((S && S.game) || !$('#charades').classList.contains('hidden'));
+  try {
+    if (want && !wakeLock && navigator.wakeLock) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!want && wakeLock) {
+      await wakeLock.release();
+      wakeLock = null;
+    }
+  } catch { wakeLock = null; }
+}
+document.addEventListener('visibilitychange', syncWakeLock);
+$('#openCharades').addEventListener('click', syncWakeLock);

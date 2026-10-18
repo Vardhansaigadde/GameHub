@@ -1,9 +1,12 @@
 # 🎲 GameHub
 
-Play the games we used to play on paper and with cards — **online, with friends in different places**.
+Play the board, paper and card games we grew up with — **online, with friends in different places**.
 
 | Game | Players | How it works |
 |---|---|---|
+| 🎟️ **Housie** | 2–8 | Tambola. Everyone gets a ticket; the host calls numbers (or turns on auto-call). Mark your numbers and claim Early Five, Top/Middle/Bottom Line, Four Corners and Full House. Wrong claim = BOGEY! |
+| 🐚 **Ashta Chamma** | 2–4 | Throw 4 shells (1–3, Chamma = 4, Ashta = 8). Race 4 pawns round the outer ring, then the inner ring, to the centre. You must cut an opponent before entering the inner ring. 4, 8 and cuts give another throw. |
+| ⚪ **Dadi** | 2 | Nine Men's Morris. Place 9 pieces, then slide them. Three in a line removes an opponent piece. With 3 left you can jump. Under 3 pieces or stuck = you lose. |
 | 🔢 **Bingo** | 2–8 | Fill your 5x5 grid with 1–25. Take turns calling numbers; everyone cuts them. Each full line = one letter of B‑I‑N‑G‑O. First to 5 lines wins. |
 | 🏹 **Ramudu‑Seetha** | 3–6 | Everyone picks a secret chit. Ramudu (1000) must find Seetha. Right guess → Ramudu keeps 1000. Wrong → Seetha steals it. Others score their chit (Lakshmanudu 800, Hanumanthudu 500, Bharathudu 300, Shatrughnudu 200). 5 rounds. |
 | 🃏 **Show** | 2–6 | 7 cards each, one Joker rank counts 0. On your turn throw a card (or several of the same rank), then pick from the deck or the open card. Call **SHOW** when you think your total is lowest — wrong call = +40. Lowest score after 5 rounds wins. |

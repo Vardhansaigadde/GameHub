@@ -1,7 +1,7 @@
 {
   "name": "gamehub",
   "version": "1.0.0",
-  "description": "Play desi paper & card games (Bingo, Show, Ramudu-Seetha) online with friends",
+  "description": "Play classic board, paper & card games online with friends",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

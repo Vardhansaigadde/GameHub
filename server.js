@@ -121,7 +121,7 @@ io.on('connection', socket => {
     if (!token) return reply(cb, { error: 'Missing token' });
     const code = makeCode();
     const player = { id: newId(), token, name: cleanName(name), socketId: null };
-    const room = { code, hostId: player.id, gameId: 'bingo', players: [player], state: null, chat: [] };
+    const room = { code, hostId: player.id, gameId: 'housie', players: [player], state: null, chat: [] };
     rooms.set(code, room);
     attach(socket, room, player);
     reply(cb, { code });
@@ -175,8 +175,8 @@ io.on('connection', socket => {
     const { room, player } = current(socket);
     if (!room || !room.state) return reply(cb, { error: 'No game running' });
     try {
-      games[room.gameId].action(room.state, player.id, action, { isHost: room.hostId === player.id });
-      reply(cb, {});
+      const result = games[room.gameId].action(room.state, player.id, action, { isHost: room.hostId === player.id });
+      reply(cb, result || {});
       broadcast(room);
     } catch (e) {
       reply(cb, { error: e.message });

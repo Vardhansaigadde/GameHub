@@ -6,7 +6,7 @@ const token = localStorage.getItem('gh_token') || (crypto.randomUUID ? crypto.ra
 localStorage.setItem('gh_token', token);
 
 let S = null; // latest { room, game, you }
-const ui = { arrange: Array(25).fill(null), selected: new Set(), lastGameKey: null, chatCount: 0 };
+const ui = { arrange: Array(25).fill(null), selected: new Set(), marks: new Set(), dadiSel: null, lastGameKey: null, chatCount: 0 };
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nameOf = id => (S.room.players.find(p => p.id === id) || {}).name || '?';
@@ -20,7 +20,7 @@ function toast(msg) {
   toast.timer = setTimeout(() => t.classList.add('hidden'), 2600);
 }
 
-const done = res => res && res.error && toast(res.error);
+const done = res => res && (res.error || res.message) && toast(res.error || res.message);
 const act = payload => socket.emit('action', payload, done);
 
 /* ---------- Home ---------- */
@@ -103,8 +103,10 @@ socket.on('state', state => {
   $('#roomBadge').textContent = 'Room ' + S.room.code;
 
   // reset local UI bits when a new game / round starts
-  const key = S.game ? `${S.game.gameId}:${S.game.round || ''}:${S.game.phase === 'arrange'}` : 'lobby';
-  if (key !== ui.lastGameKey) { ui.arrange = Array(25).fill(null); ui.selected.clear(); ui.lastGameKey = key; }
+  const fresh = S.game && S.game.called ? S.game.called.length === 0 : '';
+  const key = S.game ? `${S.game.gameId}:${S.game.round || ''}:${S.game.phase === 'arrange'}:${fresh}` : 'lobby';
+  if (key !== ui.lastGameKey) { ui.arrange = Array(25).fill(null); ui.selected.clear(); ui.marks.clear(); ui.dadiSel = null; ui.lastGameKey = key; }
+  syncAutoCall();
   if (S.game && S.game.gameId === 'show') {
     for (const c of [...ui.selected]) if (!S.game.myHand.includes(c)) ui.selected.delete(c);
   }
@@ -145,7 +147,7 @@ function render() {
   else stage.innerHTML = `<div class="card">${gameHeader()}${renderers[S.game.gameId]()}</div>`;
 }
 
-const EMOJI = { bingo: '🔢', ramsita: '🏹', show: '🃏' };
+const EMOJI = { housie: '🎟️', ashtachamma: '🐚', dadi: '⚪', bingo: '🔢', ramsita: '🏹', show: '🃏' };
 
 function gameHeader() {
   const g = S.room.games.find(x => x.id === S.game.gameId);
@@ -457,3 +459,204 @@ handlers.show = d => {
     if (confirm(`Call SHOW with ${S.game.myTotal}? If someone has equal or lower, you get +${S.game.penalty}.`)) act({ type: 'show' });
   }
 };
+
+/* ---------- Housie ---------- */
+// The host's browser drives auto-calling so the server stays simple.
+let autoTimer = null;
+function syncAutoCall() {
+  const want = S && S.game && S.game.gameId === 'housie' && S.game.auto && S.game.phase === 'play' && isHost();
+  if (want && !autoTimer) autoTimer = setInterval(() => act({ type: 'call' }), 5000);
+  if (!want && autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+}
+
+function ticketHtml(ticket, called, opts = {}) {
+  const cut = new Set(called);
+  return `<div class="ticket ${opts.small ? 'small' : ''}">${ticket.map(row => row.map(n => {
+    if (n == null) return '<div class="tcell blank"></div>';
+    const marked = opts.interactive ? ui.marks.has(n) : cut.has(n);
+    const cls = `tcell ${marked ? 'marked' : ''}`;
+    return opts.interactive ? `<button class="${cls}" data-game="housie" data-mark="${n}">${n}</button>` : `<div class="${cls}">${n}</div>`;
+  }).join('')).join('')}</div>`;
+}
+
+renderers.housie = () => {
+  const g = S.game;
+  const calledSet = new Set(g.called);
+  const board = `<div class="num-board">${[...Array(90)].map((_, i) => `<span class="${calledSet.has(i + 1) ? 'on' : ''} ${g.lastCalled === i + 1 ? 'last' : ''}">${i + 1}</span>`).join('')}</div>`;
+  const prizes = g.prizes.map(p => p.winnerId
+    ? `<button disabled class="prize won">🏆 ${esc(p.name)}<br><small>${esc(nameOf(p.winnerId))}</small></button>`
+    : `<button class="prize" data-game="housie" data-claim="${p.key}" ${g.phase === 'play' ? '' : 'disabled'}>${esc(p.name)}<br><small>Claim!</small></button>`).join('');
+  const hostControls = isHost() && g.phase === 'play' ? `<div class="actions">
+      <button class="primary" data-game="housie" data-call>📣 Call next number</button>
+      <button data-game="housie" data-auto="${g.auto ? 0 : 1}">${g.auto ? '⏸ Stop auto-call' : '▶ Auto-call every 5s'}</button>
+    </div>` : '';
+
+  if (g.phase === 'over') {
+    const full = g.prizes.find(p => p.key === 'full').winnerId;
+    const winnerTickets = g.players.filter(p => g.prizes.some(z => z.winnerId === p.id))
+      .map(p => `<div class="b"><b>${esc(p.name)}</b>${ticketHtml(p.ticket, g.called, { small: true })}</div>`).join('');
+    return `<div class="confetti">🎉🎟️🎉</div>
+      <div class="status ${full === S.you ? 'you' : ''}">Housie over! ${full ? `Full House: ${esc(nameOf(full))}` : 'All numbers called.'}</div>
+      <div class="prizes">${prizes}</div>
+      <div class="boards">${winnerTickets}</div>
+      ${isHost() ? '<div class="actions"><button class="primary big" data-rematch>Play again</button></div>' : ''}`;
+  }
+
+  return `<div class="housie-top">
+      <div class="big-number">${g.lastCalled || '–'}</div>
+      <div class="subtle">${g.called.length ? `${g.called.length} called · ${g.remaining} left` : isHost() ? 'Call the first number!' : 'Waiting for the host to call…'}${g.auto ? ' · auto-calling' : ''}</div>
+    </div>
+    ${hostControls}
+    <h3 style="margin-top:14px">Your ticket <span class="subtle" style="text-transform:none;letter-spacing:0">— tap numbers to mark them</span></h3>
+    ${ticketHtml(g.myTicket, g.called, { interactive: true })}
+    <div class="prizes">${prizes}</div>
+    <div class="log">${g.log.slice(-3).map(esc).join(' · ')}</div>
+    ${board}`;
+};
+
+handlers.housie = d => {
+  if ('mark' in d) {
+    const n = +d.mark;
+    if (!S.game.called.includes(n) && !ui.marks.has(n)) return toast(`${n} hasn't been called yet`);
+    ui.marks.has(n) ? ui.marks.delete(n) : ui.marks.add(n);
+    render();
+  } else if ('call' in d) act({ type: 'call' });
+  else if ('auto' in d) act({ type: 'auto', on: d.auto === '1' });
+  else if ('claim' in d) act({ type: 'claim', prize: d.claim });
+};
+
+/* ---------- Ashta Chamma ---------- */
+const PAWN_COLORS = ['#ff5d73', '#5ab0ff', '#3ddc97', '#ffd23f'];
+
+renderers.ashtachamma = () => {
+  const g = S.game;
+  const safe = new Set(g.safe);
+  const homes = {};
+  g.players.forEach(p => { homes[p.home.join(',')] = p.color; });
+  const cells = [];
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    const pawns = [];
+    g.players.forEach(p => p.pawns.forEach(pw => {
+      if (pw.cell[0] !== r || pw.cell[1] !== c) return;
+      const style = `background:${PAWN_COLORS[p.color]}`;
+      pawns.push(p.id === S.you && g.legal.includes(pw.i)
+        ? `<button class="pawn movable" style="${style}" data-game="ashtachamma" data-pawn="${pw.i}" title="Move this pawn"></button>`
+        : `<span class="pawn" style="${style}"></span>`);
+    }));
+    const key = `${r},${c}`;
+    const homeStyle = key in homes ? `style="border-color:${PAWN_COLORS[homes[key]]}"` : '';
+    const inner = r >= 1 && r <= 3 && c >= 1 && c <= 3 ? 'inner' : '';
+    cells.push(`<div class="acell ${inner} ${safe.has(key) ? 'safe' : ''} ${key === '2,2' ? 'centre' : ''}" ${homeStyle}>${pawns.join('')}</div>`);
+  }
+
+  const shells = g.shells ? `<div class="shells">${g.shells.map(up => `<span class="shell ${up ? 'up' : ''}"></span>`).join('')}</div>` : '';
+  const legend = g.players.map(p => `<div class="opp ${p.id === g.turnId ? 'turn' : ''}">
+      <span class="pawn" style="background:${PAWN_COLORS[p.color]}"></span> <b>${esc(p.name)}</b>${p.id === S.you ? ' (you)' : ''}
+      <div>🏠 ${p.finished}/4 · ${p.hasCut ? '⚔️ can enter inner ring' : 'needs a cut'}</div></div>`).join('');
+
+  let status;
+  if (g.phase === 'over') status = g.winnerId === S.you ? '🏆 You win!' : `🏆 ${esc(nameOf(g.winnerId))} wins!`;
+  else if (g.turnId !== S.you) status = `${esc(nameOf(g.turnId))}'s turn…`;
+  else if (g.phase === 'roll') status = 'Your turn — throw the shells!';
+  else status = `You threw ${g.roll}. Tap a glowing pawn to move it.`;
+
+  return `<div class="opponents">${legend}</div>
+    <div class="status ${g.turnId === S.you || g.winnerId === S.you ? 'you' : ''}">${status}</div>
+    <div class="ashta-wrap">
+      <div class="ashta-board">${cells.join('')}</div>
+      <div class="ashta-side">
+        ${shells}
+        ${g.roll ? `<div class="big-number">${g.roll}</div>` : ''}
+        ${g.turnId === S.you && g.phase === 'roll' ? '<button class="primary big" data-game="ashtachamma" data-roll>🐚 Throw shells</button>' : ''}
+        ${g.phase === 'over' && isHost() ? '<button class="primary big" data-rematch>Play again</button>' : ''}
+      </div>
+    </div>
+    <div class="log">${g.log.slice(-3).map(esc).join(' · ')}</div>
+    <p class="subtle" style="text-align:center;font-size:.8rem">1-3 shells up = move 1-3 · all 4 up = Chamma (4) · none up = Ashta (8). 4, 8 and cuts give another throw. ✖ squares are safe. Cut a pawn before entering the inner ring.</p>`;
+};
+
+handlers.ashtachamma = d => {
+  if ('roll' in d) act({ type: 'roll' });
+  else if ('pawn' in d) act({ type: 'move', pawn: +d.pawn });
+};
+
+/* ---------- Dadi ---------- */
+// [x, y] on a 7x7 grid for point ring*8+k (k clockwise from top-left)
+function dadiXY(p) {
+  const r = Math.floor(p / 8), k = p % 8, lo = r, hi = 6 - r;
+  return [[lo, lo], [3, lo], [hi, lo], [hi, 3], [hi, hi], [3, hi], [lo, hi], [lo, 3]][k];
+}
+
+renderers.dadi = () => {
+  const g = S.game;
+  const myTurn = g.turnId === S.you;
+  const meP = g.players[g.me];
+  const placing = meP && meP.toPlace > 0;
+  const flying = meP && !placing && meP.onBoard === 3;
+  const unit = 50, pad = 30, size = unit * 6 + pad * 2;
+  const xy = p => dadiXY(p).map(v => pad + v * unit);
+
+  let targets = [];
+  if (myTurn && !g.mustRemove && ui.dadiSel != null) {
+    targets = flying ? g.board.map((x, i) => (x == null ? i : -1)).filter(i => i >= 0)
+      : g.adjacency[ui.dadiSel].filter(q => g.board[q] == null);
+  }
+
+  let lines = '';
+  for (let r = 0; r < 3; r++) {
+    const a = pad + r * unit, b = size - pad - r * unit;
+    lines += `<rect x="${a}" y="${a}" width="${b - a}" height="${b - a}" />`;
+  }
+  const m = pad + 3 * unit;
+  lines += `<line x1="${m}" y1="${pad}" x2="${m}" y2="${pad + 2 * unit}" /><line x1="${m}" y1="${size - pad}" x2="${m}" y2="${size - pad - 2 * unit}" />`;
+  lines += `<line x1="${pad}" y1="${m}" x2="${pad + 2 * unit}" y2="${m}" /><line x1="${size - pad}" y1="${m}" x2="${size - pad - 2 * unit}" y2="${m}" />`;
+
+  const COLORS = ['#f2f0ff', '#ff8a3d'];
+  const points = g.board.map((owner, p) => {
+    const [x, y] = xy(p);
+    let clickable = false;
+    if (myTurn) {
+      if (g.mustRemove) clickable = g.removable.includes(p);
+      else if (placing) clickable = owner == null;
+      else clickable = owner === g.me || targets.includes(p);
+    }
+    let cls = '';
+    if (g.mustRemove && clickable) cls = 'removable';
+    if (ui.dadiSel === p) cls = 'selected';
+    if (targets.includes(p)) cls = 'target';
+    const last = g.lastMove.includes(p) ? '<circle r="22" class="last-ring" />' : '';
+    const piece = owner == null
+      ? `<circle r="${targets.includes(p) || (placing && clickable) ? 9 : 6}" class="dot ${cls}" />`
+      : `<circle r="17" fill="${COLORS[owner]}" class="piece ${cls}" />`;
+    return `<g transform="translate(${x},${y})" ${clickable ? `class="clickable" data-point="${p}"` : ''}>${last}<circle r="24" fill="transparent" />${piece}</g>`;
+  }).join('');
+
+  let status;
+  if (g.phase === 'over') status = g.winnerId === S.you ? '🏆 You win!' : `🏆 ${esc(nameOf(g.winnerId))} wins!`;
+  else if (!myTurn) status = `${esc(nameOf(g.turnId))}'s turn…`;
+  else if (g.mustRemove) status = 'Mill! 🎯 Tap an opponent piece to remove it';
+  else if (placing) status = `Place a piece (${meP.toPlace} left)`;
+  else if (ui.dadiSel == null) status = flying ? 'Only 3 left — pick a piece, you can jump anywhere!' : 'Pick a piece to move';
+  else status = 'Tap a green point to move there';
+
+  const info = g.players.map((p, i) => `<div class="opp ${p.id === g.turnId ? 'turn' : ''}">
+      <span class="pawn" style="background:${COLORS[i]}"></span> <b>${esc(p.name)}</b>${p.id === S.you ? ' (you)' : ''}
+      <div>${p.toPlace ? `${p.toPlace} to place · ` : ''}${p.onBoard} on board</div></div>`).join('');
+
+  return `<div class="opponents">${info}</div>
+    <div class="status ${myTurn || g.winnerId === S.you ? 'you' : ''}">${status}</div>
+    <svg class="dadi" viewBox="0 0 ${size} ${size}"><g class="lines">${lines}</g>${points}</svg>
+    ${g.phase === 'over' && isHost() ? '<div class="actions"><button class="primary big" data-rematch>Play again</button></div>' : ''}
+    <p class="subtle" style="text-align:center;font-size:.8rem">Place all 9, then slide along lines. 3 in a row = remove an opponent piece. Under 3 pieces or stuck = you lose.</p>`;
+};
+
+// SVG points aren't buttons, so Dadi gets its own click listener
+$('#stage').addEventListener('click', e => {
+  const el = e.target.closest('g.clickable');
+  if (!el || !S.game || S.game.gameId !== 'dadi') return;
+  const g = S.game, p = +el.dataset.point;
+  if (g.mustRemove) return act({ type: 'remove', point: p });
+  if (g.players[g.me].toPlace > 0) return act({ type: 'place', point: p });
+  if (g.board[p] === g.me) { ui.dadiSel = ui.dadiSel === p ? null : p; return render(); }
+  if (ui.dadiSel != null) { act({ type: 'move', from: ui.dadiSel, to: p }); ui.dadiSel = null; }
+});

@@ -12,8 +12,14 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (req, res) => res.send('ok'));
 
-const gameList = () => Object.values(games).map(g => ({ id: g.id, name: g.name, minPlayers: g.minPlayers, maxPlayers: g.maxPlayers, blurb: g.blurb, options: g.options || null }));
-app.get('/api/games', (req, res) => res.json(gameList()));
+const HOWTO = require('./games/howto');
+const gameList = () => Object.values(games).map(g => ({
+  id: g.id, name: g.name, minPlayers: g.minPlayers, maxPlayers: g.maxPlayers, options: g.options || null,
+  cat: (HOWTO.games[g.id] || {}).cat || 'party',
+  tagline: (HOWTO.games[g.id] || {}).tagline || '',
+  steps: (HOWTO.games[g.id] || {}).steps || [],
+}));
+app.get('/api/games', (req, res) => res.json({ categories: HOWTO.categories, games: gameList() }));
 
 const MAX_PLAYERS = 8;
 const ROOM_IDLE_MS = 30 * 60 * 1000; // delete rooms nobody is connected to for 30 min

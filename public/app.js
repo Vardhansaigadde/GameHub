@@ -107,7 +107,7 @@ function thumb(id) {
       <g transform="rotate(-10 36 34)"><rect x="22" y="12" width="28" height="40" rx="3" fill="#fff"/><text x="27" y="23" font-family="Georgia" font-size="9" font-weight="700" fill="#c8102e">A♥</text></g>
       <g transform="rotate(8 58 32)"><rect x="44" y="10" width="28" height="40" rx="3" fill="#fff"/><text x="49" y="21" font-family="Georgia" font-size="9" font-weight="700" fill="#111">5♣</text></g>`,
   };
-  return `<svg viewBox="0 0 96 64" aria-hidden="true">${T[id] || '<rect width="96" height="64" fill="#3c3a37"/>'}</svg>`;
+  return `<svg viewBox="0 0 96 64" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${T[id] || '<rect width="96" height="64" fill="#3c3a37"/>'}</svg>`;
 }
 
 /* ---------- Static chrome ---------- */
@@ -116,17 +116,58 @@ $('#leaveBtn').innerHTML = `${icon('logout')} Leave room`;
 $('#chatSend').innerHTML = icon('send');
 $('#charadesThumb').innerHTML = thumb('charades');
 
-function gameRow(g, opts = {}) {
-  const tag = opts.button ? 'button' : 'div';
-  return `<${tag} class="game-row ${opts.selected ? 'selected' : ''}" ${opts.button ? `data-select="${g.id}" ${opts.disabled ? 'disabled' : ''}` : ''}>
-    <span class="thumb">${thumb(g.id)}</span>
-    <span><h4>${esc(g.name)}</h4><p>${esc(g.blurb)}</p><span class="players-needed">${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players</span></span>
-  </${tag}>`;
+const playersLabel = g => `${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players`;
+
+// picture tile: art, name and player count — the rules live in "How to play"
+function gameTile(g, attrs = '', cls = '') {
+  return `<button class="tile ${cls}" ${attrs}>
+    <span class="tile-art">${thumb(g.id)}</span>
+    <span class="tile-body"><b>${esc(g.name)}</b><small>${playersLabel(g)}</small></span>
+  </button>`;
 }
 
-fetch('/api/games').then(r => r.json()).then(list => {
-  $('#catalog').innerHTML = list.map(g => gameRow(g)).join('');
+let homeGames = [];
+fetch('/api/games').then(r => r.json()).then(({ categories, games }) => {
+  homeGames = games;
+  $('#catalog').innerHTML = categories.map(c => {
+    const list = games.filter(g => g.cat === c.id);
+    if (!list.length) return '';
+    return `<div class="cat-section"><h2 class="section-title">${esc(c.name)} <span class="count">${list.length}</span></h2>
+      <div class="tile-grid">${list.map(g => gameTile(g, `data-howto-home="${g.id}"`)).join('')}</div></div>`;
+  }).join('');
 }).catch(() => {});
+
+$('#catalog').addEventListener('click', e => {
+  const b = e.target.closest('[data-howto-home]');
+  if (!b) return;
+  const g = homeGames.find(x => x.id === b.dataset.howtoHome);
+  openHowTo(g, `<button class="btn btn-primary btn-lg btn-block" data-sheet-create>${icon('play')} Create a room to play</button>`);
+});
+
+/* ---------- How to play sheet ---------- */
+ICON_PATHS.help = '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>';
+$('#sheetClose').innerHTML = icon('x');
+function openHowTo(g, actions) {
+  if (!g) return;
+  $('#sheetArt').innerHTML = thumb(g.id);
+  $('#sheetTitle').textContent = g.name;
+  $('#sheetMeta').textContent = [g.tagline, playersLabel(g)].filter(Boolean).join(' · ');
+  $('#sheetSteps').innerHTML = g.steps.map(s => `<li>${esc(s)}</li>`).join('');
+  $('#sheetActions').innerHTML = actions || '<button class="btn btn-primary btn-lg btn-block" data-sheet-close>Got it</button>';
+  $('#sheet').classList.remove('hidden');
+  $('#sheetClose').focus();
+}
+const closeHowTo = () => $('#sheet').classList.add('hidden');
+$('#sheet').addEventListener('click', e => {
+  if (e.target === $('#sheet') || e.target.closest('#sheetClose') || e.target.closest('[data-sheet-close]')) closeHowTo();
+  if (e.target.closest('[data-sheet-create]')) {
+    closeHowTo();
+    const input = $('#nameInput');
+    if (input.value.trim()) $('#createBtn').click();
+    else { input.focus(); $('#homeError').textContent = 'Enter your name, then create a room.'; }
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHowTo(); });
 
 /* ---------- Home ---------- */
 $('#nameInput').value = localStorage.getItem('gh_name') || '';
@@ -294,6 +335,7 @@ function renderGame() {
     <div class="game-bar">
       <span class="title"><span class="thumb-mini">${thumb(g.gameId)}</span>${esc(info.name)}</span>${round}
       <span class="spacer"></span>
+      <button class="btn btn-sm btn-ghost" data-howto aria-label="How to play">${icon('help')}<span class="lbl">How to play</span></button>
       ${isHost() ? `<button class="btn btn-sm btn-ghost" data-end aria-label="End game">${icon('flag')}<span class="lbl">End game</span></button>` : ''}
     </div>
     <div class="turn-bar ${r.tone || ''}">${r.tone === 'mine' ? '<span class="tag">Your turn</span>' : ''}<span>${r.turn}</span></div>
@@ -305,7 +347,7 @@ function renderLobby() {
   const n = S.room.players.length;
   const g = S.room.games.find(x => x.id === S.room.gameId);
   const ok = n >= g.minPlayers && n <= g.maxPlayers;
-  const rows = S.room.games.map(x => gameRow(x, { button: true, selected: x.id === S.room.gameId, disabled: !isHost() })).join('');
+  const rows = S.room.games.map(x => gameTile(x, `data-select="${x.id}" ${isHost() ? '' : 'disabled'}`, `small ${x.id === S.room.gameId ? 'selected' : ''}`)).join('');
   return `<div class="game lobby">
     <div class="game-bar"><span class="title">Lobby</span><span class="spacer"></span><span class="round">${n} player${n === 1 ? '' : 's'} here</span></div>
     <div class="game-body">
@@ -316,7 +358,8 @@ function renderLobby() {
       </div>
       <!-- selected game, its settings and the Play button sit above the list so phones don't scroll for them -->
       <div class="selected-game">
-        <div class="sel-head"><span class="thumb">${thumb(g.id)}</span><div><small class="muted">Selected game</small><b>${esc(g.name)}</b></div></div>
+        <div class="sel-head"><span class="thumb">${thumb(g.id)}</span><div><small class="muted">Selected game</small><b>${esc(g.name)}</b></div>
+          <button class="btn btn-sm btn-ghost sel-help" data-howto>${icon('help')} How to play</button></div>
         ${isHost() && g.options ? optionsHtml(g) : ''}
         ${isHost()
           ? `<div class="actions"><button class="btn btn-primary btn-lg" data-start ${ok ? '' : 'disabled'}>${icon('play')} Play ${esc(g.name)}</button></div>
@@ -324,7 +367,7 @@ function renderLobby() {
           : ''}
       </div>
       ${isHost() ? '<h3 class="hand-title">All games</h3>' : ''}
-      <div class="catalog-list">${rows}</div>
+      <div class="tile-grid compact">${rows}</div>
     </div>
   </div>`;
 }
@@ -357,6 +400,7 @@ $('#stage').addEventListener('click', e => {
   else if ('start' in d) socket.emit('start', { options: ui_opts[S.room.gameId] || {} }, done);
   else if ('opt' in d) { const [gid, key] = d.opt.split(':'); ui_opts[gid] = { ...(ui_opts[gid] || {}), [key]: d.val }; render(); }
   else if ('copy' in d) copyInvite();
+  else if ('howto' in d) openHowTo(S.room.games.find(x => x.id === (S.game ? S.game.gameId : S.room.gameId)));
   else if ('end' in d) { if (confirm('End this game for everyone and go back to the lobby?')) socket.emit('endGame'); }
   else if ('rematch' in d) act({ type: 'rematch' });
   else if ('next' in d) act({ type: 'next' });
@@ -503,7 +547,7 @@ renderers.ashtachamma = () => {
       </div>
     </div>
     <div class="log-line">${g.log.slice(-2).map(esc).join(' · ')}</div>
-    <p class="hint">Shells up: 1–3 move that many · all 4 = Chamma (4) · none = Ashta (8). Pawns enter the board only on a 4 or 8. 4, 8 and cutting a pawn give another throw. Crossed squares are safe; cut a pawn before entering the inner ring.</p>`,
+`,
   };
 };
 
@@ -606,7 +650,7 @@ renderers.dadi = () => {
       <div class="dadi-board wood"><svg viewBox="0 0 ${size} ${size}">${defs}<g class="lines">${lines}</g>${points}</svg></div>
       ${drawUi}${quietNote}
       ${g.phase === 'over' ? `<div class="actions">${rematchBtn()}</div>` : ''}
-      <p class="hint">Place all 9, then slide along the lines. Three in a row removes an opponent piece. Fewer than 3 pieces or no move = you lose.</p>`,
+`,
   };
 };
 
@@ -972,7 +1016,7 @@ renderers.leastcount = () => {
         <button class="btn btn-gold btn-lg" data-game="leastcount" data-show>SHOW (${g.myTotal})</button>
       </div>` : ''}
       <div class="log-line">${g.log.slice(-3).map(esc).join(' · ')}</div>
-      <p class="hint">A=1 · J=11 · Q=12 · K=13 · Joker rank counts 0. Lowest total after ${g.totalRounds} rounds wins.</p>`,
+`,
   };
 };
 
@@ -1097,7 +1141,7 @@ renderers.rummy = () => {
       ${rummyGroups(g.myGroups, { interactive: true, canReveal })}
       ${tools}
       <div class="log-line">${g.log.slice(-2).map(esc).join(' · ')}</div>
-      <p class="hint">${esc(g.rulesText)} ${g.hiddenJoker ? 'Show a pure sequence to see the joker. ' : ''}Drop before picking: 20 (first turn) or 40. Wrong declare: 80. Lowest total after ${g.totalRounds} rounds wins.</p>`,
+`,
   };
 };
 renderers.sequence = renderers.rummy;

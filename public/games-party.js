@@ -10,6 +10,7 @@ function feedHtml(feed) {
   if (!feed.length) return '<div class="feed empty">Guesses show up here</div>';
   return `<div class="feed">${feed.map(f => {
     if (f.kind === 'correct') return `<div class="f-correct">${icon('check')} <b>${esc(f.name)}</b> got it! <span class="plus">+${f.pts}</span></div>`;
+    if (f.kind === 'bonus') return `<div class="f-bonus">${icon('trophy')} Everyone got it! <b>${esc(f.name)}</b> earns a drawing bonus <span class="plus">+${f.pts}</span></div>`;
     if (f.kind === 'chat') return `<div class="f-chat"><b>${esc(f.name)}</b> ${esc(f.text)}</div>`;
     return `<div><b>${esc(f.name)}</b> ${esc(f.text)}</div>`;
   }).join('')}</div>`;

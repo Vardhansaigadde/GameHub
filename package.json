@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "movies": "node scripts/movies/fetchwiki.js && node scripts/movies/buildlist.js public/data/telugu-movies.json"
+    "movies": "node scripts/movies/fetchwiki.js && node scripts/movies/buildlist.js public/data/telugu-movies.json",
+    "test": "node --test test/*.test.js"
   },
   "engines": {
     "node": ">=18"

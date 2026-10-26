@@ -7,6 +7,8 @@ const WORDS = require('./data/draw-words');
 
 const CHOOSE_MS = 15000;
 const REVEAL_MS = 5000;
+const DRAWER_PER_GUESS = 60;     // drawer earns this for every correct guess
+const ALL_GUESSED_BONUS = 100;   // extra for the drawer when every player gets the word
 const MAX_ITEMS = 4000;
 
 function pickChoices(s) {
@@ -156,10 +158,15 @@ module.exports = {
         const pts = Math.round(80 + 220 * left) + Math.max(0, 40 - s.solvers.length * 10);
         s.solvers.push(playerId);
         s.scores[playerId] += pts;
-        s.scores[drawer.id] += 60;
+        s.scores[drawer.id] += DRAWER_PER_GUESS;
         say('correct', { pts });
         cue(s, 'correct');
-        if (s.solvers.length === s.players.length - 1) endTurn(s);
+        if (s.solvers.length === s.players.length - 1) {
+          // everyone got it — reward the drawer for a clear drawing
+          s.scores[drawer.id] += ALL_GUESSED_BONUS;
+          s.feed.push({ name: drawer.name, kind: 'bonus', pts: ALL_GUESSED_BONUS });
+          endTurn(s);
+        }
         return { message: `You got it! +${pts}` };
       }
       say('guess', { text });

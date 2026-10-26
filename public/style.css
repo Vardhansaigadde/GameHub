@@ -942,3 +942,6 @@ button, a, .clickable, [role="button"] { touch-action: manipulation; -webkit-tap
   .sheet { align-items: end; padding: 0; }
   .sheet-card { width: 100%; border-radius: 16px 16px 0 0; max-height: 88dvh; padding-bottom: env(safe-area-inset-bottom); }
 }
+.f-bonus { color: var(--gold); font-weight: 800; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.f-bonus b { color: var(--gold); }
+.f-bonus svg { width: 16px; height: 16px; }

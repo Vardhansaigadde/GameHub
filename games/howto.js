@@ -23,7 +23,7 @@ module.exports = {
       steps: [
         'On your turn, pick 1 of 4 words and draw it.',
         'Everyone else types guesses — faster guesses score more.',
-        'The drawer scores for every player who guesses right.',
+        'The drawer scores for every correct guess — and a bonus if everyone gets it.',
         'Letters are revealed as hints while time runs out.',
       ],
     },

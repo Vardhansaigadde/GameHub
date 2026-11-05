@@ -18,6 +18,8 @@ Play the board, paper and card games we grew up with — **online, with friends 
 | **Ramudu‑Seetha** | 3–6 | Everyone picks a folded chit. Ramudu (1000) must find Seetha. Right guess → Ramudu keeps 1000. Wrong → Seetha takes it. Others score their chit (Lakshmanudu 800, Hanumanthudu 500, Bharathudu 300, Shatrughnudu 200). 5 rounds. |
 | **Least Count** | 2–6 | 7 cards each, one Joker rank counts 0. Throw a card (or several of the same rank), then pick from the deck or the open card. Call SHOW when you think your total is lowest — wrong call = +40. Lowest score after 5 rounds wins. |
 
+The look is a **night arena**: an animated world, a 3D die that rolls to pick a random game, tilting game tiles, a splash when a game starts, "YOUR TURN" banners, confetti, screen shakes and score pop-ups. Everything that moves respects the device's reduced-motion setting.
+
 Every room has chat, **emoji reactions** that float across everyone's screen, and **sounds** (dice, cards, bids, SOLD gavel, correct guesses…) with a mute button in the top bar.
 
 ### Dumb Charades (Telugu movies)

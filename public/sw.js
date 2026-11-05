@@ -1,7 +1,7 @@
 // Keeps the app shell and the movie list cached so Dumb Charades works offline.
 // Network first (so updates show up straight away), cache as the fallback.
-const CACHE = 'gamehub-v4';
-const SHELL = ['/', '/index.html', '/style.css', '/app.js', '/sound.js', '/games-party.js', '/games-ipl.js', '/data/telugu-movies.json', '/manifest.webmanifest', '/icons/icon-192.png'];
+const CACHE = 'gamehub-v5';
+const SHELL = ['/', '/index.html', '/style.css', '/arena.css', '/app.js', '/fx.js', '/icons/icon.svg', '/sound.js', '/games-party.js', '/games-ipl.js', '/data/telugu-movies.json', '/manifest.webmanifest', '/icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

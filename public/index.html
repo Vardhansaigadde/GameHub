@@ -9,18 +9,19 @@
   <meta name="apple-mobile-web-app-title" content="GameHub">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta name="theme-color" content="#262421">
+  <meta name="theme-color" content="#0f0b26">
   <title>GameHub — play with friends</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2381b64c'/><circle cx='11' cy='11' r='3' fill='white'/><circle cx='21' cy='21' r='3' fill='white'/><circle cx='21' cy='11' r='3' fill='white'/><circle cx='11' cy='21' r='3' fill='white'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Kalam:wght@400;700&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="arena.css">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="/" id="brandLink">
-      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#81b64c"/><circle cx="11" cy="11" r="3" fill="#fff"/><circle cx="21" cy="21" r="3" fill="#fff"/><circle cx="21" cy="11" r="3" fill="#fff"/><circle cx="11" cy="21" r="3" fill="#fff"/></svg>
+      <img src="icons/icon.svg" width="34" height="34" alt="">
       <span>GameHub</span>
     </a>
     <div class="top-actions">
@@ -36,22 +37,32 @@
   <!-- Home -->
   <main id="home" class="page">
     <div class="home-grid">
-      <section class="panel play-panel">
-        <div class="panel-body">
-          <h1>Play with friends</h1>
-          <p class="muted">Make a room, send the code, and play together — wherever everyone is.</p>
-          <label class="field">
-            <span>Your name</span>
-            <input id="nameInput" maxlength="16" placeholder="Enter your name" autocomplete="nickname">
-          </label>
-          <button id="createBtn" class="btn btn-primary btn-lg btn-block">Create room</button>
-          <div class="divider"><span>Have a room code?</span></div>
-          <div class="join-row">
-            <input id="codeInput" maxlength="4" placeholder="ABCD" class="code-input" aria-label="Room code" autocapitalize="characters">
-            <button id="joinBtn" class="btn btn-lg">Join</button>
-          </div>
-          <p id="homeError" class="form-error" role="alert"></p>
+      <section class="hero">
+        <div class="hero-copy">
+          <h2 class="logo-word" id="logoWord" aria-label="GameHub">GAMEHUB</h2>
+          <p class="hero-tag"><b><span id="gameCount">13</span> games.</b> One room. All your friends.</p>
+          <button id="rollBtn" class="btn btn-gold btn-lg">Roll for a game</button>
         </div>
+        <button id="dieBtn" class="die-btn" aria-label="Roll the die to pick a random game">
+          <span class="die-shadow"></span>
+          <span class="cube idle" id="cube"></span>
+        </button>
+        <section class="panel play-panel">
+          <div class="panel-body">
+            <h1>Play with friends</h1>
+            <label class="field">
+              <span>Your name</span>
+              <input id="nameInput" maxlength="16" placeholder="Enter your name" autocomplete="nickname">
+            </label>
+            <button id="createBtn" class="btn btn-primary btn-lg btn-block">Create room</button>
+            <div class="divider"><span>Have a room code?</span></div>
+            <div class="join-row">
+              <input id="codeInput" maxlength="4" placeholder="ABCD" class="code-input" aria-label="Room code" autocapitalize="characters">
+              <button id="joinBtn" class="btn btn-lg">Join</button>
+            </div>
+            <p id="homeError" class="form-error" role="alert"></p>
+          </div>
+        </section>
       </section>
 
       <section class="catalog">
@@ -135,5 +146,6 @@
   <script src="sound.js"></script>
   <script src="games-party.js"></script>
   <script src="games-ipl.js"></script>
+  <script src="fx.js"></script>
 </body>
 </html>

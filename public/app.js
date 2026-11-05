@@ -129,10 +129,11 @@ function gameTile(g, attrs = '', cls = '') {
 let homeGames = [];
 fetch('/api/games').then(r => r.json()).then(({ categories, games }) => {
   homeGames = games;
+  $('#gameCount').textContent = games.length;
   $('#catalog').innerHTML = categories.map(c => {
     const list = games.filter(g => g.cat === c.id);
     if (!list.length) return '';
-    return `<div class="cat-section"><h2 class="section-title">${esc(c.name)} <span class="count">${list.length}</span></h2>
+    return `<div class="cat-section cat-${c.id}"><h2 class="section-title">${esc(c.name)} <span class="count">${list.length}</span></h2>
       <div class="tile-grid">${list.map(g => gameTile(g, `data-howto-home="${g.id}"`)).join('')}</div></div>`;
   }).join('');
 }).catch(() => {});
@@ -210,6 +211,7 @@ socket.on('connect', () => {
 
 function showHome() {
   S = null;
+  ui.tab = 'game'; // the next room opens on the game, not the last tab used
   $('#reactDock').classList.add('hidden');
   $('#charades').classList.add('hidden');
   $('#home').classList.remove('hidden');
@@ -220,6 +222,7 @@ function showHome() {
 
 $('#leaveBtn').onclick = () => {
   socket.emit('leave');
+  $('#codeInput').value = '';
   localStorage.removeItem('gh_room');
   history.replaceState(null, '', '/');
   showHome();
@@ -253,7 +256,10 @@ socket.on('state', state => {
   S = state;
   ui.skew = state.now ? state.now - Date.now() : 0; // server clock minus ours, for countdowns
   const g0 = S.game;
-  if (g0 && g0.cue && (!prevGame || prevGame.gameId !== g0.gameId || !prevGame.cue || prevGame.cue.n !== g0.cue.n) && prevGame) window.SFX && SFX.play(g0.cue.type);
+  if (g0 && g0.cue && (!prevGame || prevGame.gameId !== g0.gameId || !prevGame.cue || prevGame.cue.n !== g0.cue.n) && prevGame) {
+    if (window.SFX) SFX.play(g0.cue.type);
+    if (typeof FX !== 'undefined') FX.cue(g0.cue.type);
+  }
   $('#home').classList.add('hidden');
   $('#charades').classList.add('hidden');
   $('#room').classList.remove('hidden');
@@ -273,6 +279,7 @@ socket.on('state', state => {
     document.title = '● Your turn — GameHub';
     if (prevGame && navigator.vibrate) navigator.vibrate(120);
     if (prevGame && window.SFX) SFX.play('turn');
+    if (prevGame && typeof FX !== 'undefined') FX.turn();
   }
   else if (!myTurnNow) document.title = `Room ${S.room.code} — GameHub`;
 
@@ -338,7 +345,7 @@ function renderGame() {
       <button class="btn btn-sm btn-ghost" data-howto aria-label="How to play">${icon('help')}<span class="lbl">How to play</span></button>
       ${isHost() ? `<button class="btn btn-sm btn-ghost" data-end aria-label="End game">${icon('flag')}<span class="lbl">End game</span></button>` : ''}
     </div>
-    <div class="turn-bar ${r.tone || ''}">${r.tone === 'mine' ? '<span class="tag">Your turn</span>' : ''}<span>${r.turn}</span></div>
+    <div class="turn-bar ${r.tone || ''}">${r.tone === 'mine' && (g.turnId === S.you || g.drawerId === S.you) ? '<span class="tag">Your turn</span>' : ''}<span>${r.turn}</span></div>
     <div class="game-body">${r.body}</div>
   </div>`;
 }

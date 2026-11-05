@@ -12,7 +12,7 @@ const tbadge = (t, big) => (t ? `<span class="tbadge ${big ? 'big' : ''}" style=
 
 function photo(p, cls = '') {
   const initials = p.name.split(' ').map(w => w[0]).join('').slice(0, 2);
-  return `<div class="ipl-photo ${cls}">${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<span>${esc(initials)}</span></div>`;
+  return `<div class="ipl-photo ${cls}">${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.name)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<span>${esc(initials)}</span></div>`;
 }
 
 function playerFacts(p) {

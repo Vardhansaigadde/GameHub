@@ -8,13 +8,33 @@ module.exports = {
     { id: 'cards', name: 'Card games' },
   ],
   games: {
+    telephone: {
+      cat: 'top',
+      tagline: 'What you write is never what comes back',
+      steps: [
+        'Everyone secretly writes a funny sentence.',
+        'Each sentence moves to the next player, who draws it.',
+        'That drawing moves on, and the next player describes what they see.',
+        'Keep going round. Then watch every chain unfold — and try not to cry laughing.',
+      ],
+    },
+    showdown: {
+      cat: 'top',
+      tagline: 'Same sentence. Very different drawings.',
+      steps: [
+        'Everyone gets the same funny sentence and draws it at the same time.',
+        'When the timer ends, all the drawings are revealed together.',
+        'Vote for your favourite. You cannot vote for your own.',
+        'Each vote scores 100, and the favourite gets a bonus. Highest score wins.',
+      ],
+    },
     typing: {
       cat: 'top',
       tagline: 'Race, zap and duel with your keyboard',
       steps: [
-        'Vote for a challenge: Car Race, Word Rain or Speed Duel.',
-        'Car Race: type the sentence — your car moves with every correct letter.',
-        'Word Rain: type falling words before they land. Misses cost a life.',
+        "Vote for a challenge. Kings' Battle (2 players): you each get a king, and every word you type launches a random attack.",
+        'Longer words hit harder, and 5 words without a typo unleash an ultimate. Monster Raid: team up against three bosses.',
+        'Car Race: type the sentence and your car drives. Word Rain: zap falling words.',
         'Speed Duel: one word at a time, fastest typists score most.',
       ],
     },
@@ -71,7 +91,7 @@ module.exports = {
       cat: 'party',
       tagline: 'Draw it, guess it',
       steps: [
-        'On your turn, pick 1 of 4 words and draw it.',
+        'On your turn, pick 1 of 4 words and draw it. The host chooses the theme, and words get harder each round.',
         'Everyone else types guesses — faster guesses score more.',
         'The drawer scores for every correct guess — and a bonus if everyone gets it.',
         'Letters are revealed as hints while time runs out.',

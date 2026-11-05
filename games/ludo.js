@@ -86,14 +86,6 @@ module.exports = {
       return;
     }
 
-    if (a.type === 'skip') {
-      if (!isHost) throw new Error('Only the host can skip a turn');
-      if (s.phase === 'over') return;
-      log(`${s.players[s.turn].name}'s turn was skipped`);
-      nextTurn(s);
-      return;
-    }
-
     if (s.phase === 'over') throw new Error('Game over');
     if (s.turn !== pi) throw new Error("It's not your turn");
 

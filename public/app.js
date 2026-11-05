@@ -6,6 +6,7 @@ const token = localStorage.getItem('gh_token') || (crypto.randomUUID ? crypto.ra
 localStorage.setItem('gh_token', token);
 
 let S = null; // latest { room, game, you }
+const livePatch = {}; // games that can update in place, so typing isn't interrupted
 const afterRender = []; // hooks run after every render (e.g. to re-mount the drawing canvas)
 const ui_opts = {}; // host's chosen options per game, e.g. { pictionary: { rounds: 3 } }
 // phones get the native share sheet (WhatsApp etc.) instead of copy-to-clipboard
@@ -31,6 +32,11 @@ const ICON_PATHS = {
   link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
   crown: '<path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3l4.27-3.67a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.51-.3z"/><path d="M5 21h14"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M2 12h2M20 12h2M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400"/>',
+  moon: '<path d="M12 3a7 7 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
+  expand: '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
+  shrink: '<path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
   flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
@@ -88,7 +94,19 @@ function thumb(id) {
       <line x1="30" y1="13" x2="80" y2="13" stroke="#c62828" stroke-width="1.6"/><line x1="30" y1="8" x2="80" y2="58" stroke="#c62828" stroke-width="1.6"/>`,
     ramsita: `<rect width="96" height="64" fill="#6d4a2e"/>
       ${[[14, 18, -12], [38, 30, 8], [60, 14, -4], [70, 38, 14], [30, 42, -6]].map(([x, y, r]) => `<g transform="rotate(${r} ${x + 10} ${y + 7})"><rect x="${x}" y="${y}" width="20" height="14" fill="#f6f0df"/><line x1="${x + 10}" y1="${y}" x2="${x + 10}" y2="${y + 14}" stroke="#d6cbb0"/></g>`).join('')}`,
-    typing: `<rect width="96" height="64" fill="#1a1450"/><rect y="38" width="96" height="26" fill="#3a3560"/><path d="M0 51h96" stroke="#fff" stroke-width="1.500" stroke-dasharray="7 6"/><g transform="translate(46 28)"><path d="M1 12c0-3 2-4 5-5l5-4c1-1 2-1 3-1h8c1 0 2 0 3 1l4 4c4 1 6 2 6 5v2H1z" fill="#ff3d6e"/><circle cx="10" cy="15" r="3.200" fill="#111"/><circle cx="29" cy="15" r="3.200" fill="#111"/></g><g fill="#fff"><rect x="6" y="8" width="13" height="13" rx="3" fill="#7c4dff"/><rect x="22" y="8" width="13" height="13" rx="3" fill="#38c6ff"/></g><g font-family="Arial" font-size="9" font-weight="900" fill="#fff" text-anchor="middle"><text x="12.500" y="18">G</text><text x="28.500" y="18">O</text></g><path d="M4 42l10-2M2 47l8-1M6 55l11-2" stroke="#ffc83d" stroke-width="1.600" stroke-linecap="round"/>`,
+    telephone: `<rect width="96" height="64" fill="#3b1a9a"/><rect x="8" y="10" width="34" height="26" rx="4" fill="#fff"/><path d="M14 30c4-10 8-14 12-6s6 2 10-8" fill="none" stroke="#ff2e93" stroke-width="2.600" stroke-linecap="round"/><path d="M42 23h12" stroke="#ffc83d" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 5"/><path d="M50 18l6 5-6 5" fill="none" stroke="#ffc83d" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/><rect x="56" y="14" width="33" height="18" rx="9" fill="#2fe07f"/><circle cx="66" cy="23" r="2" fill="#052b17"/><circle cx="73" cy="23" r="2" fill="#052b17"/><circle cx="80" cy="23" r="2" fill="#052b17"/><path d="M60 30l-3 7 9-5z" fill="#2fe07f"/><path d="M20 58c8-18 48-18 56 0" fill="none" stroke="#38c6ff" stroke-width="3" stroke-dasharray="1 6" stroke-linecap="round"/>`,
+    showdown: `<rect width="96" height="64" fill="#2a1a6e"/><g transform="rotate(-6 24 32)"><rect x="8" y="14" width="30" height="36" rx="2" fill="#fff"/><circle cx="23" cy="28" r="8" fill="none" stroke="#e53935" stroke-width="3"/></g><g transform="rotate(5 72 32)"><rect x="58" y="14" width="30" height="36" rx="2" fill="#fff"/><path d="M64 38c4-14 8-14 10-4s6 2 8-8" fill="none" stroke="#1e88e5" stroke-width="3" stroke-linecap="round"/></g><rect x="33" y="10" width="30" height="36" rx="2" fill="#fff"/><path d="M48 20l3 7h7l-5 5 2 7-7-4-7 4 2-7-5-5h7z" fill="#ffc83d"/>`,
+    typing: `<rect width="96" height="64" fill="#3a1a9a"/><path d="M96 0v64H20z" fill="#b3186f" opacity=".75"/><path d="M96 22v42H52z" fill="#ff2e93" opacity=".45"/>
+      <path class="ta-spark" d="M12 8l1.500 4 4 1.500-4 1.500-1.500 4-1.500-4-4-1.500 4-1.500z" fill="#ffe27a"/><path class="ta-spark" style="animation-delay:-.6s" d="M84 6l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" fill="#fff"/>
+      <path d="M0 26h96" stroke="#fff" stroke-width="1" stroke-dasharray="5 5" opacity=".4"/>
+      <g class="ta-car"><path d="M2 22c0-3 2-4 6-5l5-4c1-1 2-1 3-1h7c1 0 2 0 3 1l4 4c4 0 6 2 6 5v1H2z" fill="#ffc83d"/><path d="M15 14h4v4h-8zM21 14h3l3 4h-6z" fill="#231a55"/><circle cx="10" cy="23" r="3" fill="#120d2b"/><circle cx="29" cy="23" r="3" fill="#120d2b"/><path d="M-10 16h8M-14 20h10" stroke="#fff" stroke-width="1.500" stroke-linecap="round" opacity=".7"/></g>
+      <text class="ta-letter" x="24" y="40" font-family="Fredoka,Arial" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">T</text>
+      <text class="ta-letter" style="animation-delay:.4s" x="40" y="40" font-family="Fredoka,Arial" font-size="13" font-weight="700" fill="#ffe27a" text-anchor="middle">Y</text>
+      <text class="ta-letter" style="animation-delay:.8s" x="56" y="40" font-family="Fredoka,Arial" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">P</text>
+      <text class="ta-letter" style="animation-delay:1.200s" x="72" y="40" font-family="Fredoka,Arial" font-size="13" font-weight="700" fill="#ffe27a" text-anchor="middle">E</text>
+      <rect x="12" y="42" width="72" height="20" rx="4" fill="#1a1450"/><rect x="13" y="43" width="70" height="1.500" fill="#fff" opacity=".2"/>
+      ${[0, 1, 2, 3, 4, 5, 6, 7].map(c => `<rect class="ta-key" style="animation-delay:${(c * 0.3).toFixed(1)}s" x="${15.500 + c * 8.300}" y="46" width="6.500" height="5.500" rx="1.200"/>`).join('')}
+      ${[0, 1, 2, 3, 4, 5, 6].map(c => `<rect class="ta-key" style="animation-delay:${(c * 0.3 + 1.100).toFixed(1)}s" x="${19.600 + c * 8.300}" y="53" width="6.500" height="5.500" rx="1.200"/>`).join('')}`,
     ludo: `<rect width="96" height="64" fill="#fff"/><g transform="translate(19 3)"><rect width="58" height="58" fill="#fff"/><rect width="23" height="23" fill="#e53935"/><rect x="35" width="23" height="23" fill="#2fb34a"/><rect x="35" y="35" width="23" height="23" fill="#f9c423"/><rect y="35" width="23" height="23" fill="#2a7de1"/><path d="M23 23h12v12H23z" fill="#ddd"/><path d="M23 23l6 6-6 6z" fill="#e53935"/><path d="M23 23l6 6 6-6z" fill="#2fb34a"/><path d="M35 23l-6 6 6 6z" fill="#f9c423"/><path d="M23 35l6-6 6 6z" fill="#2a7de1"/><circle cx="11.500" cy="11.500" r="6" fill="#fff"/><circle cx="46.500" cy="11.500" r="6" fill="#fff"/><circle cx="46.500" cy="46.500" r="6" fill="#fff"/><circle cx="11.500" cy="46.500" r="6" fill="#fff"/></g><rect width="19" height="64" fill="#e53935" opacity=".2"/><rect x="77" width="19" height="64" fill="#2a7de1" opacity=".2"/>`,
     snakes: `<rect width="96" height="64" fill="#ffe9a8"/>${[0, 1, 2, 3, 4, 5, 6, 7].map(c => [0, 1, 2, 3, 4, 5].map(r => ((r + c) % 2 ? `<rect x="${c * 12}" y="${r * 10.670}" width="12" height="10.670" fill="#bfe9ff"/>` : '')).join('')).join('')}<g stroke="#a4501a" stroke-width="2" stroke-linecap="round"><path d="M16 58L36 8M26 62L46 12M21 49l10 4M25 39l10 4M29 29l10 4M33 19l10 4"/></g><path d="M80 8C62 14 86 28 66 34S74 54 56 56" fill="none" stroke="#2fb34a" stroke-width="6" stroke-linecap="round"/><circle cx="80" cy="8" r="5" fill="#2fb34a"/><circle cx="78.500" cy="7" r="1.200" fill="#fff"/><circle cx="82" cy="7" r="1.200" fill="#fff"/>`,
     colorclash: `<rect width="96" height="64" fill="#2a1b6e"/><g stroke="#fff" stroke-width="1.500"><g transform="rotate(-16 28 36)"><rect x="16" y="14" width="26" height="38" rx="4" fill="#e8303f"/><ellipse cx="29" cy="33" rx="9" ry="13" fill="#fff" stroke="none"/></g><g transform="rotate(14 66 36)"><rect x="54" y="14" width="26" height="38" rx="4" fill="#2ab55a"/><ellipse cx="67" cy="33" rx="9" ry="13" fill="#fff" stroke="none"/></g><g><rect x="35" y="10" width="26" height="40" rx="4" fill="#f7c21f"/><ellipse cx="48" cy="30" rx="9" ry="14" fill="#fff" stroke="none"/></g></g><text x="48" y="35" font-family="Arial" font-size="14" font-weight="900" fill="#e0a000" text-anchor="middle">+2</text>`,
@@ -223,6 +241,7 @@ function showHome() {
   $('#room').classList.add('hidden');
   $('#roomChip').classList.add('hidden');
   document.title = 'GameHub — play with friends';
+  syncGameChrome();
 }
 
 $('#leaveBtn').onclick = () => {
@@ -313,7 +332,7 @@ function renderSide() {
   if (atBottom || S.room.chat.length !== ui.chatCount) log.scrollTop = log.scrollHeight;
   const myName = nameOf(S.you);
   const fresh = S.room.chat.filter(m => m.from && m.from !== myName && m.at > (ui.lastChatAt || 0));
-  if (ui.lastChatAt && fresh.length && isPhone() && ui.tab !== 'chat') toast(`${fresh[fresh.length - 1].from}: ${fresh[fresh.length - 1].text}`);
+  if (ui.lastChatAt && fresh.length && (S.game ? !ui.drawer : isPhone() && ui.tab !== 'chat')) toast(`${fresh[fresh.length - 1].from}: ${fresh[fresh.length - 1].text}`);
   ui.lastChatAt = Math.max(ui.lastChatAt || 1, ...S.room.chat.map(m => m.at));
   ui.chatCount = S.room.chat.length;
 }
@@ -328,6 +347,9 @@ const renderers = {};
 const handlers = {};
 
 function render() {
+  syncGameChrome();
+  const live = S.game && livePatch[S.game.gameId];
+  if (live && live(S.game)) { for (const f of afterRender) f(); tickCountdowns(); return; }
   // keep anything the player is typing when someone else's move re-renders the page
   const typing = $('#stage input[id]');
   const keep = typing && { id: typing.id, value: typing.value, focused: document.activeElement === typing };
@@ -1369,6 +1391,93 @@ $('#tabbar').addEventListener('click', e => {
   window.scrollTo(0, 0);
   if (ui.tab === 'chat') { const log = $('#chatLog'); log.scrollTop = log.scrollHeight; }
 });
+
+/* ======================= Full-screen game ======================= */
+// During a game the page shows only the game. Players, chat and Leave room live in a slide-out menu.
+ui.drawer = false;
+ui.gameKey = null;
+
+function setDrawer(open) {
+  ui.drawer = open;
+  document.body.classList.toggle('drawer-open', open);
+  $('#sidebar').inert = !open && !!S && !!S.game;
+  if (open) {
+    ui.chatSeenAt = Date.now();
+    const log = $('#chatLog');
+    log.scrollTop = log.scrollHeight;
+  }
+  paintMenuBtn();
+}
+
+function paintMenuBtn() {
+  if (!S) return;
+  const myName = nameOf(S.you);
+  const unread = ui.drawer ? 0 : S.room.chat.filter(m => m.from && m.from !== myName && m.at > ui.chatSeenAt).length;
+  $('#menuBtn').innerHTML = `${icon('menu')}${unread ? `<span class="badge">${unread > 9 ? '9+' : unread}</span>` : ''}`;
+}
+
+function syncGameChrome() {
+  const g = S && S.game;
+  document.body.classList.toggle('in-game', !!g);
+  if (!g) {
+    $('#gameTitle').classList.add('hidden');
+    ui.gameKey = null;
+    if (ui.drawer || $('#sidebar').inert) setDrawer(false);
+    return;
+  }
+  if (ui.gameKey !== g.gameId) {
+    ui.gameKey = g.gameId;
+    ui.tab = 'game';
+    $('#room').dataset.tab = 'game';
+    setDrawer(false);
+    window.scrollTo(0, 0);
+  }
+  const info = S.room.games.find(x => x.id === g.gameId);
+  const round = g.round && g.totalRounds ? `<span class="gt-round">Round ${g.round} of ${g.totalRounds}</span>` : '';
+  const title = `<span class="thumb-mini">${thumb(g.gameId)}</span><span class="gt-name">${esc(info.name)}</span>${round}`;
+  // only touch the bar when it changes, so its animated icon keeps running
+  if (ui.titleHtml !== title) { $('#gameTitle').innerHTML = title; ui.titleHtml = title; }
+  $('#gameTitle').classList.remove('hidden');
+  $('#drawerEnd').style.display = isHost() ? '' : 'none';
+  paintMenuBtn();
+}
+
+$('#menuBtn').onclick = () => setDrawer(!ui.drawer);
+$('#scrim').onclick = () => setDrawer(false);
+$('#drawerClose').innerHTML = icon('x');
+$('#drawerClose').onclick = () => setDrawer(false);
+$('#drawerHowto').innerHTML = `${icon('help')} How to play`;
+$('#drawerHowto').onclick = () => { setDrawer(false); openHowTo(S.room.games.find(x => x.id === S.game.gameId)); };
+$('#drawerEnd').innerHTML = `${icon('flag')} End game`;
+$('#drawerEnd').onclick = () => { if (confirm('End this game for everyone and go back to the lobby?')) { setDrawer(false); socket.emit('endGame'); } };
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.drawer) setDrawer(false); });
+
+// real browser full screen, where the device allows it (iPhones do not)
+const root = document.documentElement;
+if (root.requestFullscreen) document.body.classList.add('can-fs');
+const paintFs = () => { $('#fsBtn').innerHTML = icon(document.fullscreenElement ? 'shrink' : 'expand'); };
+$('#fsBtn').onclick = () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else root.requestFullscreen().catch(() => toast('Full screen is not available here'));
+};
+document.addEventListener('fullscreenchange', paintFs);
+paintFs();
+
+/* ======================= Light and dark mode ======================= */
+function paintTheme() {
+  const light = root.dataset.theme === 'light';
+  $('#themeBtn').innerHTML = icon(light ? 'moon' : 'sun');
+  $('#drawerTheme').innerHTML = `${icon(light ? 'moon' : 'sun')} ${light ? 'Dark mode' : 'Light mode'}`;
+  document.querySelector('meta[name="theme-color"]').content = light ? '#f3f0ff' : '#0f0b26';
+}
+function toggleTheme() {
+  root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
+  try { localStorage.setItem('gh_theme', root.dataset.theme); } catch (e) { /* private mode: only this visit */ }
+  paintTheme();
+}
+$('#themeBtn').onclick = toggleTheme;
+$('#drawerTheme').onclick = toggleTheme;
+paintTheme();
 
 // Keep the screen awake while a game or charades is on (phones dim fast otherwise)
 let wakeLock = null;

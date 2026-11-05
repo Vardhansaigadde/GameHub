@@ -315,6 +315,10 @@ function drawTools() {
   </div>`;
 }
 
+const LEVEL_LABEL = { easy: 'Easy words', medium: 'Medium words', hard: 'Hard words' };
+const THEME_LABEL = { Movie: 'All movies', Food: 'All food', Thing: 'All things', Animal: 'All animals' };
+const levelTag = g => `<div class="level-tag ${g.level}"><span>${LEVEL_LABEL[g.level]}</span>${g.roundTheme ? `<span>${THEME_LABEL[g.roundTheme]}</span>` : ''}</div>`;
+
 renderers.pictionary = () => {
   const g = S.game;
   const drawerName = esc(nameOf(g.drawerId));
@@ -338,9 +342,9 @@ renderers.pictionary = () => {
       tone: g.isDrawer ? 'mine' : '',
       turn: g.isDrawer ? 'Choose a word to draw' : `${drawerName} is choosing a word…`,
       body: g.isDrawer
-        ? `<div class="word-choices">${g.choices.map((c, i) => `<button class="word-choice" data-game="pictionary" data-choose="${i}"><small>${esc(c.cat)}</small>${esc(c.word)}</button>`).join('')}</div>
+        ? `${levelTag(g)}<div class="word-choices">${g.choices.map((c, i) => `<button class="word-choice" data-game="pictionary" data-choose="${i}"><small>${esc(c.cat)}</small>${esc(c.word)}</button>`).join('')}</div>
            <p class="hint">Auto-picks in ${secsLeft(g.timerAt)}s</p>`
-        : `<div class="waiting-art">${icon('pen')}<div>${drawerName} is picking from 4 words</div><div class="muted">${secsLeft(g.timerAt)}s</div></div>
+        : `${levelTag(g)}<div class="waiting-art">${icon('pen')}<div>${drawerName} is picking from 4 words</div><div class="muted">${secsLeft(g.timerAt)}s</div></div>
            <ol class="pc-board">${board}</ol>`,
     };
   }
@@ -361,7 +365,7 @@ renderers.pictionary = () => {
   return {
     tone,
     turn,
-    body: `<div class="pc-word">${wordLine}${!reveal ? `<span class="secs-pill">${secsLeft(g.endsAt)}s</span>` : ''}</div>
+    body: `${levelTag(g)}<div class="pc-word">${wordLine}${!reveal ? `<span class="secs-pill">${secsLeft(g.endsAt)}s</span>` : ''}</div>
       ${!reveal ? timeBar(g.endsAt, g.totalMs) : ''}
       <div class="pc-layout">
         <div class="pc-left">

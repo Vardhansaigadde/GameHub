@@ -1,4 +1,6 @@
 const list = [
+  require('./telephone'),
+  require('./showdown'),
   require('./typing'),
   require('./ipl'),
   require('./pictionary'),

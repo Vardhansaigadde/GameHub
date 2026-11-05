@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('gh_theme') === 'light' ? 'light' : 'dark'; } catch (e) {}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -18,6 +19,8 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="arena.css">
   <link rel="stylesheet" href="arcade.css">
+  <link rel="stylesheet" href="battle-scenes.css">
+  <link rel="stylesheet" href="theme-light.css">
 </head>
 <body>
   <header class="topbar">
@@ -25,6 +28,7 @@
       <img src="icons/icon.svg" width="34" height="34" alt="">
       <span>GameHub</span>
     </a>
+    <div id="gameTitle" class="game-title hidden"></div>
     <div class="top-actions">
       <button id="roomChip" class="room-chip hidden" title="Copy invite link"></button>
       <div id="reactDock" class="react-dock hidden">
@@ -32,6 +36,9 @@
         <div id="reactBar" class="react-bar hidden" role="group" aria-label="Send a reaction"></div>
       </div>
       <button id="soundBtn" class="icon-btn" aria-label="Sound on/off" title="Sound on/off"></button>
+      <button id="themeBtn" class="icon-btn" aria-label="Switch light or dark mode" title="Light or dark mode"></button>
+      <button id="fsBtn" class="icon-btn" aria-label="Full screen" title="Full screen"></button>
+      <button id="menuBtn" class="icon-btn" aria-label="Players and chat" title="Players and chat"></button>
     </div>
   </header>
 
@@ -85,7 +92,13 @@
   <main id="room" class="page hidden">
     <div class="room-grid">
       <section id="stage"></section>
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
+        <div class="drawer-head">
+          <div class="dh-title"><span>Game menu</span><button id="drawerClose" class="icon-btn" aria-label="Close menu"></button></div>
+          <button id="drawerHowto" class="btn btn-sm"></button>
+          <button id="drawerTheme" class="btn btn-sm"></button>
+          <button id="drawerEnd" class="btn btn-sm"></button>
+        </div>
         <div class="panel" id="playersPanel">
           <div class="panel-head"><span>Players</span><span id="playerCount" class="muted"></span></div>
           <ul id="playerList" class="player-list"></ul>
@@ -104,6 +117,7 @@
         <button id="leaveBtn" class="btn btn-ghost btn-block"></button>
       </aside>
     </div>
+    <div id="scrim" class="scrim"></div>
     <div id="reactLayer" class="react-layer" aria-hidden="true"></div>
     <nav id="tabbar" class="tabbar" aria-label="Room sections">
       <button data-tab="game" class="on"></button>
@@ -149,5 +163,8 @@
   <script src="games-ipl.js"></script>
   <script src="fx.js"></script>
   <script src="games-arcade.js"></script>
+  <script src="battle-scenes.js"></script>
+  <script src="games-battle.js"></script>
+  <script src="games-telephone.js"></script>
 </body>
 </html>

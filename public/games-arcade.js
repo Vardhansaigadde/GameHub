@@ -113,7 +113,6 @@ renderers.ludo = () => {
       <div class="board-wrap">${ludoBoard(g)}
         <div class="die-dock">${dieHtml(g.lastRoll || g.roll, myTurn && g.phase === 'roll' ? 'data-game="ludo" data-roll aria-label="Roll the dice"' : '')}
           <div class="log-line">${g.log.slice(-2).map(esc).join('<br>')}</div>
-          ${isHost() && g.phase !== 'over' ? '<button class="btn btn-sm btn-ghost" data-game="ludo" data-skip>Skip this turn</button>' : ''}
         </div>
       </div>
       ${g.phase === 'over' ? `<div class="actions">${rematchBtn()}</div>` : ''}`,
@@ -122,7 +121,6 @@ renderers.ludo = () => {
 handlers.ludo = d => {
   if ('roll' in d) act({ type: 'roll' });
   else if ('token' in d) act({ type: 'move', token: +d.token });
-  else if ('skip' in d) act({ type: 'skip' });
 };
 function ludoAfter(g) {
   for (const p of g.players) p.tokens.forEach((pos, i) => {
@@ -355,9 +353,54 @@ function c4After(g) {
 /* ======================= Typing Arena ======================= */
 const CAR_COL = ['#ff3d6e', '#38c6ff', '#ffc83d', '#2fe07f', '#b06bff', '#ff8a3d', '#ffffff', '#ff7ac0'];
 const ty = { key: null, prog: {}, rain: {}, typed: '', errors: 0, total: 0, done: false };
-const carSvg = c => `<svg viewBox="0 0 64 30" aria-hidden="true"><path d="M3 20c0-5 4-7 9-8l9-7c1-1 3-2 5-2h13c2 0 3 1 5 2l7 7c6 1 10 3 10 8v3c0 1-1 2-2 2H5c-1 0-2-1-2-2z" fill="${c}"/><path d="M24 6h7v7H16zM34 6h6c1 0 2 .5 3 1l5 6H34z" fill="#0f0b26" opacity=".75"/><circle cx="16" cy="24" r="5.500" fill="#120d2b"/><circle cx="16" cy="24" r="2.500" fill="#ddd"/><circle cx="48" cy="24" r="5.500" fill="#120d2b"/><circle cx="48" cy="24" r="2.500" fill="#ddd"/></svg>`;
+// Our own side-view cars. Each player gets a model and a colour.
+const CAR_MODELS = [
+  { // hypercar with a rear wing
+    body: 'M8 36V25L3 13h13l4 8 24-7c14-5 30-5 40 1l14 8c10 1 18 4 19 12l-2 1z',
+    glass: 'M50 16c9-3 20-3 28 0l10 6H46z',
+    extra: '<path d="M44 31l26-5-3 8H47z" fill="#120d2b" opacity=".75"/><path d="M3 13h13l1 2.500H4z" fill="#120d2b" opacity=".6"/>',
+  },
+  { // grand tourer
+    body: 'M4 33c0-6 5-9 16-11 12-8 24-13 38-13h12c8 0 15 5 22 12 12 1 23 4 24 11l-1 3H5z',
+    glass: 'M34 21c6-5 14-9 24-9h1v9zM62 12h7c6 0 11 4 16 9H62z',
+    extra: '<path d="M42 31l12-4h20l-5 6H46z" fill="#120d2b" opacity=".65"/>',
+  },
+  { // muscle car with a racing stripe
+    body: 'M3 35V25L1 17l9 5 24-2 11-9h28l12 9 24 2 8 5v8z',
+    glass: 'M38 20l8-6h12v6zM61 14h11l8 6H61z',
+    extra: '<path d="M3 27h114v3H3z" fill="#120d2b" opacity=".6"/><path d="M92 21h13l-3-4h-8z" fill="#120d2b" opacity=".75"/>',
+  },
+  { // classic roadster with a race number
+    body: 'M4 33c0-9 9-14 24-15h60c16 0 28 6 28 15l-1 3H5z',
+    glass: 'M62 18l5-7 2 1-3 6z',
+    extra: '<circle cx="50" cy="13" r="6.500" fill="#f4f4f8"/><path d="M50 12h6.500v3H50z" fill="#120d2b"/><path d="M42 19h15v2H42z" fill="#120d2b" opacity=".5"/><circle cx="60" cy="27" r="6.500" fill="#fff"/><text x="60" y="31" font-family="Arial" font-size="10" font-weight="900" text-anchor="middle" fill="#120d2b">1</text>',
+  },
+  { // sports car with side graphics
+    body: 'M4 32c1-6 8-9 19-11l19-9c8-3 22-3 30 0l17 9c12 1 23 4 27 11l-2 4H6z',
+    glass: 'M38 21l7-7c8-2 17-2 24 0l12 7zM58 13v8',
+    extra: '<path d="M24 28c20-6 40-6 60-3-16 1-30 4-44 9z" fill="#120d2b" opacity=".6"/>',
+  },
+  { // coupe with a rear spoiler
+    body: 'M3 32v-7L2 19l7 3 17-3c7-6 17-10 31-10h6c9 0 16 5 23 12 12 1 27 4 31 10l-2 4H4z',
+    glass: 'M33 20c6-5 14-8 24-8v8zM60 12h4c7 0 12 3 17 8H60z',
+    extra: '<path d="M2 19h10l-1 2.500H3z" fill="#120d2b" opacity=".6"/>',
+  },
+];
+function carWheel(x) {
+  const spokes = [0, 60, 120].map(a => `<path d="M${x - 5.500} 33h11" stroke="#8d93a3" stroke-width="1.400" transform="rotate(${a} ${x} 33)"/>`).join('');
+  return `<circle cx="${x}" cy="33" r="10" fill="#120d2b"/><g class="wheel"><circle cx="${x}" cy="33" r="8" fill="#17151f"/><circle cx="${x}" cy="33" r="5.500" fill="#d9dde6"/>${spokes}<circle cx="${x}" cy="33" r="1.500" fill="#23212c"/></g>`;
+}
+const carSvg = (c, model = 0) => {
+  const m = CAR_MODELS[model % CAR_MODELS.length];
+  return `<svg viewBox="0 0 120 44" aria-hidden="true"><defs><linearGradient id="carShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".4"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".4"/></linearGradient></defs>
+    <ellipse cx="60" cy="41" rx="56" ry="3" fill="#000" opacity=".35"/><path d="${m.body}" fill="${c}"/><path d="${m.body}" fill="url(#carShade)"/>
+    <path d="${m.glass}" fill="#1c2740" stroke="#1c2740" stroke-width=".6"/><path d="${m.glass}" fill="#9fd8ff" opacity=".22"/>${m.extra}
+    <ellipse cx="113.500" cy="30" rx="3" ry="2" fill="#fff4b0"/><rect x="4" y="27" width="3.500" height="3" rx="1" fill="#ff2e4d"/>${carWheel(30)}${carWheel(92)}</svg>`;
+};
 const modeIcon = {
-  race: '<span class="scene race"><i class="sc-car a"></i><i class="sc-car b"></i><i class="sc-road"></i></span>',
+  kings: '<span class="scene kings"><i class="k a">♚</i><i class="bolt"></i><i class="k b">♚</i></span>',
+  raid: '<span class="scene raid"><i class="m">👹</i><i class="shot s1"></i><i class="shot s2"></i></span>',
+  race: `<span class="scene race"><i class="sc-car a">${carSvg('#ff3d6e', 0)}</i><i class="sc-car b">${carSvg('#38c6ff', 1)}</i><i class="sc-road"></i></span>`,
   rain: '<span class="scene rain"><i>mango</i><i>rocket</i><i>tiger</i><i>dosa</i></span>',
   duel: '<span class="scene duel"><b>A</b><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><b>B</b></span>',
 };
@@ -382,9 +425,10 @@ function typingPick(g) {
   const voted = Object.keys(g.votes).length;
   const cards = g.modes.map(m => {
     const voters = g.players.filter(p => g.votes[p.id] === m.id);
-    return `<button class="mode-card ${g.votes[S.you] === m.id ? 'on' : ''}" data-game="typing" data-vote="${m.id}">
-      ${modeIcon[m.id]}<b>${esc(m.name)}</b><small>${esc(m.tagline)}</small>
-      <span class="mode-votes">${voters.map(p => avatar(p.name)).join('') || '<em>No votes yet</em>'}</span></button>`;
+    const closed = m.maxPlayers && g.players.length > m.maxPlayers;
+    return `<button class="mode-card ${g.votes[S.you] === m.id ? 'on' : ''}" ${closed ? 'disabled' : ''} data-game="typing" data-vote="${m.id}">
+      ${modeIcon[m.id]}<b>${esc(m.name)}</b><small>${closed ? `Only for ${m.maxPlayers} players` : esc(m.tagline)}</small>
+      <span class="mode-votes">${voters.map(p => avatar(p.name)).join('') || (closed ? '' : '<em>No votes yet</em>')}</span></button>`;
   }).join('');
   return {
     tone: g.votes[S.you] ? '' : 'live',
@@ -402,7 +446,7 @@ function typingRace(g) {
     const n = Math.max(ty.prog[p.id] || 0, g.prog[p.id] || 0);
     const f = g.finished[p.id];
     return `<div class="lane"><span class="lane-name">${esc(p.name)}${p.id === S.you ? ' (you)' : ''}</span>
-      <span class="car" data-car="${p.id}" style="left:${carLeft(n, len)}">${carSvg(CAR_COL[i % CAR_COL.length])}</span>
+      <span class="car ${f ? 'parked' : ''}" data-car="${p.id}" style="left:${carLeft(n, len)}">${carSvg(CAR_COL[i % CAR_COL.length], i)}</span>
       <span class="lane-wpm" data-wpm="${p.id}">${f ? `#${f.place}` : `${liveWpm(n)} wpm`}</span></div>`;
   }).join('');
   return {
@@ -448,8 +492,9 @@ function typingDuel(g) {
 
 function typingOver(g) {
   const rows = g.results;
-  const val = r => (g.mode === 'race' ? `${r.wpm} wpm` : `${r.score} pts`);
-  const sub = r => (g.mode === 'race' ? (r.done ? `${(r.ms / 1000).toFixed(1)}s · ${r.acc}% accuracy` : `${r.pct}% done`) : g.mode === 'rain' ? `${r.lives} lives left` : '');
+  const battle = g.mode === 'kings' || g.mode === 'raid';
+  const val = r => (g.mode === 'race' ? `${r.wpm} wpm` : battle ? `${r.score} dmg` : `${r.score} pts`);
+  const sub = r => (g.mode === 'race' ? (r.done ? `${(r.ms / 1000).toFixed(1)}s · ${r.acc}% accuracy` : `${r.pct}% done`) : g.mode === 'rain' ? `${r.lives} lives left` : battle ? `${r.words} word${r.words === 1 ? '' : 's'}` : '');
   const podium = [1, 0, 2].map(i => rows[i]).filter(Boolean).map(r => {
     const place = rows.indexOf(r) + 1;
     return `<div class="pod pod${place}">${avatar(nameOf(r.id))}<b>${esc(nameOf(r.id))}</b><small>${val(r)}</small><div class="pod-bar"><span>${place}</span></div></div>`;
@@ -457,7 +502,7 @@ function typingOver(g) {
   const table = rows.map((r, i) => `<tr class="${r.id === S.you ? 'me' : ''}"><td class="rank">${i + 1}</td><td><span class="pcell">${avatarOf(r.id)}${esc(nameOf(r.id))}</span></td><td class="num">${sub(r)}</td><td class="num"><b>${val(r)}</b></td></tr>`).join('');
   return {
     tone: 'win',
-    turn: `${esc(nameOf(rows[0].id))} wins ${esc(g.modes.find(m => m.id === g.mode).name)}!`,
+    turn: battle ? battleHeadline(g) : `${esc(nameOf(rows[0].id))} wins ${esc(g.modes.find(m => m.id === g.mode).name)}!`,
     body: `<div class="podium">${podium}</div><table class="scoreboard">${table}</table>
       <div class="actions">${isHost() ? `<button class="btn btn-primary btn-lg" data-game="typing" data-again>${icon('rotate')} Pick another challenge</button>` : ''}</div>`,
   };
@@ -467,10 +512,12 @@ renderers.typing = () => {
   const g = S.game;
   if (g.phase === 'pick') return typingPick(g);
   if (g.phase === 'over') return typingOver(g);
+  if (g.phase === 'countdown' && g.battle) return battleVs(g);
   if (g.phase === 'countdown') {
     const m = g.modes.find(x => x.id === g.mode);
     return { tone: 'live', turn: `${esc(m.name)} — get your fingers ready`, body: `<div class="count-wrap"><div class="count-big" data-deadline="${g.timerAt}"></div><b>${esc(m.name)}</b><small>${esc(m.tagline)}</small></div>` };
   }
+  if (g.mode === 'kings' || g.mode === 'raid') return typingBattle(g);
   return g.mode === 'race' ? typingRace(g) : g.mode === 'rain' ? typingRain(g) : typingDuel(g);
 };
 handlers.typing = d => {

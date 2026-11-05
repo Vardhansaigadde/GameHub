@@ -1,0 +1,143 @@
+/* The castle battlefields: animation for the pieces drawn in battle-scenes.js */
+.bs { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #0c0a18; }
+.bs-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.bf::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 20%; z-index: 1; background: linear-gradient(180deg, rgba(8, 6, 24, .7), transparent); pointer-events: none; }
+.bf { background: #0c0a18; box-shadow: inset 0 0 0 1px rgba(255, 200, 61, .25); }
+
+.bs-flicker { transform-box: fill-box; transform-origin: bottom center; animation: bsFlicker .42s ease-in-out infinite alternate; }
+@keyframes bsFlicker { from { transform: scale(1, 1) rotate(-2deg); } to { transform: scale(.9, 1.12) rotate(3deg); } }
+.bs-glow { animation: bsGlow 1.7s ease-in-out infinite alternate; }
+@keyframes bsGlow { from { opacity: 1; } to { opacity: .62; } }
+.bs-pulse { animation: bsPulse 6s ease-in-out infinite alternate; }
+@keyframes bsPulse { from { opacity: 1; } to { opacity: .78; } }
+.bs-shaft { animation: bsShaft 7s ease-in-out infinite alternate; }
+@keyframes bsShaft { from { opacity: .95; } to { opacity: .45; } }
+.bs-pool { animation: bsShaft 6s ease-in-out infinite alternate; }
+.bs-win { animation: bsWin 3.400s ease-in-out infinite; }
+@keyframes bsWin { 0%, 100% { opacity: .95; } 40% { opacity: .55; } 55% { opacity: 1; } 70% { opacity: .7; } }
+.bs-star { animation: bsStar 4s ease-in-out infinite alternate; }
+@keyframes bsStar { to { opacity: .25; } }
+.bs-sway { transform-box: fill-box; transform-origin: top center; animation: bsSway 4.400s ease-in-out infinite alternate; }
+@keyframes bsSway { from { transform: skewX(-1.800deg); } to { transform: skewX(2.200deg); } }
+.bs-swing { animation: bsSwing 5s ease-in-out infinite alternate; }
+@keyframes bsSwing { from { transform: rotate(-1.200deg); } to { transform: rotate(1.200deg); } }
+.bs-whip { animation: bsWhip .7s ease-in-out infinite alternate; }
+@keyframes bsWhip { from { transform: skewY(-5deg) scaleX(1); } to { transform: skewY(6deg) scaleX(.9); } }
+.bs-drift { animation: bsDrift 60s linear infinite alternate; }
+.bs-drift.fast { animation-duration: 26s; }
+@keyframes bsDrift { from { transform: translateX(-40px); } to { transform: translateX(-340px); } }
+.bs-fog { animation: bsFog 16s ease-in-out infinite alternate; }
+@keyframes bsFog { from { transform: translateX(-30px); } to { transform: translateX(40px); } }
+.bs-wet { animation: bsShaft 3s ease-in-out infinite alternate; }
+.bs-mote { position: absolute; width: 3px; height: 3px; border-radius: 50%; opacity: 0; animation: bsMote var(--t) linear var(--d) infinite; }
+@keyframes bsMote { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: .85; } 80% { opacity: .55; } 100% { transform: translate(var(--dx), -150px); opacity: 0; } }
+.bs-rain { position: absolute; inset: -40% -10% 0; background: repeating-linear-gradient(103deg, transparent 0 22px, rgba(200, 220, 255, .26) 22px 23px, transparent 23px 47px); background-size: 100% 120px; opacity: .8; animation: bsRain .5s linear infinite; }
+@keyframes bsRain { to { transform: translate(-14px, 60px); } }
+.bs-flash { position: absolute; inset: 0; z-index: 2; background: #dfe8ff; opacity: 0; animation: bsFlash 9s linear infinite; }
+@keyframes bsFlash { 0%, 89%, 100% { opacity: 0; } 90% { opacity: .42; } 91% { opacity: .05; } 92% { opacity: .55; } 95% { opacity: 0; } }
+.bs-bolt { opacity: 0; animation: bsBolt 9s linear infinite; }
+@keyframes bsBolt { 0%, 89%, 100% { opacity: 0; } 90% { opacity: 1; } 91% { opacity: .1; } 92% { opacity: 1; } 95% { opacity: 0; } }
+.bs-birds { position: absolute; top: 20%; left: 0; animation: bsBirds 34s linear infinite; }
+@keyframes bsBirds { from { transform: translateX(-60px); } to { transform: translateX(1600px); } }
+.bs-birds i { position: absolute; width: 14px; height: 6px; border-top: 2px solid #1d1020; border-radius: 50%; animation: bsFlap .7s ease-in-out infinite alternate; }
+.bs-birds i:nth-child(2) { left: 22px; top: 9px; animation-delay: -.3s; }
+.bs-birds i:nth-child(3) { left: -18px; top: 13px; animation-delay: -.5s; }
+@keyframes bsFlap { to { transform: scaleY(.6) translateY(3px); } }
+.bf-fighter::after { content: ""; position: absolute; left: 12%; right: 12%; bottom: -3%; height: 7%; border-radius: 50%; background: rgba(0, 0, 0, .42); z-index: -1; }
+.vs-arena { grid-column: 1 / -1; text-align: center; font: 600 .86rem var(--display); color: #ffe0a0; letter-spacing: .04em; }
+@media (prefers-reduced-motion: reduce) {
+  .bs *, .bs-birds, .bs-rain, .bs-flash { animation: none !important; }
+  .bs-mote { opacity: .5; }
+}
+
+/* ---------- Typing Arena icon ---------- */
+.ta-key { animation: taKey 2.400s linear infinite; }
+@keyframes taKey { 0%, 10%, 100% { fill: #4a3f92; } 3%, 7% { fill: #ffc83d; } }
+.ta-letter { animation: taLetter 2.400s ease-out infinite; opacity: 0; }
+@keyframes taLetter { 0% { transform: translateY(8px) scale(.6); opacity: 0; } 14% { opacity: 1; transform: translateY(0) scale(1.1); } 55% { opacity: 1; } 75%, 100% { transform: translateY(-20px) scale(.9); opacity: 0; } }
+.ta-car { animation: taCar 2.400s ease-in-out infinite; }
+@keyframes taCar { 0% { transform: translateX(-34px); } 70%, 100% { transform: translateX(100px); } }
+.ta-spark { transform-box: fill-box; transform-origin: center; animation: taSpark 1.200s ease-in-out infinite alternate; }
+@keyframes taSpark { from { opacity: .25; transform: scale(.6); } to { opacity: 1; transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) {
+  .ta-key, .ta-car, .ta-spark { animation: none; }
+  .ta-letter { animation: none; opacity: 1; }
+}
+
+/* ---------- Race ---------- */
+.car .wheel { transform-box: fill-box; transform-origin: center; animation: wheelSpin .5s linear infinite; }
+.car.parked .wheel { animation: none; }
+@keyframes wheelSpin { to { transform: rotate(360deg); } }
+.car { width: 96px; }
+.lane { height: 66px; }
+.track { background: linear-gradient(180deg, #38354f, #29263f); }
+.lane-name, .lane-wpm { color: #fff; text-shadow: 0 1px 2px #000; }
+.sc-car { width: 56px; height: auto; background: none !important; }
+.sc-car.a { top: 34%; } .sc-car.b { top: 62%; }
+.sc-car svg { display: block; width: 100%; height: auto; }
+@media (max-width: 900px) {
+  .car { width: 70px; }
+  .lane { height: 54px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .car .wheel { animation: none; }
+}
+
+/* ==========================================================================
+   Full-screen game: one slim bar, everything else in a slide-out panel
+   ========================================================================== */
+.game-title { display: flex; align-items: center; gap: 8px; min-width: 0; font: 600 1.02rem var(--display); }
+.game-title .thumb-mini { flex: none; width: 34px; height: 23px; border-radius: 4px; overflow: hidden; }
+.game-title .thumb-mini svg { display: block; width: 100%; height: 100%; }
+.game-title .gt-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game-title .gt-round { flex: none; padding: 1px 9px; border-radius: 999px; background: var(--raised); font-size: .76rem; }
+.icon-btn { position: relative; }
+.icon-btn .badge { position: absolute; top: -5px; right: -5px; }
+#fsBtn, #menuBtn { display: none; }
+.scrim { position: fixed; inset: 0; z-index: 39; background: rgba(5, 3, 18, .6); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.drawer-head { display: none; }
+
+body.in-game .topbar { height: calc(46px + env(safe-area-inset-top)); }
+body.in-game .brand, body.in-game #roomChip, body.in-game #themeBtn { display: none; }
+body.in-game #menuBtn { display: inline-flex; align-items: center; justify-content: center; }
+body.in-game.can-fs #fsBtn { display: inline-flex; align-items: center; justify-content: center; }
+body.in-game #world .floor, body.in-game #world .piece { display: none; }
+body.in-game .page { max-width: none; padding: 6px 8px calc(10px + env(safe-area-inset-bottom)); }
+body.in-game .room-grid { display: block; }
+body.in-game .game { max-width: 1500px; margin: 0 auto; min-height: calc(100dvh - 46px - 16px - env(safe-area-inset-top)); }
+body.in-game .game-bar { display: none; }
+body.in-game .tabbar { display: none; }
+body.in-game #room { padding-bottom: 0; }
+body.in-game .sticky-actions { bottom: env(safe-area-inset-bottom); }
+body.in-game .bf { height: clamp(300px, 56vh, 680px); }
+
+body.in-game #room .sidebar {
+  display: flex; flex-direction: column; gap: 10px; position: fixed; top: 0; right: 0; bottom: 0; z-index: 40;
+  width: min(370px, 92vw); padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
+  overflow-y: auto; overscroll-behavior: contain; background: var(--bg-deep); border-left: 1px solid var(--line);
+  box-shadow: -18px 0 40px rgba(0, 0, 0, .4); transform: translateX(105%); visibility: hidden;
+  transition: transform .24s cubic-bezier(.2, .9, .3, 1), visibility .24s;
+}
+body.in-game.drawer-open #room .sidebar { transform: none; visibility: visible; }
+body.in-game.drawer-open .scrim { opacity: 1; pointer-events: auto; }
+body.in-game .drawer-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.drawer-head .dh-title { flex: 1 1 100%; display: flex; align-items: center; justify-content: space-between; font: 600 1.1rem var(--display); }
+.drawer-head .btn { flex: 1 1 calc(50% - 4px); min-width: 0; }
+body.in-game #chatPanel { flex: 1 0 300px; display: flex; flex-direction: column; min-height: 300px; }
+body.in-game #chatPanel .chat-log { flex: 1 1 0; height: auto; min-height: 120px; }
+body.in-game #playersPanel { flex: none; }
+body.in-game #leaveBtn { flex: none; }
+
+/* phones in the lobby: Leave room sits under the chat box too */
+@media (max-width: 900px) {
+  body:not(.in-game) #room[data-tab="players"] #leaveBtn { display: none; }
+  body:not(.in-game) #room[data-tab="chat"] #leaveBtn { display: block; }
+  body:not(.in-game) #room[data-tab="chat"] .chat-log { height: calc(100dvh - 50px - 58px - 210px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  body.in-game .bf { height: clamp(250px, 42vh, 400px); }
+  body.in-game .page { padding: 4px 4px calc(8px + env(safe-area-inset-bottom)); }
+  body.in-game .game { min-height: calc(100dvh - 46px - 12px - env(safe-area-inset-top)); }
+  .game-title .gt-round { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.in-game #room .sidebar, .scrim { transition: none; }
+}

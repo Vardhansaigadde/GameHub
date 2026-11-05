@@ -1,24 +1,41 @@
 // Draw & Guess (skribbl-style).
-//   Each turn the drawer picks 1 of 4 random words (movie / food / thing) and draws it.
+//   Each turn the drawer picks 1 of 4 random words and draws it. Words get harder every round.
+//   The host picks the theme: mixed (one word from each theme), one fixed theme, or a new theme each round.
 //   Everyone else types guesses — faster correct guesses score more, and the drawer
 //   earns points for every player who gets it. Letters are revealed as hints over time.
 const { shuffle, findPlayer, cue, matchGuess } = require('./util');
-const WORDS = require('./data/draw-words');
+const { THEMES } = require('./data/draw-words');
 
 const CHOOSE_MS = 15000;
 const REVEAL_MS = 5000;
 const DRAWER_PER_GUESS = 60;     // drawer earns this for every correct guess
 const ALL_GUESSED_BONUS = 100;   // extra for the drawer when every player gets the word
 const MAX_ITEMS = 4000;
+const THEME_IDS = Object.keys(THEMES);
+const THEME_CHOICES = ['mixed', ...THEME_IDS, 'rotate'];
+const LEVELS = ['easy', 'medium', 'hard'];
+
+// the first round is easy, the last is hard
+const levelOf = s => (s.rounds === 1 ? LEVELS[0] : LEVELS[Math.round(((s.round - 1) / (s.rounds - 1)) * 2)]);
+
+// which single theme this round uses; null means one word from every theme
+function themeOf(s) {
+  if (s.theme === 'mixed') return null;
+  if (s.theme === 'rotate') return s.themeOrder[(s.round - 1) % s.themeOrder.length];
+  return s.theme;
+}
 
 function pickChoices(s) {
-  const take = (list, cat) => {
+  const level = levelOf(s);
+  const take = id => {
+    const list = THEMES[id][level];
     const pool = list.filter(w => !s.used.has(w));
     const w = pool[Math.floor(Math.random() * pool.length)] || list[Math.floor(Math.random() * list.length)];
     s.used.add(w);
-    return { word: w, cat };
+    return { word: w, cat: THEMES[id].label };
   };
-  return shuffle([take(WORDS.movies, 'Movie'), take(WORDS.food, 'Food'), take(WORDS.things, 'Thing'), take(WORDS.things, 'Thing')]);
+  const theme = themeOf(s);
+  return shuffle(theme ? [theme, theme, theme, theme].map(take) : THEME_IDS.map(take));
 }
 
 function startTurn(s) {
@@ -72,12 +89,13 @@ const drawerOf = s => s.players[s.turn];
 module.exports = {
   id: 'pictionary',
   name: 'Draw & Guess',
-  blurb: 'Pick a word, draw it, and everyone races to guess. Telugu movies, food and everyday things — bad drawings welcome!',
+  blurb: 'Pick a word, draw it, and everyone races to guess. Words get harder every round.',
   minPlayers: 2,
   maxPlayers: 8,
   options: [
     { key: 'rounds', label: 'Rounds', choices: [2, 3, 4], default: 3 },
     { key: 'time', label: 'Draw time', choices: [60, 80, 100], default: 80, suffix: 's' },
+    { key: 'theme', label: 'Word theme', choices: THEME_CHOICES, labels: ['Mixed', 'Movies', 'Food', 'Things', 'Animals', 'New each round'], default: 'mixed' },
   ],
 
   setup(players, opts = {}) {
@@ -86,6 +104,8 @@ module.exports = {
       scores: Object.fromEntries(players.map(p => [p.id, 0])),
       rounds: [2, 3, 4].includes(Number(opts.rounds)) ? Number(opts.rounds) : 3,
       drawMs: ([60, 80, 100].includes(Number(opts.time)) ? Number(opts.time) : 80) * 1000,
+      theme: THEME_CHOICES.includes(opts.theme) ? opts.theme : 'mixed',
+      themeOrder: shuffle(THEME_IDS),
       round: 1,
       turn: 0,
       used: new Set(),
@@ -184,7 +204,7 @@ module.exports = {
     if (a.type === 'rematch') {
       if (s.phase !== 'over') throw new Error('Game not finished');
       if (!isHost) throw new Error('Only the host can start a rematch');
-      Object.assign(s, this.setup(s.players, { rounds: s.rounds, time: s.drawMs / 1000 }));
+      Object.assign(s, this.setup(s.players, { rounds: s.rounds, time: s.drawMs / 1000, theme: s.theme }));
       return;
     }
 
@@ -201,6 +221,8 @@ module.exports = {
       phase: s.phase,
       round: s.round,
       totalRounds: s.rounds,
+      level: levelOf(s),
+      roundTheme: themeOf(s) ? THEMES[themeOf(s)].label : null,
       drawerId: drawer.id,
       endsAt: s.phase === 'draw' ? s.startedAt + s.drawMs : s.timerAt,
       totalMs: s.phase === 'draw' ? s.drawMs : CHOOSE_MS,

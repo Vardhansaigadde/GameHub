@@ -1,0 +1,75 @@
+/* Light mode. Boards, cards and the battlefield keep their own colours;
+   this restyles the surfaces around them. */
+html[data-theme="light"] {
+  --bg: #f3f0ff;
+  --bg-deep: #e9e4fb;
+  --panel: #ffffff;
+  --panel-head: #f1edff;
+  --raised: #e6e0fb;
+  --raised-hover: #d9d1f7;
+  --line: #cfc7ec;
+  --text: #1e1742;
+  --muted: #544c7c;
+  --faint: #6e6696;
+  --green: #17b566;
+  --green-hover: #22c975;
+  --green-shadow: #0d8147;
+  --on-green: #ffffff;
+  --red: #d81f47;
+  --gold: #a86f00;
+  --pink: #d3147a;
+  --blue: #0877b5;
+  --violet: #5f35d6;
+  --well: #f0ecfd;
+  --well-2: #e6e0fb;
+  --shade: #c0b6e6;
+  --shade-2: #cfc7ec;
+  --card-top: #ffffff;
+  --card-bot: #f5f2ff;
+  color-scheme: light;
+}
+html[data-theme="light"] #world { background: linear-gradient(180deg, #f6f3ff 0%, #ece6ff 60%, #e0d7fb 100%); }
+html[data-theme="light"] .aurora.a1 { background: radial-gradient(circle, rgba(124, 77, 255, .18), transparent 65%); }
+html[data-theme="light"] .aurora.a2 { background: radial-gradient(circle, rgba(255, 46, 147, .13), transparent 65%); }
+html[data-theme="light"] .stars { display: none; }
+html[data-theme="light"] .floor-grid { background-image: linear-gradient(rgba(95, 53, 214, .16) 2px, transparent 2px), linear-gradient(90deg, rgba(211, 20, 122, .12) 2px, transparent 2px); }
+html[data-theme="light"] .topbar { background: rgba(255, 255, 255, .9); border-bottom: 1px solid var(--line); }
+html[data-theme="light"] .panel, html[data-theme="light"] .game { background: #fff; border: 1px solid var(--line); box-shadow: 0 10px 26px rgba(70, 50, 140, .12); }
+html[data-theme="light"] .panel-head, html[data-theme="light"] .game-bar { background: var(--panel-head); }
+html[data-theme="light"] .room-chip, html[data-theme="light"] .icon-btn { box-shadow: 0 3px 0 var(--shade); }
+html[data-theme="light"] .tabbar { background: rgba(255, 255, 255, .97); border-top: 1px solid var(--line); }
+html[data-theme="light"] .sticky-actions { background: rgba(255, 255, 255, .97); }
+html[data-theme="light"] .scrim { background: rgba(50, 35, 110, .32); }
+html[data-theme="light"] .brand span, html[data-theme="light"] .logo-word { text-shadow: none; }
+html[data-theme="light"] .turn-bar { background: var(--panel-head); color: var(--text); }
+html[data-theme="light"] .turn-bar.live, html[data-theme="light"] .turn-bar.mine { background: #dcf8e8; }
+html[data-theme="light"] .turn-bar.alert { background: #ffe3e8; }
+html[data-theme="light"] .turn-bar.win { background: #fff1c9; }
+html[data-theme="light"] input, html[data-theme="light"] textarea, html[data-theme="light"] select { background: #fff; color: var(--text); border-color: var(--line); }
+html[data-theme="light"] input::placeholder { color: var(--faint); }
+html[data-theme="light"] .btn:not(.btn-primary):not(.btn-gold):not(.btn-ghost) { background: var(--raised); color: var(--text); box-shadow: 0 4px 0 var(--shade); }
+html[data-theme="light"] .btn-ghost { color: var(--muted); background: transparent; }
+html[data-theme="light"] .btn-ghost:hover:not(:disabled) { background: var(--raised); color: var(--text); }
+html[data-theme="light"] .btn-gold { color: #3a2300; }
+html[data-theme="light"] .pill { background: var(--raised); color: var(--text); }
+html[data-theme="light"] .pill.ok { background: #cdf5de; color: #0a5c33; }
+html[data-theme="light"] .tile, html[data-theme="light"] .lobby .tile, html[data-theme="light"] .mode-card { background: #fff; border-color: var(--line); color: var(--text); box-shadow: 0 8px 18px rgba(70, 50, 140, .12); }
+html[data-theme="light"] .sheet-card { background: #fff; color: var(--text); }
+html[data-theme="light"] .toast { background: var(--text); color: #fff; }
+html[data-theme="light"] .scoreboard tr.me { background: #e6e0fb; }
+html[data-theme="light"] .game-title .gt-round { color: var(--text); }
+html[data-theme="light"] .tool { background: var(--raised); color: var(--text); }
+html[data-theme="light"] .tp-who b { color: var(--text); }
+html[data-theme="light"] .tp-card:not(.tp-paper) { background: var(--panel-head); border-color: var(--line); }
+html[data-theme="light"] .level-tag span { background: rgba(8, 119, 181, .13); }
+html[data-theme="light"] .level-tag.easy span:first-of-type { background: #cdf5de; color: #0a5c33; }
+html[data-theme="light"] .level-tag.medium span:first-of-type { background: #ffeeb8; color: #6b4700; }
+html[data-theme="light"] .level-tag.hard span:first-of-type { background: #ffd9e0; color: #a3122c; }
+html[data-theme="light"] .tp-dot { background: var(--raised); color: var(--muted); border-color: var(--line); }
+html[data-theme="light"] .tp-dot.done { background: #17b566; border-color: #17b566; color: #fff; }
+html[data-theme="light"] .tp-dot.now { background: #ffc83d; border-color: #ffc83d; color: #3a2300; }
+html[data-theme="light"] .tp-link { background: var(--line); }
+/* dark game surfaces stay dark, so their text stays light */
+html[data-theme="light"] .bw-panel, html[data-theme="light"] .track, html[data-theme="light"] .vs-screen { --text: #f5f2ff; --muted: #bdb5e3; --gold: #ffc83d; --green: #2fe07f; --blue: #38c6ff; color: #f5f2ff; }
+html[data-theme="light"] .bw-panel input { background: #1c1640; color: #fff; border-color: #4a4080; }
+html[data-theme="light"] .bw-panel input::placeholder { color: #9a90c9; }

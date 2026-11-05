@@ -210,7 +210,7 @@ io.on('connection', socket => {
     try {
       const result = games[room.gameId].action(room.state, player.id, action, { isHost: room.hostId === player.id });
       reply(cb, result || {});
-      broadcast(room);
+      if (!(result && result.quiet)) broadcast(room);
     } catch (e) {
       reply(cb, { error: e.message });
     }

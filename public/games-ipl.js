@@ -54,11 +54,13 @@ renderers.ipl = () => {
     };
   }
 
+  // whose squad is on show: yours by default, or any team you tap
+  const viewId = g.teamsPlayers.some(p => p.id === ui.iplView) ? ui.iplView : S.you;
   const purses = g.teamsPlayers.map(p => {
     const t = teamOf(g, p.team);
     const leading = g.bid && g.bid.by === p.id;
-    return `<div class="purse ${leading ? 'leading' : ''} ${p.id === S.you ? 'me' : ''}" style="--tc:${t.color}">
-      ${tbadge(t)}<div><b>${money(p.purse)}</b><small>${p.squad.length}/${g.opts.squad} · ${p.overseas}/${g.opts.overseas} ✈</small></div></div>`;
+    return `<button class="purse ${leading ? 'leading' : ''} ${p.id === S.you ? 'me' : ''} ${p.id === viewId ? 'viewing' : ''}" style="--tc:${t.color}" data-game="ipl" data-viewteam="${p.id}" aria-pressed="${p.id === viewId}" aria-label="See ${esc(t.name)} squad">
+      ${tbadge(t)}<span class="purse-info"><b>${money(p.purse)}</b><small>${p.squad.length}/${g.opts.squad} · ${p.overseas}/${g.opts.overseas} ✈</small></span></button>`;
   }).join('');
 
   if (g.phase === 'over') {
@@ -143,12 +145,37 @@ renderers.ipl = () => {
           ${isHost() ? `<div class="actions host-row"><button class="btn btn-sm" data-game="ipl" data-pause>${g.paused ? `${icon('play')} Resume` : `${icon('pause')} Pause`}</button><button class="btn btn-sm btn-ghost" data-game="ipl" data-end>End auction</button></div>` : ''}
         </div>
       </div>
+      <h3 class="purses-title">Teams <span class="muted">· tap a team to see its squad</span></h3>
       <div class="purses">${purses}</div>
-      ${me.squad.length ? `<details class="my-squad"><summary>${tbadge(myTeam)} Your squad (${me.squad.length})</summary><ul>${me.squad.map(x => `<li>${photo(x, 'xs')}<span class="nm">${esc(x.name)}<small>${esc(x.role)}</small></span><b>${money(x.price)}</b></li>`).join('')}</ul></details>` : ''}`,
+      ${squadView(g, viewId)}`,
   };
 };
 
+// one team's squad so far, newest buy first, with a count per role
+const ROLE_SHORT = { Batter: 'BAT', 'Wicket-keeper': 'WK', 'All-rounder': 'AR', 'Fast bowler': 'FAST', Spinner: 'SPIN' };
+function squadView(g, id) {
+  const p = g.teamsPlayers.find(x => x.id === id);
+  const t = teamOf(g, p.team);
+  const spent = g.opts.purse * 100 - p.purse;
+  const counts = Object.entries(ROLE_SHORT).map(([role, short]) => {
+    const n = p.squad.filter(x => x.role === role).length;
+    return n ? `<span class="role-count">${short} <b>${n}</b></span>` : '';
+  }).join('');
+  const justBought = g.phase === 'sold' && g.last && !g.last.unsold && g.last.team === p.team ? g.last.lot : null;
+  const rows = p.squad.slice().reverse().map(x => `<li class="${x.id === justBought ? 'just-bought' : ''}">${photo(x, 'xs')}<span class="nm">${esc(x.name)}<small>${esc(x.role)}${x.overseas ? ' · ✈ Overseas' : ''}</small></span><b>${money(x.price)}</b></li>`).join('');
+  return `<section class="squad-view" style="--tc:${t.color};--ti:${t.ink}" aria-label="${esc(t.name)} squad">
+    <div class="squad-view-head">
+      ${tbadge(t, true)}
+      <div class="sv-title"><b>${esc(t.name)}</b><small>${p.id === S.you ? 'Your team' : esc(p.name)} · spent ${money(spent)} · left ${money(p.purse)}</small></div>
+      <span class="sv-count">${p.squad.length}<small>/${g.opts.squad}</small></span>
+    </div>
+    ${counts ? `<div class="role-counts">${counts}</div>` : ''}
+    ${rows ? `<ul class="sv-list">${rows}</ul>` : `<p class="sv-empty">${p.id === S.you ? "You haven't" : `${esc(t.short)} hasn't`} bought anyone yet</p>`}
+  </section>`;
+}
+
 handlers.ipl = d => {
+  if ('viewteam' in d) { ui.iplView = d.viewteam; render(); return; }
   if ('team' in d) act({ type: 'team', team: d.team });
   else if ('begin' in d) act({ type: 'begin' });
   else if ('bid' in d) act({ type: 'bid', on: d.bid === '' ? null : +d.bid });

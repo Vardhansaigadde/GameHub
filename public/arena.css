@@ -343,3 +343,29 @@ button.token { animation: bob .6s ease-in-out infinite alternate; }
   .top-actions { gap: 6px; }
   .topbar { padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); }
 }
+
+/* ---------- IPL: see any team's squad during the auction ---------- */
+.purses-title { font-size: .95rem; font-weight: 600; margin: 16px 0 8px; }
+.purses-title .muted { font: 600 .82rem var(--font); }
+.purses { margin-top: 0; }
+button.purse { font: inherit; color: var(--text); text-align: left; cursor: pointer; transition: transform .15s var(--spring), border-color .15s, background .15s; min-height: 48px; }
+button.purse:hover { transform: translateY(-2px); }
+button.purse:active { transform: scale(.96); }
+.purse-info { display: flex; flex-direction: column; }
+.purse.viewing { border-color: var(--gold); background: #3a2d7a; box-shadow: 0 0 16px rgba(255, 200, 61, .35); }
+.purse.leading:not(.viewing) { border-color: var(--tc); }
+.squad-view { margin-top: 12px; border-radius: 16px; padding: 12px 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--tc) 26%, #1c1640), #1c1640 62%); border: 1px solid rgba(255, 255, 255, .1); border-top: 4px solid var(--tc); }
+.squad-view-head { display: flex; align-items: center; gap: 12px; }
+.sv-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sv-title b { font: 600 1.08rem var(--display); }
+.sv-title small { color: var(--muted); font-size: .8rem; }
+.sv-count { font: 700 1.5rem var(--display); color: var(--gold); white-space: nowrap; }
+.sv-count small { font-size: .9rem; color: var(--muted); }
+.role-counts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.role-count { font-size: .74rem; font-weight: 800; letter-spacing: .03em; padding: 2px 9px; border-radius: 999px; background: rgba(255, 255, 255, .1); color: var(--muted); }
+.role-count b { color: var(--text); }
+.sv-list { list-style: none; padding: 0; margin: 10px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 14px; }
+.sv-list li { display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 10px; background: rgba(0, 0, 0, .18); }
+.sv-list li b { font-variant-numeric: tabular-nums; color: var(--gold); white-space: nowrap; }
+.sv-list li.just-bought { box-shadow: 0 0 0 2px var(--gold), 0 0 16px rgba(255, 200, 61, .5); animation: answerIn .45s var(--spring) both; }
+.sv-empty { color: var(--muted); margin: 10px 0 2px; font-size: .9rem; }

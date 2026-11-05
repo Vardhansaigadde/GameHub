@@ -369,3 +369,13 @@ button.purse:active { transform: scale(.96); }
 .sv-list li b { font-variant-numeric: tabular-nums; color: var(--gold); white-space: nowrap; }
 .sv-list li.just-bought { box-shadow: 0 0 0 2px var(--gold), 0 0 16px rgba(255, 200, 61, .5); animation: answerIn .45s var(--spring) both; }
 .sv-empty { color: var(--muted); margin: 10px 0 2px; font-size: .9rem; }
+
+/* phones: the SOLD banner must fit inside the shorter player card */
+@media (max-width: 900px) {
+  .lot-card { min-height: 214px; }
+  .sold-overlay { gap: 0; padding: 8px; }
+  .sold-overlay .stamp { font-size: 1.45rem; padding: 1px 12px; border-width: 3px; }
+  .sold-overlay .ipl-photo.md { width: 54px; height: 62px; margin: 6px auto 2px; }
+  .sold-line { margin-top: 2px; font-size: .92rem; }
+  .sold-price { font-size: 1.3rem; line-height: 1.15; }
+}

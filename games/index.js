@@ -1,6 +1,11 @@
 const list = [
+  require('./typing'),
   require('./ipl'),
   require('./pictionary'),
+  require('./ludo'),
+  require('./snakes'),
+  require('./colorclash'),
+  require('./connect4'),
   require('./housie'),
   require('./ashtachamma'),
   require('./dadi'),

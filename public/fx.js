@@ -232,6 +232,7 @@ const FX = (() => {
     if (ELEMENT_FX[type]) pending = ELEMENT_FX[type];
     switch (type) {
       case 'win': confetti(); break;
+      case 'go': banner('GO!', 'mine'); break;
       case 'sold': {
         const g = S && S.game;
         const t = g && g.last && g.last.team && g.teams.find(x => x.id === g.last.team);

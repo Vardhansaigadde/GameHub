@@ -60,6 +60,9 @@ const SFX = (() => {
     sold: () => { knock(0); knock(0.2); [784, 988, 1175].forEach((f, i) => tone(f, 0.42 + i * 0.08, 0.3, { type: 'triangle', gain: 0.12 })); },
     unsold: () => { knock(0); tone(300, 0.1, 0.35, { type: 'triangle', gain: 0.1, slide: 150 }); },
     pop: () => tone(880, 0, 0.06, { gain: 0.06, slide: 1500 }),
+    dice: () => { for (let i = 0; i < 5; i++) knock(i * 0.07 + Math.random() * 0.02); },
+    key: () => noise(0, 0.025, { freq: 3200, gain: 0.1, q: 2 }),
+    go: () => [440, 660, 880].forEach((f, i) => tone(f, i * 0.07, 0.22, { type: 'square', gain: 0.07 })),
   };
 
   const say = text => {

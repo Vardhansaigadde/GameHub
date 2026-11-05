@@ -1,12 +1,62 @@
 // Short "How to play" steps and the home-page section for each game.
 module.exports = {
   categories: [
+    { id: 'top', name: 'Most played' },
     { id: 'party', name: 'Party games' },
     { id: 'paper', name: 'Paper & chits' },
     { id: 'board', name: 'Board games' },
     { id: 'cards', name: 'Card games' },
   ],
   games: {
+    typing: {
+      cat: 'top',
+      tagline: 'Race, zap and duel with your keyboard',
+      steps: [
+        'Vote for a challenge: Car Race, Word Rain or Speed Duel.',
+        'Car Race: type the sentence — your car moves with every correct letter.',
+        'Word Rain: type falling words before they land. Misses cost a life.',
+        'Speed Duel: one word at a time, fastest typists score most.',
+      ],
+    },
+    ludo: {
+      cat: 'top',
+      tagline: 'The classic race home',
+      steps: [
+        'Roll a 6 to bring a token out of your yard.',
+        'Tap a glowing token to move it. A 6 rolls again (three 6s lose the turn).',
+        'Land on an opponent to send them back and roll again. Star squares are safe.',
+        'Bring all 4 tokens home with an exact roll to win.',
+      ],
+    },
+    snakes: {
+      cat: 'top',
+      tagline: 'Climb ladders, dodge snakes',
+      steps: [
+        'Tap the dice on your turn. A 6 rolls again.',
+        'Land on a ladder to climb up.',
+        'Land on a snake\'s head and slide down.',
+        'First to land exactly on 100 wins.',
+      ],
+    },
+    colorclash: {
+      cat: 'top',
+      tagline: 'Match, skip, reverse, +4!',
+      steps: [
+        'Play a card matching the colour or the value, or a wild card.',
+        'Skip, Reverse and +2 mess with the next player. Wild +4 is the big one.',
+        'No match? Draw a card, then play it or pass.',
+        'One card left? Press ONE! before someone catches you for +2. Empty hand wins.',
+      ],
+    },
+    connect4: {
+      cat: 'board',
+      tagline: 'Drop four in a line',
+      steps: [
+        'Take turns dropping a disc into a column.',
+        'Discs fall to the lowest free slot.',
+        'Four in a line wins: across, up or diagonal.',
+      ],
+    },
     ipl: {
       cat: 'party',
       tagline: 'Build your dream IPL squad',

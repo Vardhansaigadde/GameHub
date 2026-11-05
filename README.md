@@ -4,6 +4,11 @@ Play the board, paper and card games we grew up with — **online, with friends 
 
 | Game | Players | How it works |
 |---|---|---|
+| **Typing Arena** | 1–8 | Vote for a challenge. **Car Race:** type the sentence and your car drives. **Word Rain:** type falling words before they land (5 lives). **Speed Duel:** one word at a time, fastest fingers score. |
+| **Ludo** | 2–4 | Roll a 6 to leave the yard, capture to send rivals back, bring all 4 tokens home. Tokens hop square by square. |
+| **Snakes & Ladders** | 2–6 | Roll, climb ladders, slide down snakes. Exact roll to 100. |
+| **Color Clash** | 2–8 | Shedding card game: match colour or value, Skip, Reverse, +2, Wild, Wild +4. Press ONE! or get caught. |
+| **Four in a Row** | 2 | Drop discs; four in a line wins. |
 | **IPL Auction** | 2–8 | Everyone picks a franchise (CSK, MI, RCB, KKR, SRH, DC, PBKS, RR, GT, LSG) and bids for real cricketers with a purse. Marquee set first, then batters, all-rounders, keepers, fast bowlers and spinners. No turns — everyone bids at the same time. The host sets each team's purse before starting (quick picks or any amount from ₹10–500 Cr) and the bid timer (10, 15, 20 or 30 s, changeable during the auction) and every bid resets it to full; when it runs out with no new bid, "going once, going twice" → a live **SOLD to …** announcement (spoken aloud) with the player's photo. Tap any team during the auction to see its squad live — who they bought, for how much, and their money left. Squad and overseas limits; host can pause or end. |
 | **Draw & Guess** | 2–8 | skribbl-style: the drawer picks 1 of 4 random words (a Telugu movie, a food or an everyday thing) and draws it with pens, colours, fill, eraser and undo. Others type guesses — faster guesses score more, the drawer scores 60 for each correct guess plus a +100 bonus if everyone gets it, and letters are revealed as hints. Works with a finger on phones. |
 | **Emoji Movie Guess** | 2–8 | A Telugu movie as emojis (🪰😡🔪 = *Eega*). Type the name — first correct answer gets 100, then 80, 65… Small typos are accepted; a hint appears halfway. 88 movies. |

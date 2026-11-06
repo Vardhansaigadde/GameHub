@@ -9,7 +9,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, 'public')));
+// extensions: lets /terms and /privacy work without .html
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 app.get('/health', (req, res) => res.send('ok'));
 
 const HOWTO = require('./games/howto');

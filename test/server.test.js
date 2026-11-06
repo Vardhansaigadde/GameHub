@@ -47,6 +47,18 @@ test.after(() => {
   server.kill();
 });
 
+test('the Terms and Privacy pages are served and linked from the home page', async () => {
+  const home = await fetch(URL).then(r => r.text());
+  for (const [page, title] of [['/terms', 'Terms and Conditions'], ['/privacy', 'Privacy Policy']]) {
+    const res = await fetch(URL + page);
+    assert.strictEqual(res.status, 200);
+    const html = await res.text();
+    assert.ok(html.includes(`<h1>${title}</h1>`));
+    assert.ok(html.includes('id="legalPage"'), 'the offline copy recognises it');
+    assert.ok(home.includes(`href="${page}"`));
+  }
+});
+
 test('malformed messages cannot crash the server', async () => {
   const { host, others } = await room('ludo', 2);
   const bad = await client();

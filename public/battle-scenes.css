@@ -203,3 +203,8 @@ html[data-theme="light"] .duel-word span { color: #fff; }
 /* ---------- a player has left ---------- */
 .absent-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 12px 0; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--gold); background: var(--well); font-weight: 700; }
 .absent-bar small { color: var(--muted); font-size: .8rem; }
+
+
+/* ---------- home page footer ---------- */
+.site-foot { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 6px; margin-top: 30px; padding: 16px 8px 4px; border-top: 1px solid var(--line); color: var(--muted); font-size: .88rem; text-align: center; }
+.site-foot a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 2px; color: var(--text); font-weight: 800; text-underline-offset: 2px; }

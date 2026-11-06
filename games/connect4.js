@@ -21,6 +21,13 @@ function findWin(b, r, c) {
 }
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    const id = s.phase !== 'over' ? s.players[s.turn].id : null;
+    return id && absent.includes(id) ? id : null;
+  },
+  skipAbsent(s) { s.turn = 1 - s.turn; },
+
   id: 'connect4',
   name: 'Four in a Row',
   minPlayers: 2,

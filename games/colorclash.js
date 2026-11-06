@@ -36,6 +36,13 @@ function drawCards(s, player, n) {
 const step = (s, n = 1) => { s.turn = (s.turn + s.dir * n + s.players.length * 2) % s.players.length; };
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    const id = s.phase !== 'over' ? s.players[s.turn].id : null;
+    return id && absent.includes(id) ? id : null;
+  },
+  skipAbsent(s) { s.drew = null; step(s); },
+
   id: 'colorclash',
   name: 'Color Clash',
   minPlayers: 2,

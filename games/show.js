@@ -43,6 +43,24 @@ function finishRound(s) {
 }
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    const gone = s.players.filter(p => absent.includes(p.id));
+    if (s.phase === 'words') return (gone.find(p => !p.word) || {}).id || null;
+    if (s.phase === 'pass') return (gone.find(p => p.pick == null) || {}).id || null;
+    if (s.phase === 'race') {
+      const left = s.players.filter(p => !s.ranking.some(r => r.id === p.id));
+      return left.length && left.every(p => absent.includes(p.id)) ? left[0].id : null;
+    }
+    return null;
+  },
+  skipAbsent(s, id) {
+    const me = s.players.find(p => p.id === id);
+    if (s.phase === 'words') this.action(s, id, { type: 'word', word: `Mystery ${s.players.indexOf(me) + 1}` }, {});
+    else if (s.phase === 'pass') this.action(s, id, { type: 'pick', chit: me.hand[Math.floor(Math.random() * me.hand.length)].id }, {});
+    else if (s.phase === 'race') this.action(s, id, { type: 'show' }, {});
+  },
+
   id: 'show',
   name: 'Show',
   blurb: 'Everyone writes a word on 4 chits. Pass chits around — collect 4 of the same and hit SHOW first!',

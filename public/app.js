@@ -310,6 +310,9 @@ $('#chatForm').onsubmit = e => {
 
 /* ---------- State updates ---------- */
 socket.on('state', state => {
+  // the game list and chat are only sent when they change
+  state.room.games = ui.games = state.room.games || ui.games;
+  state.room.chat = ui.chat = state.room.chat || ui.chat;
   const prevGame = S && S.game;
   S = state;
   ui.skew = state.now ? state.now - Date.now() : 0; // server clock minus ours, for countdowns
@@ -407,6 +410,7 @@ function renderGame() {
       ${isHost() ? `<button class="btn btn-sm btn-ghost" data-end aria-label="End game">${icon('flag')}<span class="lbl">End game</span></button>` : ''}
     </div>
     <div class="turn-bar ${r.tone || ''}">${r.tone === 'mine' && (g.turnId === S.you || g.drawerId === S.you) ? '<span class="tag">Your turn</span>' : ''}<span>${r.turn}</span></div>
+    ${g.waitingOn ? `<div class="absent-bar"><span>${esc(nameOf(g.waitingOn))} has left the game.</span>${isHost() ? `<button class="btn btn-sm btn-primary" data-skip-absent>Skip ${esc(nameOf(g.waitingOn))}</button>` : `<small>The host can skip them, or they can come back.</small>`}</div>` : ''}
     <div class="game-body">${r.body}</div>
   </div>`;
 }
@@ -470,6 +474,7 @@ $('#stage').addEventListener('click', e => {
   else if ('copy' in d) copyInvite();
   else if ('howto' in d) openHowTo(S.room.games.find(x => x.id === (S.game ? S.game.gameId : S.room.gameId)));
   else if ('end' in d) { if (confirm('End this game for everyone and go back to the lobby?')) socket.emit('endGame'); }
+  else if ('skipAbsent' in d) socket.emit('skipAbsent', {}, res => { if (res && res.error) toast(res.error); });
   else if ('rematch' in d) act({ type: 'rematch' });
   else if ('next' in d) act({ type: 'next' });
   else if (d.game && handlers[d.game]) handlers[d.game](d, el);

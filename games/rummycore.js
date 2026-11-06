@@ -151,6 +151,20 @@ function createGame(cfg) {
   }
 
   return {
+    // who the game is stuck waiting for, out of the players who have gone
+    absentBlock(s, absent) {
+      const id = s.phase === 'play' ? s.players[s.turn].id : null;
+      return id && absent.includes(id) ? id : null;
+    },
+    // a player who has gone drops out of the round, the same as pressing Drop
+    skipAbsent(s) {
+      const me = s.players[s.turn];
+      me.out = true;
+      s.roundPoints[me.id] = me.drew ? MIDDLE_DROP : FIRST_DROP;
+      log(s, `${me.name} left and dropped (+${s.roundPoints[me.id]})`);
+      advance(s);
+    },
+
     id: cfg.id,
     name: cfg.name,
     blurb: cfg.blurb,

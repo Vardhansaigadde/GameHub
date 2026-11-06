@@ -54,6 +54,13 @@ function nextTurn(s) {
 }
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    const id = s.phase !== 'over' ? s.players[s.turn].id : null;
+    return id && absent.includes(id) ? id : null;
+  },
+  skipAbsent(s) { nextTurn(s); },
+
   id: 'ludo',
   name: 'Ludo',
   minPlayers: 2,

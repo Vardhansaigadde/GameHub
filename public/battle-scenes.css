@@ -198,3 +198,8 @@ html[data-theme="light"] .duel-word span { color: #fff; }
 .net-bar i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); border-top-color: #ffc83d; animation: netSpin .8s linear infinite; }
 @keyframes netSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .net-bar i { animation: none; } }
+
+
+/* ---------- a player has left ---------- */
+.absent-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 12px 0; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--gold); background: var(--well); font-weight: 700; }
+.absent-bar small { color: var(--muted); font-size: .8rem; }

@@ -32,6 +32,24 @@ function holder(s, key) {
 }
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    if (s.phase === 'pick') return (s.players.find(p => absent.includes(p.id) && !roleOf(s, p.id)) || {}).id || null;
+    if (s.phase === 'guess') {
+      const ram = holder(s, 'ramudu');
+      return absent.includes(ram) ? ram : null;
+    }
+    return null;
+  },
+  skipAbsent(s, id) {
+    if (s.phase === 'pick') {
+      this.action(s, id, { type: 'pick', index: s.chits.findIndex(c => !c.takenBy) }, {});
+    } else if (s.phase === 'guess') {
+      const others = s.players.filter(p => p.id !== id);
+      this.action(s, id, { type: 'guess', targetId: others[Math.floor(Math.random() * others.length)].id }, {});
+    }
+  },
+
   id: 'ramsita',
   name: 'Ramudu-Seetha',
   blurb: 'Pick a secret chit. Ramudu must find Seetha — guess wrong and Seetha steals 1000 points!',

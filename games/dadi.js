@@ -60,6 +60,13 @@ function endTurn(s) {
 }
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    const id = s.phase !== 'over' ? s.players[s.turn].id : null;
+    return id && absent.includes(id) ? id : null;
+  },
+  skipAbsent(s) { s.mustRemove = false; endTurn(s); },
+
   id: 'dadi',
   name: 'Dadi',
   blurb: 'Nine Men\'s Morris. Place and slide your 9 pieces — make a line of 3 to knock out an opponent piece.',

@@ -26,6 +26,22 @@ function isValidBoard(board) {
 }
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    if (s.phase === 'arrange') return (s.players.find(p => !p.board && absent.includes(p.id)) || {}).id || null;
+    if (s.phase !== 'play') return null;
+    const id = s.players[s.turn].id;
+    return absent.includes(id) ? id : null;
+  },
+  skipAbsent(s, id) {
+    if (s.phase === 'arrange') {
+      const board = Array.from({ length: 25 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+      this.action(s, id, { type: 'ready', board }, {});
+    } else {
+      s.turn = (s.turn + 1) % s.players.length;
+    }
+  },
+
   id: 'bingo',
   name: 'Bingo',
   blurb: 'Fill your 5x5 grid with 1-25, take turns calling numbers. First to cut 5 lines shouts BINGO!',

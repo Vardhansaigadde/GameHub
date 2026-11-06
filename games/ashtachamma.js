@@ -54,6 +54,13 @@ function nextTurn(s) {
 }
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    const id = s.phase !== 'over' ? s.players[s.turn].id : null;
+    return id && absent.includes(id) ? id : null;
+  },
+  skipAbsent(s) { s.extra = false; nextTurn(s); },
+
   id: 'ashtachamma',
   name: 'Ashta Chamma',
   blurb: 'The classic shell-throwing board game. Cut an opponent to enter the inner ring and race your 4 pawns home.',

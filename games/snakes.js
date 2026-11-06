@@ -7,6 +7,13 @@ const SNAKES = { 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 76: 58, 89: 53, 99: 41 };
 const FINISH = 100;
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    const id = s.phase !== 'over' ? s.players[s.turn].id : null;
+    return id && absent.includes(id) ? id : null;
+  },
+  skipAbsent(s) { s.turn = (s.turn + 1) % s.players.length; },
+
   id: 'snakes',
   name: 'Snakes & Ladders',
   minPlayers: 2,

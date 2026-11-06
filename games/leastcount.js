@@ -37,6 +37,26 @@ function addLog(s, text) {
 }
 
 module.exports = {
+  // who the game is stuck waiting for, out of the players who have gone
+  absentBlock(s, absent) {
+    const id = s.phase === 'throw' || s.phase === 'draw' ? s.players[s.turn].id : null;
+    return id && absent.includes(id) ? id : null;
+  },
+  skipAbsent(s) {
+    if (s.phase === 'draw') {
+      // they had thrown already, so finish their turn with a card from the deck
+      if (!s.deck.length) {
+        s.deck = shuffle(s.pile);
+        s.pile = [];
+      }
+      s.players[s.turn].hand.push(s.deck.pop());
+      s.pile.push(...s.pending);
+      s.pending = null;
+    }
+    s.turn = (s.turn + 1) % s.players.length;
+    s.phase = 'throw';
+  },
+
   id: 'leastcount',
   name: 'Least Count',
   blurb: 'Keep your card total lowest. Throw, pick, and call SHOW when you think you have the least!',

@@ -39,7 +39,6 @@ html[data-theme="light"] .panel-head, html[data-theme="light"] .game-bar { backg
 html[data-theme="light"] .room-chip, html[data-theme="light"] .icon-btn { box-shadow: 0 3px 0 var(--shade); }
 html[data-theme="light"] .tabbar { background: rgba(255, 255, 255, .97); border-top: 1px solid var(--line); }
 html[data-theme="light"] .sticky-actions { background: rgba(255, 255, 255, .97); }
-html[data-theme="light"] .scrim { background: rgba(50, 35, 110, .32); }
 html[data-theme="light"] .brand span, html[data-theme="light"] .logo-word { text-shadow: none; }
 html[data-theme="light"] .turn-bar { background: var(--panel-head); color: var(--text); }
 html[data-theme="light"] .turn-bar.live, html[data-theme="light"] .turn-bar.mine { background: #dcf8e8; }

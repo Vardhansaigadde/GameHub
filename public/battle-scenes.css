@@ -94,7 +94,6 @@
 .icon-btn { position: relative; }
 .icon-btn .badge { position: absolute; top: -5px; right: -5px; }
 #fsBtn, #menuBtn { display: none; }
-.scrim { position: fixed; inset: 0; z-index: 39; background: rgba(5, 3, 18, .6); opacity: 0; pointer-events: none; transition: opacity .2s; }
 .drawer-head { display: none; }
 
 body.in-game .topbar { height: calc(46px + env(safe-area-inset-top)); }
@@ -111,16 +110,20 @@ body.in-game #room { padding-bottom: 0; }
 body.in-game .sticky-actions { bottom: env(safe-area-inset-bottom); }
 body.in-game .bf { height: clamp(300px, 56vh, 680px); }
 
+/* The panel sits beside the game: the game shrinks to make room and stays fully playable. */
+body.in-game { --dock: clamp(250px, 30vw, 340px); }
 body.in-game #room .sidebar {
-  display: flex; flex-direction: column; gap: 10px; position: fixed; top: 0; right: 0; bottom: 0; z-index: 40;
-  width: min(370px, 92vw); padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 10px; position: fixed; top: calc(46px + env(safe-area-inset-top)); right: 0; bottom: 0; z-index: 11;
+  width: var(--dock); padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
   overflow-y: auto; overscroll-behavior: contain; background: var(--bg-deep); border-left: 1px solid var(--line);
-  box-shadow: -18px 0 40px rgba(0, 0, 0, .4); transform: translateX(105%); visibility: hidden;
+  transform: translateX(105%); visibility: hidden;
 }
 /* only slides when the player opens or closes it, not when a game starts or the page loads */
-body.in-game.drawer-anim #room .sidebar { transition: transform .24s cubic-bezier(.2, .9, .3, 1), visibility .24s; }
+body.in-game.drawer-anim #room .sidebar { transition: transform .22s cubic-bezier(.2, .9, .3, 1), visibility .22s; }
+body.in-game.drawer-anim #room { transition: padding .22s cubic-bezier(.2, .9, .3, 1); }
 body.in-game.drawer-open #room .sidebar { transform: none; visibility: visible; }
-body.in-game.drawer-open .scrim { opacity: 1; pointer-events: auto; }
+body.in-game.drawer-open #room { padding-right: calc(var(--dock) + 8px); }
+body.in-game #playerList { max-height: 26dvh; overflow-y: auto; }
 body.in-game .drawer-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .drawer-head .dh-title { flex: 1 1 100%; display: flex; align-items: center; justify-content: space-between; font: 600 1.1rem var(--display); }
 .drawer-head .btn { flex: 1 1 calc(50% - 4px); min-width: 0; }
@@ -135,7 +138,7 @@ body.in-game #playersPanel { flex: none; }
   .game-title .gt-round { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  body.in-game.drawer-anim #room .sidebar, .scrim { transition: none; }
+  body.in-game.drawer-anim #room .sidebar, body.in-game.drawer-anim #room { transition: none; }
 }
 
 /* drawing games: the pad and its Done button always fit on one screen */
@@ -170,4 +173,21 @@ html[data-theme="light"] .duel-word span { color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   .ipl-gavel { animation: none; }
   .ipl-spark { animation: none; opacity: 1; }
+}
+
+
+/* narrow phones have no room at the side, so the panel docks under the game instead */
+@media (max-width: 639px) {
+  body.in-game #room .sidebar { top: auto; left: 0; width: auto; height: 40dvh; padding-top: 6px; border-left: 0; border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; transform: translateY(105%); }
+  body.in-game.drawer-open #room { padding-right: 0; padding-bottom: calc(40dvh + 8px); }
+  /* the game stays usable above: smaller arena, and chat comes first in the panel */
+  body.in-game.drawer-open .bf { height: 24dvh; min-height: 170px; }
+  body.in-game.drawer-open .bf-tag, body.in-game.drawer-open .hp-n { display: none; }
+  body.in-game #chatPanel { order: 1; flex: 1 0 22dvh; min-height: 22dvh; }
+  body.in-game #chatPanel .panel-head { display: none; }
+  body.in-game #playersPanel { order: 2; }
+  body.in-game .drawer-head { order: 3; }
+  body.in-game .drawer-head .dh-title { display: none; }
+  body.in-game .drawer-head .btn { flex: 1 1 0; padding-inline: 4px; font-size: .78rem; white-space: nowrap; }
+  body.in-game #playerList { max-height: none; overflow: visible; }
 }

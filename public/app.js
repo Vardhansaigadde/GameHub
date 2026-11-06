@@ -1418,8 +1418,9 @@ function setDrawer(open) {
   ui.drawer = open;
   document.body.classList.toggle('drawer-open', open);
   $('#sidebar').inert = !open && !!S && !!S.game;
+  // messages that arrived while the panel was open have been seen
+  ui.chatSeenAt = Date.now();
   if (open) {
-    ui.chatSeenAt = Date.now();
     const log = $('#chatLog');
     log.scrollTop = log.scrollHeight;
   }
@@ -1461,14 +1462,15 @@ function syncGameChrome() {
 }
 
 $('#menuBtn').onclick = () => { document.body.classList.add('drawer-anim'); setDrawer(!ui.drawer); };
-$('#scrim').onclick = () => setDrawer(false);
+// opening the panel never takes the player's typing away from the game
+$('#menuBtn').addEventListener('mousedown', e => e.preventDefault());
 $('#drawerClose').innerHTML = icon('x');
-$('#drawerClose').onclick = () => setDrawer(false);
+$('#drawerClose').onclick = () => { document.body.classList.add('drawer-anim'); setDrawer(false); };
 $('#drawerHowto').innerHTML = `${icon('help')} How to play`;
-$('#drawerHowto').onclick = () => { setDrawer(false); openHowTo(S.room.games.find(x => x.id === S.game.gameId)); };
+$('#drawerHowto').onclick = () => { openHowTo(S.room.games.find(x => x.id === S.game.gameId)); };
 $('#drawerEnd').innerHTML = `${icon('flag')} End game`;
 $('#drawerEnd').onclick = () => { if (confirm('End this game for everyone and go back to the lobby?')) { setDrawer(false); socket.emit('endGame'); } };
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.drawer) setDrawer(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.drawer && $('#sheet').classList.contains('hidden')) setDrawer(false); });
 
 // real browser full screen, where the device allows it (iPhones do not)
 const root = document.documentElement;

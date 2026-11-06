@@ -105,8 +105,8 @@ module.exports = {
       steps: [
         'A Telugu movie appears as emojis, like 🪰😡🔪.',
         'Type the movie name — small spelling mistakes are fine.',
-        'First correct answer gets 100, then 80, 65…',
-        'A hint shows up halfway through.',
+        'As time runs down, hints appear one at a time in a random order: hero, heroine, director or release year.',
+        'First correct answer gets 100, then 80, 65… Each hint showing takes 10 points off.',
       ],
     },
     mostlikely: {

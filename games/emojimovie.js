@@ -1,16 +1,33 @@
 // Emoji Movie Guess: a Telugu movie shown as emojis. Type the name — faster = more points.
-// A hint (first letter of each word) appears halfway through. Small typos are accepted.
+// As time runs down, hints appear one at a time in a random order: hero, heroine, director and
+// release year. First letters come last. Answering sooner scores more. Small typos are accepted.
 const { shuffle, findPlayer, cue, matchGuess } = require('./util');
 const CLUES = require('./data/emoji-movies');
 
-const CLUE_MS = 35000;
-const HINT_MS = 17000;
+const CLUE_MS = 56000;
+const FIRST_HINT_MS = 16000; // players get this long with only the emojis
+const HINT_EVERY_MS = 8000;
+const HINT_PENALTY = 10;  // points off for each hint already showing
+const MIN_POINTS = 20;
 const REVEAL_MS = 4500;
 const POINTS = [100, 80, 65, 55, 50];
 
-function hintFor(answer, level) {
-  // level 0: blanks only, level 1: first letter of each word
-  return answer.split(' ').map(w => [...w].map((ch, i) => (/[a-z0-9]/i.test(ch) ? (level >= 1 && i === 0 ? ch : '_') : ch)).join(' ')).join('   ');
+function maskFor(answer, firstLetters) {
+  return answer.split(' ').map(w => [...w].map((ch, i) => {
+    if (!/[a-z0-9]/i.test(ch)) return ch;
+    return firstLetters && i === 0 ? ch : '_';
+  }).join(' ')).join('   ');
+}
+
+// the same random order for everyone in the room, different for each movie
+function hintsFor(clue) {
+  const all = [
+    { label: 'Hero', value: clue.hero },
+    { label: 'Heroine', value: clue.heroine },
+    { label: 'Director', value: clue.director },
+    { label: 'Released', value: String(clue.y) },
+  ];
+  return shuffle(all.filter(h => h.value));
 }
 
 function nextClue(s) {
@@ -18,10 +35,11 @@ function nextClue(s) {
   if (s.idx >= s.queue.length) { s.phase = 'over'; s.timerAt = null; cue(s, 'win'); return; }
   s.phase = 'clue';
   s.hint = 0;
+  s.hints = hintsFor(CLUES[s.queue[s.idx]]);
   s.solvers = [];
   s.feed = [];
   s.startedAt = Date.now();
-  s.timerAt = s.startedAt + HINT_MS;
+  s.timerAt = s.startedAt + FIRST_HINT_MS;
 }
 
 function revealClue(s) {
@@ -52,9 +70,10 @@ module.exports = {
   },
 
   onTimer(s) {
-    if (s.phase === 'clue' && s.hint === 0) {
-      s.hint = 1;
-      s.timerAt = s.startedAt + CLUE_MS;
+    // one hint each time, and the first letters after all of them
+    if (s.phase === 'clue' && s.hint <= s.hints.length) {
+      s.hint++;
+      s.timerAt = s.hint <= s.hints.length ? s.startedAt + FIRST_HINT_MS + s.hint * HINT_EVERY_MS : s.startedAt + CLUE_MS;
       cue(s, 'tick');
     } else if (s.phase === 'clue') revealClue(s);
     else if (s.phase === 'reveal') nextClue(s);
@@ -71,7 +90,7 @@ module.exports = {
       const clue = CLUES[s.queue[s.idx]];
       const m = matchGuess(text, clue.a);
       if (m === 'exact') {
-        const pts = POINTS[Math.min(s.solvers.length, POINTS.length - 1)];
+        const pts = Math.max(MIN_POINTS, POINTS[Math.min(s.solvers.length, POINTS.length - 1)] - s.hint * HINT_PENALTY);
         s.solvers.push(playerId);
         s.scores[playerId] += pts;
         s.feed.push({ name: me.name, kind: 'correct', pts });
@@ -113,7 +132,9 @@ module.exports = {
       endsAt: s.phase === 'clue' ? s.startedAt + CLUE_MS : s.timerAt,
       answer: clue && showAnswer ? clue.a[0] : null,
       year: clue && s.phase === 'reveal' ? clue.y : null,
-      hint: clue && !showAnswer ? hintFor(clue.a[0], s.hint) : null,
+      hints: !clue ? [] : s.phase === 'reveal' ? s.hints : s.hints.slice(0, s.hint),
+      hint: clue && !showAnswer ? maskFor(clue.a[0], s.hint > s.hints.length) : null,
+      totalMs: CLUE_MS,
       solved,
       solvers: s.solvers || [],
       feed: s.feed || [],

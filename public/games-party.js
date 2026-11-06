@@ -31,6 +31,7 @@ const timeBar = (deadline, total) => `<div class="timebar"><span data-deadline="
 const secsLeft = deadline => `<span class="secs" data-deadline="${deadline}"></span>`;
 
 /* ======================= Emoji Movie Guess ======================= */
+const emojiHints = { key: null, shown: 0 };
 renderers.emojimovie = () => {
   const g = S.game;
   if (g.phase === 'over') {
@@ -46,19 +47,25 @@ renderers.emojimovie = () => {
   const turn = reveal ? `It was <b>${esc(g.answer)}</b> (${g.year})`
     : g.solved ? 'You got it! Waiting for the others…'
     : `Movie ${g.number} of ${g.of} — what is it?`;
+  // each hint pops in once, when it first appears
+  const key = `${g.number}`;
+  if (emojiHints.key !== key) { emojiHints.key = key; emojiHints.shown = 0; }
+  const chips = g.hints.length ? `<div class="emoji-hints">${g.hints.map((h, i) => `<span class="emoji-hint ${!reveal && i >= emojiHints.shown ? 'fresh' : ''}"><small>${esc(h.label)}</small>${esc(h.value)}</span>`).join('')}</div>` : '';
+  emojiHints.shown = Math.max(emojiHints.shown, g.hints.length);
   return {
     tone: reveal ? 'win' : g.solved ? '' : 'mine',
     turn,
     body: `<div class="emoji-card ${reveal ? 'revealed' : ''}">
         <div class="emoji-clue" aria-label="Emoji clue">${g.emoji}</div>
-        ${reveal || g.solved ? `<div class="emoji-answer">${esc(g.answer)}</div>` : `<div class="hint-mask">${esc(g.hint)}</div>`}
+        ${reveal || g.solved ? `<div class="emoji-answer">${esc(g.answer)}</div>` : `<div class="hint-mask">${esc(g.hint).split('   ').map(w => `<span class="hm-word">${w}</span>`).join('')}</div>`}
+        ${chips}
       </div>
-      ${g.phase === 'clue' ? timeBar(g.endsAt, 35000) : ''}
+      ${g.phase === 'clue' ? timeBar(g.endsAt, g.totalMs) : ''}
       ${g.phase === 'clue' && !g.solved ? guessForm('Type the movie name…') : ''}
       ${feedHtml(g.feed)}
       ${scoreboard(g.scores, { extra: { title: 'This movie', value: id => (g.solvers.includes(id) ? `<span class="plus">${icon('check')}</span>` : '') } })}
       ${isHost() && g.phase === 'clue' ? '<div class="actions"><button class="btn btn-sm btn-ghost" data-game="emojimovie" data-skip>Reveal now</button></div>' : ''}
-      <p class="hint">Small spelling mistakes are fine. A hint appears halfway through.</p>`,
+      <p class="hint">A new hint appears as time runs down: hero, heroine, director or year. Answer sooner to score more. Small spelling mistakes are fine.</p>`,
   };
 };
 handlers.emojimovie = d => { if ('skip' in d) act({ type: 'skip' }); };

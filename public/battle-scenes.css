@@ -208,3 +208,14 @@ html[data-theme="light"] .duel-word span { color: #fff; }
 /* ---------- home page footer ---------- */
 .site-foot { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 6px; margin-top: 30px; padding: 16px 8px 4px; border-top: 1px solid var(--line); color: var(--muted); font-size: .88rem; text-align: center; }
 .site-foot a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 2px; color: var(--text); font-weight: 800; text-underline-offset: 2px; }
+
+
+/* ---------- Emoji Movie Guess hints ---------- */
+.emoji-hints { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+.emoji-hint { display: inline-flex; flex-direction: column; max-width: 100%; padding: 6px 14px; border-radius: 12px; background: var(--raised); font: 600 1rem/1.25 var(--display); }
+.emoji-hint small { color: var(--gold); font: 800 .68rem var(--font); letter-spacing: .06em; text-transform: uppercase; }
+.emoji-hint.fresh { animation: emojiHintIn .45s var(--spring); }
+@keyframes emojiHintIn { from { transform: scale(.7) translateY(8px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .emoji-hint.fresh { animation: none; } }
+/* each word stays together with a clear gap, so players can see how many words the name has */
+.hm-word { display: inline-block; margin: 0 .55em; }

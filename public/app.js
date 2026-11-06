@@ -112,7 +112,13 @@ function thumb(id) {
     snakes: `<rect width="96" height="64" fill="#ffe9a8"/>${[0, 1, 2, 3, 4, 5, 6, 7].map(c => [0, 1, 2, 3, 4, 5].map(r => ((r + c) % 2 ? `<rect x="${c * 12}" y="${r * 10.670}" width="12" height="10.670" fill="#bfe9ff"/>` : '')).join('')).join('')}<g stroke="#a4501a" stroke-width="2" stroke-linecap="round"><path d="M16 58L36 8M26 62L46 12M21 49l10 4M25 39l10 4M29 29l10 4M33 19l10 4"/></g><path d="M80 8C62 14 86 28 66 34S74 54 56 56" fill="none" stroke="#2fb34a" stroke-width="6" stroke-linecap="round"/><circle cx="80" cy="8" r="5" fill="#2fb34a"/><circle cx="78.500" cy="7" r="1.200" fill="#fff"/><circle cx="82" cy="7" r="1.200" fill="#fff"/>`,
     colorclash: `<rect width="96" height="64" fill="#2a1b6e"/><g stroke="#fff" stroke-width="1.500"><g transform="rotate(-16 28 36)"><rect x="16" y="14" width="26" height="38" rx="4" fill="#e8303f"/><ellipse cx="29" cy="33" rx="9" ry="13" fill="#fff" stroke="none"/></g><g transform="rotate(14 66 36)"><rect x="54" y="14" width="26" height="38" rx="4" fill="#2ab55a"/><ellipse cx="67" cy="33" rx="9" ry="13" fill="#fff" stroke="none"/></g><g><rect x="35" y="10" width="26" height="40" rx="4" fill="#f7c21f"/><ellipse cx="48" cy="30" rx="9" ry="14" fill="#fff" stroke="none"/></g></g><text x="48" y="35" font-family="Arial" font-size="14" font-weight="900" fill="#e0a000" text-anchor="middle">+2</text>`,
     connect4: `<rect width="96" height="64" fill="#1d46c8"/>${[0, 1, 2, 3, 4, 5, 6].map(c => [0, 1, 2, 3, 4].map(r => { const on = { '3,4': '#e8303f', '4,4': '#f7c21f', '2,4': '#e8303f', '4,3': '#e8303f', '3,3': '#f7c21f', '2,3': '#f7c21f', '5,4': '#e8303f', '1,4': '#f7c21f', '3,2': '#e8303f' }[`${c},${r}`]; return `<circle cx="${12 + c * 12}" cy="${8 + r * 12}" r="4.800" fill="${on || '#0f1a57'}"/>`; }).join('')).join('')}`,
-    ipl: `<rect width="96" height="64" fill="#0b1f4d"/><circle cx="48" cy="70" r="46" fill="#123a8a"/><rect x="30" y="10" width="36" height="44" rx="4" fill="#f4f1ea"/><circle cx="48" cy="25" r="7" fill="#c9a26b"/><path d="M36 46c2-8 22-8 24 0" fill="#1e88e5"/><rect x="8" y="40" width="22" height="12" rx="6" fill="#F9CD05"/><text x="19" y="49" font-family="Arial" font-size="7" font-weight="900" fill="#1c2a6b" text-anchor="middle">CSK</text><rect x="66" y="40" width="22" height="12" rx="6" fill="#D1001C"/><text x="77" y="49" font-family="Arial" font-size="7" font-weight="900" fill="#fff" text-anchor="middle">RCB</text><text x="48" y="61" font-family="Arial" font-size="7" font-weight="900" fill="#f2c14e" text-anchor="middle">SOLD ₹18 Cr</text>`,
+    ipl: `<rect width="96" height="64" fill="#0b1f4d"/><circle cx="40" cy="74" r="50" fill="#163f94"/><circle cx="40" cy="74" r="34" fill="#1f52b8" opacity=".7"/>
+      <text x="78" y="16" transform="rotate(8 78 16)" font-family="Fredoka,Arial" font-size="10" font-weight="700" fill="#ffc83d" text-anchor="middle">SOLD</text>
+      <ellipse cx="39" cy="58" rx="24" ry="3" fill="#000" opacity=".35"/>
+      <path d="M20 49h38v6c0 2-2 3-4 3H24c-2 0-4-1-4-3z" fill="#6f4219"/><ellipse cx="39" cy="49" rx="19" ry="4" fill="#b67a3c"/><ellipse cx="39" cy="48.500" rx="13" ry="2.300" fill="#cf9352"/>
+      <g class="ipl-spark" fill="#ffe27a"><path d="M18 42l-6-3 1 4zM22 36l-5-6-1 5zM60 42l6-3-1 4zM56 36l5-6 1 5z"/></g>
+      <g class="ipl-gavel"><path d="M46 28L89 47" stroke="#5e3614" stroke-width="6.500" stroke-linecap="round"/><path d="M46 27L89 46" stroke="#a96c30" stroke-width="3.500" stroke-linecap="round"/>
+        <g transform="rotate(24 46 28)"><rect x="38" y="11" width="16" height="34" rx="3.500" fill="#8f5522"/><rect x="38" y="11" width="6" height="34" rx="3" fill="#b67a3c"/><rect x="37" y="15" width="18" height="4" fill="#ffc83d"/><rect x="37" y="37" width="18" height="4" fill="#ffc83d"/></g></g>`,
     pictionary: `<rect width="96" height="64" fill="#fff"/><path d="M18 46c6-18 16-26 24-10s14 4 20-8 12-6 16 6" fill="none" stroke="#1e88e5" stroke-width="3" stroke-linecap="round"/><circle cx="30" cy="20" r="7" fill="#fdd835"/><path d="M60 52 82 30l5 5-22 22-7 2z" fill="#e53935"/><rect x="0" y="0" width="96" height="64" fill="none" stroke="#ddd"/>`,
     emojimovie: `<rect width="96" height="64" fill="#3c3a37"/><rect x="10" y="12" width="76" height="40" rx="6" fill="#262421"/><text x="48" y="39" font-size="17" text-anchor="middle">🪰😡🔪</text>`,
     mostlikely: `<rect width="96" height="64" fill="#2e3a24"/><rect x="10" y="10" width="76" height="12" rx="3" fill="#81b64c"/><rect x="10" y="27" width="56" height="8" rx="2" fill="#95c45f"/><rect x="10" y="39" width="34" height="8" rx="2" fill="#6d9f43"/><rect x="10" y="51" width="18" height="8" rx="2" fill="#537a2f"/><circle cx="78" cy="31" r="4" fill="#f2c14e"/>`,
@@ -1431,6 +1437,7 @@ function syncGameChrome() {
   const g = S && S.game;
   document.body.classList.toggle('in-game', !!g);
   if (!g) {
+    document.body.classList.remove('drawer-anim');
     $('#gameTitle').classList.add('hidden');
     ui.gameKey = null;
     if (ui.drawer || $('#sidebar').inert) setDrawer(false);
@@ -1453,7 +1460,7 @@ function syncGameChrome() {
   paintMenuBtn();
 }
 
-$('#menuBtn').onclick = () => setDrawer(!ui.drawer);
+$('#menuBtn').onclick = () => { document.body.classList.add('drawer-anim'); setDrawer(!ui.drawer); };
 $('#scrim').onclick = () => setDrawer(false);
 $('#drawerClose').innerHTML = icon('x');
 $('#drawerClose').onclick = () => setDrawer(false);

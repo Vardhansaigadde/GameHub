@@ -116,8 +116,9 @@ body.in-game #room .sidebar {
   width: min(370px, 92vw); padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
   overflow-y: auto; overscroll-behavior: contain; background: var(--bg-deep); border-left: 1px solid var(--line);
   box-shadow: -18px 0 40px rgba(0, 0, 0, .4); transform: translateX(105%); visibility: hidden;
-  transition: transform .24s cubic-bezier(.2, .9, .3, 1), visibility .24s;
 }
+/* only slides when the player opens or closes it, not when a game starts or the page loads */
+body.in-game.drawer-anim #room .sidebar { transition: transform .24s cubic-bezier(.2, .9, .3, 1), visibility .24s; }
 body.in-game.drawer-open #room .sidebar { transform: none; visibility: visible; }
 body.in-game.drawer-open .scrim { opacity: 1; pointer-events: auto; }
 body.in-game .drawer-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -134,7 +135,7 @@ body.in-game #playersPanel { flex: none; }
   .game-title .gt-round { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  body.in-game #room .sidebar, .scrim { transition: none; }
+  body.in-game.drawer-anim #room .sidebar, .scrim { transition: none; }
 }
 
 /* drawing games: the pad and its Done button always fit on one screen */
@@ -159,3 +160,14 @@ body.in-game #playersPanel { flex: none; }
 .lane-wpm.placed { padding: 1px 9px; border-radius: 999px; background: var(--gold, #ffc83d); color: #3a2300 !important; text-shadow: none !important; }
 html[data-theme="light"] .lane-wpm.placed { background: #ffc83d; }
 html[data-theme="light"] .duel-word span { color: #fff; }
+
+
+/* ---------- IPL Auction icon: the hammer comes down ---------- */
+.ipl-gavel { transform-box: view-box; transform-origin: 89px 47px; animation: iplStrike 2.200s ease-in infinite; }
+@keyframes iplStrike { 0%, 45% { transform: rotate(9deg); } 58% { transform: rotate(0deg); } 66% { transform: rotate(2deg); } 72%, 100% { transform: rotate(9deg); } }
+.ipl-spark { animation: iplSpark 2.200s linear infinite; opacity: 0; }
+@keyframes iplSpark { 0%, 56% { opacity: 0; } 59% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .ipl-gavel { animation: none; }
+  .ipl-spark { animation: none; opacity: 1; }
+}

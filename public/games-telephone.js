@@ -26,6 +26,7 @@ const TP_IDEAS = [
 const tp = {
   roundKey: null, autoSent: null, lastStep: null, images: {}, loading: {},
   canvas: null, ctx: null, color: '#111111', size: 4, tool: 'pen', history: [], drawing: false, last: null,
+  ops: [], opMarks: [], strokes: {}, replay: null, replayWant: null, sharing: false,
 };
 
 /* ---------- the sketchpad (lives across re-renders so a drawing is never lost) ---------- */
@@ -53,9 +54,10 @@ function tpCanvasInit() {
     c.setPointerCapture(e.pointerId);
     tpSnapshot();
     const [x, y] = point(e);
-    if (tp.tool === 'fill') { tpFill(x, y, tp.color); return; }
+    if (tp.tool === 'fill') { tp.ops.push({ f: tp.color, x, y }); tpFill(x, y, tp.color); return; }
     tp.drawing = true;
     tp.last = [x, y];
+    tp.ops.push({ c: tp.tool === 'eraser' ? '#ffffff' : tp.color, w: tp.tool === 'eraser' ? Math.max(18, tp.size * 2) : tp.size, p: [x, y] });
     tpLine(x, y, x + 0.1, y + 0.1);
   });
   c.addEventListener('pointermove', e => {
@@ -65,6 +67,11 @@ function tpCanvasInit() {
       const [x, y] = point(ev);
       tpLine(tp.last[0], tp.last[1], x, y);
       tp.last = [x, y];
+      const op = tp.ops[tp.ops.length - 1];
+      if (op && op.p) {
+        const n = op.p.length;
+        if (Math.abs(op.p[n - 2] - x) + Math.abs(op.p[n - 1] - y) >= 3) op.p.push(x, y);
+      }
     }
   });
   const stop = () => { tp.drawing = false; };
@@ -77,7 +84,8 @@ function tpClear() {
 }
 function tpSnapshot() {
   tp.history.push(tp.ctx.getImageData(0, 0, TP_W, TP_H));
-  if (tp.history.length > 12) tp.history.shift();
+  tp.opMarks.push(tp.ops.length);
+  if (tp.history.length > 12) { tp.history.shift(); tp.opMarks.shift(); }
 }
 function tpLine(x1, y1, x2, y2) {
   const ctx = tp.ctx;
@@ -90,8 +98,8 @@ function tpLine(x1, y1, x2, y2) {
   ctx.lineTo(x2, y2);
   ctx.stroke();
 }
-function tpFill(x, y, color) {
-  const img = tp.ctx.getImageData(0, 0, TP_W, TP_H), d = img.data;
+function tpFill(x, y, color, ctx = tp.ctx) {
+  const img = ctx.getImageData(0, 0, TP_W, TP_H), d = img.data;
   const at = (px, py) => (py * TP_W + px) * 4;
   const i0 = at(x, y);
   const t = [d[i0], d[i0 + 1], d[i0 + 2]];
@@ -113,9 +121,15 @@ function tpFill(x, y, color) {
       if (sy < TP_H - 1) { const ok = !seen[(sy + 1) * TP_W + cx] && near(at(cx, sy + 1)); if (ok && !down) stack.push([cx, sy + 1]); down = ok; }
     }
   }
-  tp.ctx.putImageData(img, 0, 0);
+  ctx.putImageData(img, 0, 0);
 }
 const tpImage = () => tp.canvas.toDataURL('image/jpeg', 0.72);
+// a very long drawing skips the replay rather than risk the drawing itself not sending
+const tpDrawingPayload = () => {
+  const out = { type: 'submit', image: tpImage() };
+  if (tp.ops.length && JSON.stringify(tp.ops).length <= 150000) out.strokes = tp.ops;
+  return out;
+};
 
 /* ---------- pieces of the screen ---------- */
 function tpSteps(g) {
@@ -130,8 +144,12 @@ function tpSteps(g) {
 
 function tpImageTag(chain, step, empty) {
   if (empty) return '<div class="tp-blank">Nothing was drawn in time!</div>';
-  return `<img class="tp-img" data-tpimg="${chain}:${step}" alt="A player's drawing">`;
+  return `<div class="tp-pic"><img class="tp-img" data-tpimg="${chain}:${step}" alt="A player's drawing"></div>`;
 }
+
+// the reveal version adds a button to watch the drawing being made again
+const tpRevealPic = (chain, step, empty) => (empty ? tpImageTag(chain, step, true)
+  : tpImageTag(chain, step, false).replace('</div>', `<button class="tp-replay-btn" data-game="telephone" data-replay="${chain}:${step}" hidden>${icon('rotate')} Replay</button></div>`));
 
 function tpTools() {
   return `<div class="draw-tools tp-tools">
@@ -223,33 +241,67 @@ function tpRound(g) {
   };
 }
 
+const TP_HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C5 15.500 2 12 2 8a5.500 5.500 0 0 1 10-3 5.500 5.500 0 0 1 10 3c0 4-3 7.500-10 13z"/></svg>';
+
+function tpHeart(r, e) {
+  const count = e.hearts ? `<b>${e.hearts}</b>` : '';
+  const key = `${r.chain}:${e.step}`;
+  if (e.missing) return '';
+  if (e.by === S.you) return e.hearts ? `<span class="tp-heart mine">${TP_HEART}${count}</span>` : '';
+  const pop = tp.heartPop === key ? 'pop' : '';
+  return `<button class="tp-heart ${e.myHeart ? 'on' : ''} ${pop}" data-game="telephone" data-heart="${key}" aria-pressed="${e.myHeart}" aria-label="Heart this entry">${TP_HEART}${count}</button>`;
+}
+
+function tpOver(g) {
+  const best = Math.max(...Object.values(g.scores));
+  const champs = Object.keys(g.scores).filter(id => g.scores[id] === best);
+  const headline = best > 0
+    ? `${champs.map(nameOf).map(esc).join(' & ')} win${champs.length > 1 ? '' : 's'} with ${best}`
+    : 'No hearts this time. What a mess. Perfect.';
+  const f = g.funniest;
+  const moment = f ? `<div class="tp-moment">
+      <small>Funniest moment of the game</small>
+      ${f.type === 'image' ? `<div class="tp-frame small">${tpRevealPic(f.chain, f.step, false)}</div>` : `<div class="tp-bubble">${esc(f.text)}</div>`}
+      <div class="tp-moment-by">${avatar(nameOf(f.by))}<b>${esc(nameOf(f.by))}</b><span class="tp-heart mine">${TP_HEART}<b>${f.hearts}</b></span></div>
+    </div>` : '';
+  return {
+    tone: 'win',
+    turn: 'That was every story!',
+    body: `${resultBanner(headline)}${moment}${scoreboard(g.scores)}
+      <div class="tp-stories"><h4>${icon('share')} Share a story</h4><div>${g.players.map((p, i) => `<button class="btn btn-sm" data-game="telephone" data-share="${i}">${esc(p.name)}'s story</button>`).join('')}</div></div>
+      <div class="actions">${rematchBtn()}</div>`,
+  };
+}
+
 function tpReveal(g) {
+  if (g.phase === 'over') return tpOver(g);
   const r = g.reveal;
-  const over = g.phase === 'over';
   const entries = r.entries.map((e, i) => {
-    const newest = i === r.entries.length - 1 && !over;
+    const newest = i === r.entries.length - 1;
     const label = i === 0 ? 'started with' : e.type === 'image' ? 'drew' : 'guessed';
     const content = e.type === 'image'
-      ? `<div class="tp-frame small">${tpImageTag(r.chain, e.step, e.empty)}</div>`
+      ? `<div class="tp-frame small">${tpRevealPic(r.chain, e.step, e.empty)}</div>`
       : `<div class="tp-bubble">${esc(e.text)}</div>`;
     return `<div class="tp-entry ${newest ? 'new' : ''}">
-      <div class="tp-who">${avatar(nameOf(e.by))}<span><b>${esc(nameOf(e.by))}</b> ${label}</span></div>
+      <div class="tp-who">${avatar(nameOf(e.by))}<span><b>${esc(nameOf(e.by))}</b> ${label}</span>${tpHeart(r, e)}</div>
       ${content}
     </div>`;
   }).join('');
+  tp.heartPop = null;
 
   let next;
   if (!r.lastStep) next = `Next ${icon('arrow')}`;
   else if (!r.lastChain) next = `Next story ${icon('arrow')}`;
-  else next = 'Finish';
+  else next = 'Finish and see scores';
 
   return {
-    tone: over ? 'win' : '',
-    turn: over ? 'That was every story!' : `${esc(nameOf(r.owner))}'s story · ${r.chain + 1} of ${g.steps}`,
-    body: `${over ? resultBanner('What a mess. Perfect.') : ''}
+    tone: '',
+    turn: `${esc(nameOf(r.owner))}'s story · ${r.chain + 1} of ${g.steps}`,
+    body: `<p class="hint tp-heart-hint">Tap the heart on anything that makes you laugh</p>
       <div class="tp-album" id="tpAlbum">${entries}</div>
       <div class="actions sticky-actions">
-        ${over ? rematchBtn() : isHost() ? `<button class="btn btn-primary btn-lg" data-game="telephone" data-next-step>${next}</button>` : `<span class="muted">${esc(nameOf(S.room.hostId))} controls the reveal</span>`}
+        ${r.lastStep ? `<button class="btn btn-lg" data-game="telephone" data-share="${r.chain}">${icon('share')} Share</button>` : ''}
+        ${isHost() ? `<button class="btn btn-primary btn-lg" data-game="telephone" data-next-step>${next}</button>` : `<span class="muted">${esc(nameOf(S.room.hostId))} controls the reveal</span>`}
       </div>`,
   };
 }
@@ -270,12 +322,22 @@ handlers.telephone = d => {
   if ('color' in d) { tp.color = d.color; if (tp.tool === 'eraser') tp.tool = 'pen'; render(); }
   else if ('size' in d) { tp.size = +d.size; render(); }
   else if ('tool' in d) { tp.tool = d.tool; render(); }
-  else if ('undo' in d) { const prev = tp.history.pop(); if (prev) tp.ctx.putImageData(prev, 0, 0); }
-  else if ('wipe' in d) { tpSnapshot(); tpClear(); }
-  else if ('send' in d) act({ type: 'submit', image: tpImage() });
+  else if ('undo' in d) {
+    const prev = tp.history.pop();
+    if (prev) { tp.ctx.putImageData(prev, 0, 0); tp.ops.length = tp.opMarks.pop(); }
+  }
+  else if ('wipe' in d) { tpSnapshot(); tp.ops.push({ k: 1 }); tpClear(); }
+  else if ('send' in d) act(tpDrawingPayload());
+  else if ('replay' in d) tpStartReplay(`${S.game.gameNo}:${d.replay}`);
+  else if ('share' in d) tpShareStory(Number(d.share));
   else if ('edit' in d) act({ type: 'unsubmit' });
   else if ('idea' in d) { const i = $('#tpText'); if (i) { i.value = TP_IDEAS[Math.floor(Math.random() * TP_IDEAS.length)]; i.focus(); } }
   else if ('nextStep' in d) act({ type: 'next' });
+  else if ('heart' in d) {
+    const [chain, step] = d.heart.split(':').map(Number);
+    tp.heartPop = d.heart;
+    act({ type: 'heart', chain, step });
+  }
 };
 
 $('#stage').addEventListener('submit', e => {
@@ -296,8 +358,244 @@ function tpLoadImages(g) {
       tp.loading[key] = false;
       if (!res || !res.image) return;
       tp.images[key] = res.image;
+      tp.strokes[key] = res.strokes || null;
+      if (tp.replayWant === key) tpStartReplay(key); // before the picture shows, so it isn't spoiled
       for (const el of document.querySelectorAll(`[data-tpimg="${chain}:${step}"]`)) el.src = res.image;
+      tpSyncReplay();
     });
+  }
+}
+
+/* ---------- replay: a drawing makes itself, line by line ---------- */
+function tpStopReplay() {
+  if (!tp.replay) return;
+  cancelAnimationFrame(tp.replay.raf);
+  tp.replay.canvas.remove();
+  tp.replay = null;
+}
+
+function tpStartReplay(key) {
+  const ops = tp.strokes[key];
+  tpStopReplay();
+  tp.replayWant = null;
+  if (!ops || !ops.length) return;
+  const c = document.createElement('canvas');
+  c.width = TP_W;
+  c.height = TP_H;
+  c.className = 'tp-replay';
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  const white = () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, TP_W, TP_H); };
+  white();
+  // every piece of work counts as a step; fills and wipes get a little more time
+  const steps = [];
+  for (const op of ops) {
+    if (op.k) steps.push(() => white(), null, null, null, null);
+    else if (op.f) steps.push(() => tpFill(op.x, op.y, op.f, ctx), null, null, null, null, null, null, null);
+    else {
+      const dot = op.p.length === 2;
+      for (let i = dot ? 0 : 2; i < op.p.length; i += 2) {
+        const x1 = dot ? op.p[0] : op.p[i - 2], y1 = dot ? op.p[1] : op.p[i - 1];
+        const x2 = dot ? op.p[0] + 0.1 : op.p[i], y2 = dot ? op.p[1] + 0.1 : op.p[i + 1];
+        steps.push(() => {
+          ctx.strokeStyle = op.c;
+          ctx.lineWidth = op.w;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        });
+      }
+    }
+  }
+  const duration = Math.max(2500, Math.min(7000, steps.length * 16));
+  const start = performance.now();
+  let done = 0;
+  const run = { key, canvas: c, raf: 0 };
+  const frame = now => {
+    const upto = Math.min(steps.length, Math.ceil(((now - start) / duration) * steps.length));
+    for (; done < upto; done++) if (steps[done]) steps[done]();
+    if (done >= steps.length) { if (tp.replay === run) tpStopReplay(); return; }
+    run.raf = requestAnimationFrame(frame);
+  };
+  tp.replay = run;
+  run.raf = requestAnimationFrame(frame);
+  tpSyncReplay();
+}
+
+// page redraws replace the picture, so the running replay is placed back on top of the new one
+function tpSyncReplay() {
+  const g = S && S.game;
+  if (!g || g.gameId !== 'telephone') { tpStopReplay(); return; }
+  for (const b of document.querySelectorAll('[data-replay]')) b.hidden = !tp.strokes[`${g.gameNo}:${b.dataset.replay}`];
+  if (!tp.replay) return;
+  const [gameNo, chain, step] = tp.replay.key.split(':');
+  const img = Number(gameNo) === g.gameNo && document.querySelector(`[data-tpimg="${chain}:${step}"]`);
+  if (!img) { tpStopReplay(); return; }
+  if (tp.replay.canvas.parentElement !== img.parentElement) img.parentElement.appendChild(tp.replay.canvas);
+}
+
+/* ---------- share: one tall image of a whole story ---------- */
+const tpAction = payload => new Promise((resolve, reject) => {
+  socket.emit('action', payload, res => (!res || res.error ? reject(new Error((res && res.error) || 'Could not load that')) : resolve(res)));
+});
+const tpLoadPicture = src => new Promise((resolve, reject) => {
+  const img = new Image();
+  img.onload = () => resolve(img);
+  img.onerror = reject;
+  img.src = src;
+});
+function tpWrap(ctx, text, width) {
+  const lines = [];
+  let line = '';
+  for (const word of String(text).split(' ')) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width > width && line) { lines.push(line); line = word; } else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function tpBuildStoryImage(gameNo, chain, story) {
+  await Promise.all(['700 44px Kalam', '600 40px Fredoka', '700 30px Nunito'].map(f => document.fonts.load(f).catch(() => null)));
+  const pictures = {};
+  await Promise.all(story.entries.filter(e => e.type === 'image' && !e.empty).map(async e => {
+    const key = `${gameNo}:${chain}:${e.step}`;
+    if (!tp.images[key]) {
+      const res = await tpAction({ type: 'image', chain, step: e.step });
+      tp.images[key] = res.image;
+      tp.strokes[key] = res.strokes || null;
+    }
+    pictures[e.step] = await tpLoadPicture(tp.images[key]);
+  }));
+
+  const W = 1080, PAD = 70, PIC_W = 860, PIC_H = PIC_W * 0.75;
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d');
+  // measure first, then draw
+  ctx.font = '700 44px Kalam, cursive';
+  const blocks = story.entries.map(e => {
+    if (e.type === 'text') {
+      const lines = tpWrap(ctx, e.text, W - PAD * 2 - 80);
+      return { e, lines, h: 70 + lines.length * 58 + 56 };
+    }
+    return { e, h: 70 + (e.empty ? 160 : PIC_H + 40) + 46 };
+  });
+  c.width = W;
+  c.height = 210 + blocks.reduce((sum, b) => sum + b.h, 0) + 130;
+  const bg = ctx.createLinearGradient(0, 0, 0, c.height);
+  bg.addColorStop(0, '#1b1248');
+  bg.addColorStop(1, '#3a1458');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, c.height);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffc83d';
+  ctx.font = '600 34px Fredoka, sans-serif';
+  ctx.fillText('GameHub · Doodle Telephone', W / 2, 78);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '600 58px Fredoka, sans-serif';
+  ctx.fillText(`${nameOf(story.owner)}'s story`, W / 2, 150);
+
+  const palette = ['#7c4dff', '#c8505c', '#3f7fc4', '#3f9a68', '#c98a2a', '#b0468f', '#4a8f9f', '#8a6f4d'];
+  let y = 210;
+  for (const { e, lines, h } of blocks) {
+    const seat = S.game.players.findIndex(p => p.id === e.by);
+    ctx.fillStyle = palette[Math.max(0, seat) % palette.length];
+    ctx.beginPath();
+    ctx.arc(PAD + 24, y + 24, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = '700 26px Nunito, sans-serif';
+    ctx.fillText(nameOf(e.by).charAt(0).toUpperCase(), PAD + 24, y + 33);
+    ctx.textAlign = 'left';
+    ctx.font = '700 30px Nunito, sans-serif';
+    ctx.fillText(`${nameOf(e.by)} ${e.step === 0 ? 'started with' : e.type === 'image' ? 'drew' : 'guessed'}`, PAD + 62, y + 34);
+    if (e.hearts) {
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ff7a9c';
+      ctx.fillText(`♥ ${e.hearts}`, W - PAD, y + 34);
+      ctx.textAlign = 'left';
+    }
+    const top = y + 70;
+    if (e.type === 'text') {
+      ctx.fillStyle = '#fbf8ef';
+      ctx.beginPath();
+      ctx.roundRect(PAD, top, W - PAD * 2, lines.length * 58 + 30, 22);
+      ctx.fill();
+      ctx.fillStyle = '#23307a';
+      ctx.font = '700 44px Kalam, cursive';
+      lines.forEach((line, i) => ctx.fillText(line, PAD + 36, top + 56 + i * 58));
+    } else if (e.empty) {
+      ctx.fillStyle = '#fbf8ef';
+      ctx.fillRect(PAD, top, W - PAD * 2, 130);
+      ctx.fillStyle = '#6e6696';
+      ctx.font = '700 38px Kalam, cursive';
+      ctx.fillText('Nothing was drawn in time!', PAD + 36, top + 80);
+    } else {
+      const x = (W - PIC_W) / 2;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(x - 14, top - 14, PIC_W + 28, PIC_H + 28);
+      ctx.drawImage(pictures[e.step], x, top, PIC_W, PIC_H);
+    }
+    y += h;
+  }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#bdb5e3';
+  ctx.font = '700 28px Nunito, sans-serif';
+  ctx.fillText(`Play with friends at ${location.host}`, W / 2, c.height - 54);
+  return new Promise((resolve, reject) => c.toBlob(b => (b ? resolve(b) : reject(new Error('Could not make the image'))), 'image/jpeg', 0.88));
+}
+
+function tpShowShare(blob, title) {
+  const url = URL.createObjectURL(blob);
+  const file = new File([blob], 'gamehub-story.jpg', { type: 'image/jpeg' });
+  const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  const box = document.createElement('div');
+  box.className = 'tp-sharebox';
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  box.setAttribute('aria-label', title);
+  box.innerHTML = `<div class="tp-sharecard">
+    <div class="tp-sharepreview"><img src="${url}" alt="${esc(title)}"></div>
+    <div class="tp-shareactions">
+      ${canShare ? `<button class="btn btn-primary btn-lg" data-do="share">${icon('share')} Share</button>` : ''}
+      <a class="btn btn-lg ${canShare ? '' : 'btn-primary'}" href="${url}" download="gamehub-story.jpg">${icon('download')} Save image</a>
+      <button class="btn btn-lg btn-ghost" data-do="close">Close</button>
+    </div></div>`;
+  const close = () => {
+    document.removeEventListener('keydown', onKey);
+    box.remove();
+    URL.revokeObjectURL(url);
+  };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  box.addEventListener('click', e => {
+    const b = e.target.closest('[data-do]');
+    if (e.target === box || (b && b.dataset.do === 'close')) close();
+    else if (b && b.dataset.do === 'share') {
+      navigator.share({ files: [file], title, text: `Our Doodle Telephone story! Play at ${location.origin}` }).catch(err => {
+        if (err.name !== 'AbortError') toast('Sharing did not work. Try Save image.');
+      });
+    }
+  });
+  document.body.appendChild(box);
+}
+
+async function tpShareStory(chain) {
+  if (tp.sharing) return;
+  tp.sharing = true;
+  toast('Making your story image…');
+  try {
+    const gameNo = S.game.gameNo;
+    const story = await tpAction({ type: 'story', chain });
+    const blob = await tpBuildStoryImage(gameNo, chain, story);
+    tpShowShare(blob, `${nameOf(story.owner)}'s Doodle Telephone story`);
+  } catch (err) {
+    toast(err.message || 'Could not make the image');
+  } finally {
+    tp.sharing = false;
   }
 }
 
@@ -313,6 +611,8 @@ afterRender.push(() => {
       tpCanvasInit();
       tpClear();
       tp.history = [];
+      tp.ops = [];
+      tp.opMarks = [];
       tp.tool = 'pen';
     }
     const input = $('#tpText');
@@ -320,16 +620,21 @@ afterRender.push(() => {
   }
   const slot = $('#tpCanvasSlot');
   if (slot) { tpCanvasInit(); slot.appendChild(tp.canvas); }
-  tpLoadImages(g);
 
   if (g.reveal) {
     const stepKey = `${g.gameNo}:${g.reveal.chain}:${g.reveal.step}`;
     if (stepKey !== tp.lastStep) {
       tp.lastStep = stepKey;
+      const fresh = g.phase === 'reveal' && g.reveal.entries[g.reveal.entries.length - 1];
+      tpStopReplay();
+      tp.replayWant = fresh && fresh.type === 'image' && !fresh.empty && motionOk() ? `${g.gameNo}:${g.reveal.chain}:${g.reveal.step}` : null;
+      if (tp.replayWant && tp.images[tp.replayWant]) tpStartReplay(tp.replayWant);
       const newest = document.querySelector('.tp-entry.new');
       if (newest) newest.scrollIntoView({ behavior: motionOk() ? 'smooth' : 'auto', block: 'center' });
     }
   }
+  tpLoadImages(g);
+  tpSyncReplay();
 });
 
 // when the clock is about to run out, send what the player has so far
@@ -338,7 +643,7 @@ setInterval(() => {
   if (!g || g.gameId !== 'telephone' || g.phase !== 'round' || g.myDone || tp.autoSent) return;
   if (serverNow() < g.endsAt - 900) return;
   tp.autoSent = true;
-  if (g.kind === 'draw') act({ type: 'submit', image: tpImage() });
+  if (g.kind === 'draw') act(tpDrawingPayload());
   else {
     const input = $('#tpText');
     const text = input ? input.value.trim() : '';

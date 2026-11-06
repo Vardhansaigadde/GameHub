@@ -37,6 +37,7 @@ const ICON_PATHS = {
   expand: '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
   shrink: '<path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/>',
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  download: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
   send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
   flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
@@ -165,8 +166,17 @@ $('#catalog').addEventListener('click', e => {
   const b = e.target.closest('[data-howto-home]');
   if (!b) return;
   const g = homeGames.find(x => x.id === b.dataset.howtoHome);
+  setWantedGame(g);
   openHowTo(g, `<button class="btn btn-primary btn-lg btn-block" data-sheet-create>${icon('play')} Create a room to play</button>`);
 });
+
+// the game picked on the home page is the one the new room opens on
+function setWantedGame(g) {
+  ui.wantGame = g ? g.id : null;
+  $('#pickedGame').classList.toggle('hidden', !g);
+  if (g) $('#pickedGame').innerHTML = `<span>Your room will open on <b>${esc(g.name)}</b></span><button type="button" class="picked-clear" aria-label="Clear the chosen game">${icon('x')}</button>`;
+}
+$('#pickedGame').addEventListener('click', e => { if (e.target.closest('.picked-clear')) setWantedGame(null); });
 
 /* ---------- How to play sheet ---------- */
 ICON_PATHS.help = '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>';
@@ -210,11 +220,12 @@ function enterRoom(res) {
   $('#homeError').textContent = '';
   localStorage.setItem('gh_room', res.code);
   history.replaceState(null, '', '?room=' + res.code);
+  setWantedGame(null);
 }
 
 $('#createBtn').onclick = () => {
   const name = getName();
-  if (name) socket.emit('create', { name, token }, enterRoom);
+  if (name) socket.emit('create', { name, token, gameId: ui.wantGame }, enterRoom);
 };
 $('#joinBtn').onclick = () => {
   const name = getName();

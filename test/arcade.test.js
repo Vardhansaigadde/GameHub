@@ -10,20 +10,21 @@ const throws = (fn, re) => assert.throws(fn, re);
 /* ---------- Typing Arena ---------- */
 function typingGame(mode, n = 2) {
   const s = typing.setup(P.slice(0, n));
-  P.slice(0, n).forEach(p => typing.action(s, p.id, { type: 'vote', mode }, guest));
-  assert.strictEqual(s.phase, 'countdown', 'starts once everyone voted');
+  typing.action(s, 'p0', { type: 'choose', mode }, host);
+  assert.strictEqual(s.phase, 'countdown', 'starts as soon as the host picks');
   typing.onTimer(s);
   assert.strictEqual(s.phase, 'play');
   return s;
 }
 
-test('typing: most votes picks the game and only the host can force a start', () => {
+test('typing: only the host picks the game, and it starts straight away with no votes', () => {
   const s = typing.setup(P.slice(0, 3));
-  typing.action(s, 'p0', { type: 'vote', mode: 'rain' }, guest);
-  throws(() => typing.action(s, 'p1', { type: 'start' }, guest), /host/);
-  typing.action(s, 'p1', { type: 'vote', mode: 'rain' }, guest);
-  typing.action(s, 'p0', { type: 'start' }, host);
+  throws(() => typing.action(s, 'p1', { type: 'choose', mode: 'rain' }, guest), /host/);
+  throws(() => typing.action(s, 'p1', { type: 'vote', mode: 'rain' }, guest), /Unknown action/);
+  throws(() => typing.action(s, 'p0', { type: 'choose', mode: 'nothing' }, host), /Pick/);
+  typing.action(s, 'p0', { type: 'choose', mode: 'rain' }, host);
   assert.strictEqual(s.mode, 'rain');
+  assert.strictEqual(s.phase, 'countdown');
 });
 
 test('typing race: progress is relayed, finishing needs the real text, fastest ranks first', () => {
@@ -32,7 +33,7 @@ test('typing race: progress is relayed, finishing needs the real text, fastest r
   assert.strictEqual(typing.stream(s, 'p1', { t: 'p', n: 99999 }).n, s.text.length, 'progress is capped');
   throws(() => typing.action(s, 'p0', { type: 'finished', typed: 'nope', acc: 100 }, guest), /finished/);
   typing.action(s, 'p1', { type: 'finished', typed: s.text, acc: 97 }, guest);
-  assert.ok(s.timerAt - Date.now() <= 30000, 'the others get a last call');
+  assert.ok(s.timerAt - Date.now() <= 90000, 'the others get a last call');
   typing.action(s, 'p0', { type: 'finished', typed: s.text, acc: 90 }, guest);
   assert.strictEqual(s.phase, 'over');
   assert.strictEqual(s.results[0].id, 'p1');
@@ -45,6 +46,34 @@ test('typing race: time running out ranks unfinished players by progress', () =>
   typing.stream(s, 'p1', { t: 'p', n: 9 });
   typing.onTimer(s);
   assert.deepStrictEqual(s.results.map(r => r.id), ['p1', 'p0', 'p2']);
+});
+
+test('typing race: a real paragraph, and places go in the order cars reach the finish', () => {
+  const s = typingGame('race', 4);
+  assert.ok(s.text.length > 180, 'long enough to be a paragraph');
+  assert.ok(s.text.split('. ').length >= 2);
+  for (const id of ['p2', 'p0', 'p3']) typing.action(s, id, { type: 'finished', typed: s.text, acc: 95 }, guest);
+  assert.strictEqual(s.phase, 'play', 'the last car can still finish');
+  assert.deepStrictEqual(['p2', 'p0', 'p3'].map(id => s.finished[id].place), [1, 2, 3]);
+  typing.stream(s, 'p1', { t: 'p', n: 12 });
+  typing.onTimer(s);
+  assert.deepStrictEqual(s.results.map(r => r.id), ['p2', 'p0', 'p3', 'p1']);
+});
+
+test('typing duel: mixes words and sentences, and sentences get more time', () => {
+  const s = typingGame('duel', 2);
+  assert.strictEqual(s.queue.length, 10);
+  assert.strictEqual(s.queue.filter(t => t.includes(' ')).length, 4);
+  while (s.phase === 'play') {
+    const text = s.queue[s.idx];
+    const left = s.timerAt - Date.now();
+    assert.ok(text.includes(' ') ? left > 15000 : left <= 9000, text);
+    assert.strictEqual(typing.view(s, 'p0').duelMs, text.includes(' ') ? 20000 : 9000);
+    typing.action(s, 'p0', { type: 'duel', text }, guest);
+    typing.action(s, 'p1', { type: 'duel', text }, guest);
+    typing.onTimer(s);
+  }
+  assert.strictEqual(s.scores.p0, 1000);
 });
 
 test('typing rain: same schedule for all, scores come in live, ends when everyone is out', () => {
@@ -82,7 +111,7 @@ test('typing: play again returns to the vote screen', () => {
   while (s.phase === 'play') typing.onTimer(s);
   typing.action(s, 'p0', { type: 'again' }, host);
   assert.strictEqual(s.phase, 'pick');
-  assert.deepStrictEqual(s.votes, {});
+  assert.strictEqual(s.mode, null);
 });
 
 /* ---------- Ludo ---------- */

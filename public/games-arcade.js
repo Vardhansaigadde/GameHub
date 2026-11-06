@@ -399,6 +399,7 @@ const carSvg = (c, model = 0) => {
 };
 const modeIcon = {
   kings: '<span class="scene kings"><i class="k a">♚</i><i class="bolt"></i><i class="k b">♚</i></span>',
+  royal: '<span class="scene kings royal"><i class="k a">♛</i><i class="bolt"></i><i class="k b">♛</i></span>',
   raid: '<span class="scene raid"><i class="m">👹</i><i class="shot s1"></i><i class="shot s2"></i></span>',
   race: `<span class="scene race"><i class="sc-car a">${carSvg('#ff3d6e', 0)}</i><i class="sc-car b">${carSvg('#38c6ff', 1)}</i><i class="sc-road"></i></span>`,
   rain: '<span class="scene rain"><i>mango</i><i>rocket</i><i>tiger</i><i>dosa</i></span>',
@@ -422,22 +423,20 @@ const liveWpm = n => {
 };
 
 function typingPick(g) {
-  const voted = Object.keys(g.votes).length;
+  const host = isHost();
   const cards = g.modes.map(m => {
-    const voters = g.players.filter(p => g.votes[p.id] === m.id);
-    const closed = m.maxPlayers && g.players.length > m.maxPlayers;
-    return `<button class="mode-card ${g.votes[S.you] === m.id ? 'on' : ''}" ${closed ? 'disabled' : ''} data-game="typing" data-vote="${m.id}">
-      ${modeIcon[m.id]}<b>${esc(m.name)}</b><small>${closed ? `Only for ${m.maxPlayers} players` : esc(m.tagline)}</small>
-      <span class="mode-votes">${voters.map(p => avatar(p.name)).join('') || (closed ? '' : '<em>No votes yet</em>')}</span></button>`;
+    const closed = m.exactPlayers && g.players.length !== m.exactPlayers;
+    return `<button class="mode-card" ${closed || !host ? 'disabled' : ''} data-game="typing" data-choose-mode="${m.id}">
+      ${modeIcon[m.id]}<b>${esc(m.name)}</b><small>${closed ? `Only when exactly ${m.exactPlayers} players are in the room` : esc(m.tagline)}</small></button>`;
   }).join('');
   return {
-    tone: g.votes[S.you] ? '' : 'live',
-    turn: g.votes[S.you] ? `Voted — ${voted} of ${g.players.length} in` : 'Choose your typing challenge',
-    body: `<div class="mode-grid">${cards}</div>
-      ${isHost() ? `<div class="actions"><button class="btn btn-primary btn-lg" data-game="typing" data-start ${voted ? '' : 'disabled'}>${icon('play')} Start${voted < g.players.length ? ' now' : ''}</button></div>` : ''}
-      <p class="hint">Most votes wins. It starts by itself when everyone has voted.</p>`,
+    tone: host ? 'live' : '',
+    turn: host ? 'Choose the typing game' : `${esc(nameOf(S.room.hostId))} is choosing the typing game…`,
+    body: `<div class="mode-grid ${host ? '' : 'watching'}">${cards}</div>`,
   };
 }
+
+const placeName = n => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10] || 'th'}`;
 
 function typingRace(g) {
   const len = g.text.length;
@@ -447,15 +446,15 @@ function typingRace(g) {
     const f = g.finished[p.id];
     return `<div class="lane"><span class="lane-name">${esc(p.name)}${p.id === S.you ? ' (you)' : ''}</span>
       <span class="car ${f ? 'parked' : ''}" data-car="${p.id}" style="left:${carLeft(n, len)}">${carSvg(CAR_COL[i % CAR_COL.length], i)}</span>
-      <span class="lane-wpm" data-wpm="${p.id}">${f ? `#${f.place}` : `${liveWpm(n)} wpm`}</span></div>`;
+      <span class="lane-wpm ${f ? 'placed' : ''}" data-wpm="${p.id}">${f ? placeName(f.place) : `${liveWpm(n)} wpm`}</span></div>`;
   }).join('');
   return {
     tone: mine ? 'win' : 'live',
-    turn: mine ? `Finished #${mine.place}! Waiting for the others` : 'Type the sentence — go go go!',
+    turn: mine ? `You finished ${placeName(mine.place)}! Waiting for the others` : 'Type the paragraph. First car home wins!',
     body: `<div class="track">${lanes}<div class="finish-line"></div></div>
-      <div class="timebar"><span data-deadline="${g.timerAt}" data-total="120000"></span></div>
+      <div class="timebar"><span data-deadline="${g.timerAt}" data-total="${g.raceMs}"></span></div>
       ${mine ? '' : `<div class="race-text" id="raceText">${raceTextHtml(g.text, ty.typed)}</div>
-      <input id="typeInput" class="type-input" ${typeAttrs} placeholder="Start typing here…" aria-label="Type the sentence">
+      <input id="typeInput" class="type-input" ${typeAttrs} placeholder="Start typing here…" aria-label="Type the paragraph">
       <div class="type-stats"><span><b id="myWpm">0</b> wpm</span><span><b id="myAcc">100</b>% accuracy</span></div>`}`,
   };
 }
@@ -479,22 +478,23 @@ function typingRain(g) {
 
 function typingDuel(g) {
   const solved = g.solvers.includes(S.you);
-  const letters = g.word ? [...g.word].map((ch, i) => `<span style="--i:${i}">${esc(ch)}</span>`).join('') : '';
+  const isSentence = !!g.word && g.word.includes(' ');
+  const letters = !g.word ? '' : isSentence ? `<span class="duel-sentence">${esc(g.word)}</span>` : [...g.word].map((ch, i) => `<span style="--i:${i}">${esc(ch)}</span>`).join('');
   return {
     tone: g.gap ? 'win' : solved ? '' : 'live',
-    turn: g.gap ? (g.solvers.length ? `${esc(nameOf(g.solvers[0]))} was fastest!` : 'Too slow — nobody got it') : solved ? 'Got it! Waiting…' : `Word ${g.number} of ${g.of} — type it!`,
-    body: `<div class="duel-word ${solved ? 'solved' : ''}">${letters}</div>
+    turn: g.gap ? (g.solvers.length ? `${esc(nameOf(g.solvers[0]))} was fastest!` : 'Too slow — nobody got it') : solved ? 'Got it! Waiting…' : `${isSentence ? 'Sentence' : 'Word'} ${g.number} of ${g.of} — type it!`,
+    body: `<div class="duel-word ${solved ? 'solved' : ''} ${isSentence ? 'sentence' : ''}">${letters}</div>
       ${g.gap ? '' : `<div class="timebar"><span data-deadline="${g.timerAt}" data-total="${g.duelMs}"></span></div>`}
-      ${solved || g.gap ? '' : `<form data-duel-form><input id="duelInput" class="type-input" ${typeAttrs} placeholder="Type the word…" aria-label="Type the word"></form>`}
-      ${scoreboard(g.scores, { extra: { title: 'This word', value: id => (g.solvers.includes(id) ? `<span class="plus">${icon('check')}</span>` : '') } })}`,
+      ${solved || g.gap ? '' : `<form data-duel-form><input id="duelInput" class="type-input" ${typeAttrs} placeholder="${isSentence ? 'Type the sentence…' : 'Type the word…'}" aria-label="Type the answer"></form>`}
+      ${scoreboard(g.scores, { extra: { title: 'This round', value: id => (g.solvers.includes(id) ? `<span class="plus">${icon('check')}</span>` : '') } })}`,
   };
 }
 
 function typingOver(g) {
   const rows = g.results;
-  const battle = g.mode === 'kings' || g.mode === 'raid';
-  const val = r => (g.mode === 'race' ? `${r.wpm} wpm` : battle ? `${r.score} dmg` : `${r.score} pts`);
-  const sub = r => (g.mode === 'race' ? (r.done ? `${(r.ms / 1000).toFixed(1)}s · ${r.acc}% accuracy` : `${r.pct}% done`) : g.mode === 'rain' ? `${r.lives} lives left` : battle ? `${r.words} word${r.words === 1 ? '' : 's'}` : '');
+  const battle = !!g.battle;
+  const val = r => (g.mode === 'race' ? `${r.wpm} wpm` : g.mode === 'royal' ? `${r.score} round${r.score === 1 ? '' : 's'}` : battle ? `${r.score} dmg` : `${r.score} pts`);
+  const sub = r => (g.mode === 'race' ? (r.done ? `${(r.ms / 1000).toFixed(1)}s · ${r.acc}% accuracy` : `${r.pct}% done`) : g.mode === 'rain' ? `${r.lives} lives left` : g.mode === 'royal' ? '' : battle ? `${r.words} word${r.words === 1 ? '' : 's'}` : '');
   const podium = [1, 0, 2].map(i => rows[i]).filter(Boolean).map(r => {
     const place = rows.indexOf(r) + 1;
     return `<div class="pod pod${place}">${avatar(nameOf(r.id))}<b>${esc(nameOf(r.id))}</b><small>${val(r)}</small><div class="pod-bar"><span>${place}</span></div></div>`;
@@ -517,12 +517,11 @@ renderers.typing = () => {
     const m = g.modes.find(x => x.id === g.mode);
     return { tone: 'live', turn: `${esc(m.name)} — get your fingers ready`, body: `<div class="count-wrap"><div class="count-big" data-deadline="${g.timerAt}"></div><b>${esc(m.name)}</b><small>${esc(m.tagline)}</small></div>` };
   }
-  if (g.mode === 'kings' || g.mode === 'raid') return typingBattle(g);
+  if (g.battle) return typingBattle(g);
   return g.mode === 'race' ? typingRace(g) : g.mode === 'rain' ? typingRain(g) : typingDuel(g);
 };
 handlers.typing = d => {
-  if ('vote' in d) act({ type: 'vote', mode: d.vote });
-  else if ('start' in d) act({ type: 'start' });
+  if ('chooseMode' in d) act({ type: 'choose', mode: d.chooseMode });
   else if ('again' in d) act({ type: 'again' });
 };
 
@@ -547,6 +546,14 @@ function paintRainRow(id) {
   row.querySelector('b').textContent = r.score;
 }
 
+// long paragraphs scroll by themselves so the next letter is always in view
+function raceFollow() {
+  const box = $('#raceText');
+  const caret = box && box.querySelector('.rt-caret');
+  if (caret) box.scrollTop = Math.max(0, caret.offsetTop - box.clientHeight / 2);
+}
+afterRender.push(raceFollow);
+
 // Car Race typing
 function onRaceInput(input) {
   const g = S.game;
@@ -564,7 +571,10 @@ function onRaceInput(input) {
   const n = correctLen(g.text, typed);
   input.classList.toggle('bad', n < typed.length);
   const box = $('#raceText');
-  if (box) box.innerHTML = raceTextHtml(g.text, typed);
+  if (box) {
+    box.innerHTML = raceTextHtml(g.text, typed);
+    raceFollow();
+  }
   ty.prog[S.you] = n;
   const car = document.querySelector(`[data-car="${S.you}"]`);
   if (car) car.style.left = carLeft(n, g.text.length);

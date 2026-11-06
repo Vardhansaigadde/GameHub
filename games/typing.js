@@ -5,15 +5,18 @@
 //   Kings' Battle - one player against another; each typed word launches a random attack of your king.
 //   Monster Raid  - everyone teams up to type down three bosses before they destroy you.
 const { shuffle, findPlayer, cue } = require('./util');
-const { sentences, words } = require('./data/typing-words');
+const { paragraphs, shortSentences, words } = require('./data/typing-words');
 
 const COUNTDOWN_MS = 3000;
-const RACE_MS = 120000;
-const RACE_LAST_CALL_MS = 30000; // once someone finishes, the rest get this long
+const RACE_MS = 240000;
+const RACE_LAST_CALL_MS = 90000; // once someone finishes, the rest get this long to take their places
 const RAIN_MS = 60000;
 const RAIN_LIVES = 5;
 const DUEL_WORDS = 10;
 const DUEL_WORD_MS = 9000;
+const DUEL_SENTENCE_MS = 20000;
+const DUEL_SENTENCES = 4;       // of the DUEL_WORDS rounds
+const BATTLE_SENTENCE_EVERY = 4; // every 4th thing to type in a battle is a sentence
 const DUEL_GAP_MS = 1500;
 const DUEL_POINTS = [100, 70, 50, 40];
 
@@ -22,8 +25,7 @@ const KO_MS = 2400;
 const KING_HP = 150;
 const RAID_HP = 100;
 const ULT_EVERY = 5;         // words in a row without a typo
-const CPU_EVERY_MS = 3500;
-const CPU_DMG = 6;
+const CHAMP_MS = 30000;       // time to choose a king
 const BATTLE_INTRO_MS = 4000; // the versus screen
 const BATTLE_SCENES = ['throne', 'hall', 'chapel', 'gate', 'ramparts', 'bailey'];
 const ATTACKS_PER_KING = 4;   // every normal hit is one of these, chosen at random
@@ -35,13 +37,22 @@ const BOSSES = [
 ];
 
 // longer words hit harder and look bigger
+const ROYAL_WINS = 3;           // first to this many rounds wins
+const ROYAL_WORDS = 3;
+const ROYAL_SENTENCES = 2;
+const ROYAL_EXTRA = 3;          // tie-break sentences if rounds were missed and it is level after five
+const ROYAL_WORD_MS = 12000;
+const ROYAL_SENTENCE_MS = 25000;
+const ROYAL_GAP_MS = 2400;      // time to watch the attack land
+const SENTENCE_ATTACK = { type: 'bolt', dmg: 22 };
 const attackFor = len => (len <= 4 ? { type: 'sword', dmg: 7 } : len <= 6 ? { type: 'arrows', dmg: 9 } : len <= 8 ? { type: 'fire', dmg: 12 } : { type: 'bolt', dmg: 15 });
 const ULTIMATE = { type: 'meteor', dmg: 28 };
 
 const MODES = [
-  { id: 'kings', name: "Kings' Battle", tagline: 'One on one. Type to attack.', maxPlayers: 2 },
+  { id: 'kings', name: "Kings' Battle", tagline: 'One on one. Type to attack.', exactPlayers: 2 },
+  { id: 'royal', name: 'Royal Duel', tagline: 'Same words for both. First to type strikes. First to 3 wins.', exactPlayers: 2 },
   { id: 'raid', name: 'Monster Raid', tagline: 'Team up and type down the bosses.' },
-  { id: 'race', name: 'Car Race', tagline: 'Type the sentence. Your car drives.' },
+  { id: 'race', name: 'Car Race', tagline: 'Type the paragraph. First car home wins.' },
   { id: 'rain', name: 'Word Rain', tagline: 'Zap falling words before they land.' },
   { id: 'duel', name: 'Speed Duel', tagline: 'Fastest fingers take the points.' },
 ];
@@ -65,10 +76,12 @@ function rainSchedule() {
   return out;
 }
 
+const heroChoices = mode => (mode === 'raid' ? HEROES.filter(h => !BOSSES.some(b => b.art === h)) : HEROES);
+const isBattle = mode => mode === 'kings' || mode === 'raid' || mode === 'royal';
+
 function reset(s) {
   s.phase = 'pick';
   s.mode = null;
-  s.votes = {};
   s.results = null;
   s.timerAt = null;
   s.startedAt = null;
@@ -76,9 +89,9 @@ function reset(s) {
 
 function begin(s, mode) {
   s.mode = mode;
-  const battle = mode === 'kings' || mode === 'raid';
-  s.phase = 'countdown';
-  s.timerAt = Date.now() + (battle ? BATTLE_INTRO_MS : COUNTDOWN_MS);
+  const battle = isBattle(mode);
+  s.phase = battle ? 'champ' : 'countdown';
+  s.timerAt = Date.now() + (battle ? CHAMP_MS : COUNTDOWN_MS);
   s.results = null;
   s.prog = {};
   s.finished = {};
@@ -89,11 +102,11 @@ function begin(s, mode) {
     s.scores[p.id] = 0;
     s.rain[p.id] = { score: 0, lives: RAIN_LIVES, done: false };
   }
-  if (mode === 'race') s.text = pick(sentences, 1)[0];
+  if (mode === 'race') s.text = pick(paragraphs, 1)[0];
   if (mode === 'rain') s.words = rainSchedule();
-  if (mode === 'kings' || mode === 'raid') s.b = newBattle(s, mode);
+  if (battle) s.b = newBattle(s, mode);
   if (mode === 'duel') {
-    s.queue = pick(words, DUEL_WORDS);
+    s.queue = shuffle([...pick(words, DUEL_WORDS - DUEL_SENTENCES), ...pick(shortSentences, DUEL_SENTENCES)]);
     s.idx = 0;
     s.solvers = [];
     s.gap = false;
@@ -101,23 +114,26 @@ function begin(s, mode) {
   cue(s, battle ? 'tap' : 'reveal');
 }
 
+// mostly single words, with a short sentence every so often for a bigger hit
+function battleWords() {
+  const list = pick(words, words.length);
+  const lines = pick(shortSentences, shortSentences.length);
+  return list.map((w, i) => ((i + 1) % BATTLE_SENTENCE_EVERY === 0 ? lines[((i + 1) / BATTLE_SENTENCE_EVERY - 1) % lines.length] : w));
+}
+
 function newBattle(s, mode) {
   const sides = { a: [], b: [] };
   s.players.forEach((p, i) => (mode === 'raid' || i % 2 === 0 ? sides.a : sides.b).push(p.id));
   const b = {
     sides,
-    cpu: mode === 'kings' && !sides.b.length, // playing alone: the enemy king fights back by himself
     hp: {}, max: {}, words: {}, idx: {}, streak: {}, dmg: {}, typed: {},
     events: [], evId: 0, boss: 0, winner: null, endAt: 0, nextHit: 0,
     heroes: {},
+    ready: {},
     scene: BATTLE_SCENES[Math.floor(Math.random() * BATTLE_SCENES.length)],
   };
-  // kings are dealt out at random, so nobody needs to choose; raid bosses stay on the enemy side
-  const deck = shuffle(mode === 'raid' ? HEROES.filter(h => !BOSSES.some(x => x.art === h)) : HEROES);
-  s.players.forEach((p, i) => { b.heroes[p.id] = deck[i % deck.length]; });
-  b.cpuHero = deck[s.players.length % deck.length];
   for (const p of s.players) {
-    b.words[p.id] = pick(words, words.length);
+    b.words[p.id] = battleWords();
     b.idx[p.id] = 0;
     b.streak[p.id] = 0;
     b.dmg[p.id] = 0;
@@ -126,6 +142,17 @@ function newBattle(s, mode) {
   if (mode === 'raid') {
     b.max.a = b.hp.a = RAID_HP;
     b.max.b = b.hp.b = BOSSES[0].hp * s.players.length;
+  } else if (mode === 'royal') {
+    // health here counts rounds: each round lost takes one away
+    b.max.a = b.hp.a = ROYAL_WINS;
+    b.max.b = b.hp.b = ROYAL_WINS;
+    const lines = pick(shortSentences, ROYAL_SENTENCES + ROYAL_EXTRA);
+    b.queue = [...pick(words, ROYAL_WORDS), ...lines.slice(0, ROYAL_SENTENCES)];
+    b.extra = lines.slice(ROYAL_SENTENCES);
+    b.round = 0;
+    b.gap = false;
+    b.lastWin = null;
+    b.roundMs = 0;
   } else {
     b.max.a = b.hp.a = KING_HP;
     b.max.b = b.hp.b = KING_HP;
@@ -154,15 +181,14 @@ function battleTimers(s) {
 function scheduleEnemy(s, first) {
   const b = s.b;
   if (s.mode === 'raid') b.nextHit = Date.now() + BOSSES[b.boss].every + (first ? 1500 : 0);
-  else if (b.cpu) b.nextHit = Date.now() + CPU_EVERY_MS;
 }
 
 function enemyStrike(s) {
   const b = s.b;
-  const boss = s.mode === 'raid' ? BOSSES[b.boss] : null;
-  const dmg = boss ? boss.dmg : CPU_DMG;
+  const boss = BOSSES[b.boss];
+  const dmg = boss.dmg;
   b.hp.a = Math.max(0, b.hp.a - dmg);
-  battleEvent(s, { type: boss ? boss.attack : 'sword', side: 'b', dmg, by: null });
+  battleEvent(s, { type: boss.attack, side: 'b', dmg, by: null });
   if (b.hp.a === 0) return battleKo(s, 'b');
   scheduleEnemy(s);
   battleTimers(s);
@@ -188,7 +214,7 @@ function strike(s, playerId, text) {
   b.typed[playerId]++;
   b.streak[playerId]++;
   const ult = b.streak[playerId] % ULT_EVERY === 0;
-  const atk = ult ? ULTIMATE : attackFor(word.length);
+  const atk = ult ? ULTIMATE : word.includes(' ') ? SENTENCE_ATTACK : attackFor(word.length);
   const side = b.sides.a.includes(playerId) ? 'a' : 'b';
   const target = side === 'a' ? 'b' : 'a';
   const dmg = Math.min(atk.dmg, b.hp[target]);
@@ -209,9 +235,66 @@ function strike(s, playerId, text) {
   if (b.hp[target] === 0) battleKo(s, side);
 }
 
+/* ---------- Royal Duel: both players race to type the same thing ---------- */
+function royalStartRound(s) {
+  const b = s.b;
+  b.gap = false;
+  b.lastWin = null;
+  b.roundMs = b.queue[b.round].includes(' ') ? ROYAL_SENTENCE_MS : ROYAL_WORD_MS;
+  s.timerAt = Date.now() + b.roundMs;
+}
+
+function royalNextRound(s) {
+  const b = s.b;
+  b.round++;
+  if (b.round >= b.queue.length) {
+    const winsA = b.max.b - b.hp.b, winsB = b.max.a - b.hp.a;
+    if (winsA !== winsB) return battleKo(s, winsA > winsB ? 'a' : 'b');
+    if (!b.extra.length) return battleKo(s, null); // nobody could separate them
+    b.queue.push(b.extra.shift());
+  }
+  royalStartRound(s);
+}
+
+function royalType(s, playerId, text) {
+  const b = s.b;
+  if (s.phase !== 'play' || b.gap) return { quiet: true };
+  const word = b.queue[b.round];
+  if (String(text || '').trim().toLowerCase() !== word) return { quiet: true, message: 'Check the spelling' };
+  const side = b.sides.a.includes(playerId) ? 'a' : 'b';
+  const target = side === 'a' ? 'b' : 'a';
+  b.hp[target]--;
+  b.dmg[playerId]++;
+  b.typed[playerId]++;
+  const won = b.hp[target] === 0;
+  battleEvent(s, { type: word.includes(' ') ? 'bolt' : 'fire', side, dmg: 1, by: playerId, ult: won });
+  b.lastWin = playerId;
+  if (won) return battleKo(s, side);
+  b.gap = true;
+  s.timerAt = Date.now() + ROYAL_GAP_MS;
+}
+
+function royalTick(s) {
+  const b = s.b;
+  if (b.gap) return royalNextRound(s);
+  b.gap = true; // nobody typed it in time
+  s.timerAt = Date.now() + ROYAL_GAP_MS;
+  cue(s, 'tick');
+}
+
+// anyone still undecided when the clock runs out gets a free king at random
+function champsDone(s) {
+  const taken = Object.values(s.b.heroes);
+  const free = shuffle(heroChoices(s.mode).filter(h => !taken.includes(h)));
+  for (const p of s.players) if (!s.b.heroes[p.id]) s.b.heroes[p.id] = free.shift();
+  s.phase = 'countdown';
+  s.timerAt = Date.now() + BATTLE_INTRO_MS;
+  cue(s, 'go');
+}
+
 function finishGame(s) {
   let rows;
-  if (s.mode === 'kings' || s.mode === 'raid') {
+  if (isBattle(s.mode)) {
     rows = s.players.map(p => ({
       id: p.id,
       score: s.b.dmg[p.id],
@@ -247,12 +330,14 @@ function finishGame(s) {
   cue(s, 'win');
 }
 
+const duelMsFor = text => (text.includes(' ') ? DUEL_SENTENCE_MS : DUEL_WORD_MS);
+
 function duelNext(s) {
   s.idx++;
   s.gap = false;
   s.solvers = [];
   if (s.idx >= s.queue.length) return finishGame(s);
-  s.timerAt = Date.now() + DUEL_WORD_MS;
+  s.timerAt = Date.now() + duelMsFor(s.queue[s.idx]);
 }
 
 function duelGap(s) {
@@ -273,11 +358,14 @@ module.exports = {
   },
 
   onTimer(s) {
-    if (s.phase === 'countdown') {
+    if (s.phase === 'champ') {
+      champsDone(s);
+    } else if (s.phase === 'countdown') {
       s.phase = 'play';
       s.startedAt = Date.now();
-      s.timerAt = s.startedAt + (s.mode === 'race' ? RACE_MS : s.mode === 'rain' ? RAIN_MS : DUEL_WORD_MS);
-      if (s.b && (s.mode === 'kings' || s.mode === 'raid')) {
+      s.timerAt = s.startedAt + (s.mode === 'race' ? RACE_MS : s.mode === 'rain' ? RAIN_MS : s.mode === 'duel' ? duelMsFor(s.queue[s.idx]) : DUEL_WORD_MS);
+      if (s.mode === 'royal') royalStartRound(s);
+      else if (s.b && (s.mode === 'kings' || s.mode === 'raid')) {
         s.b.endAt = s.startedAt + BATTLE_MS;
         scheduleEnemy(s, true);
         battleTimers(s);
@@ -286,7 +374,8 @@ module.exports = {
     } else if (s.phase === 'ko') {
       finishGame(s);
     } else if (s.phase === 'play') {
-      if (s.mode === 'kings' || s.mode === 'raid') battleTick(s);
+      if (s.mode === 'royal') royalTick(s);
+      else if (s.mode === 'kings' || s.mode === 'raid') battleTick(s);
       else if (s.mode === 'duel') {
         if (s.gap) duelNext(s);
         else { duelGap(s); cue(s, 'tick'); }
@@ -319,27 +408,38 @@ module.exports = {
   action(s, playerId, a, { isHost }) {
     findPlayer(s, playerId);
 
-    if (a.type === 'vote') {
+    if (a.type === 'choose') {
       if (s.phase !== 'pick') throw new Error('The game already started');
+      if (!isHost) throw new Error('Only the host picks the typing game');
       const picked = MODES.find(m => m.id === a.mode);
       if (!picked) throw new Error('Pick a typing game');
-      if (picked.maxPlayers && s.players.length > picked.maxPlayers) throw new Error(`${picked.name} is for ${picked.maxPlayers} players only`);
-      s.votes[playerId] = a.mode;
-      cue(s, 'tap');
-      if (Object.keys(s.votes).length === s.players.length) this.action(s, playerId, { type: 'start' }, { isHost: true });
+      if (picked.exactPlayers && s.players.length !== picked.exactPlayers) throw new Error(`${picked.name} is for ${picked.exactPlayers} players only`);
+      begin(s, picked.id);
       return;
     }
 
-    if (a.type === 'start') {
-      if (s.phase !== 'pick') throw new Error('The game already started');
-      if (!isHost) throw new Error('Only the host can start');
-      const tally = {};
-      for (const m of Object.values(s.votes)) tally[m] = (tally[m] || 0) + 1;
-      const top = Math.max(0, ...Object.values(tally));
-      if (!top) throw new Error('Vote for a typing game first');
-      const best = Object.keys(tally).filter(m => tally[m] === top);
-      begin(s, best[Math.floor(Math.random() * best.length)]);
+    if (a.type === 'champ') {
+      if (s.phase !== 'champ') throw new Error('The battle already started');
+      if (!heroChoices(s.mode).includes(a.hero)) throw new Error('Pick a king');
+      if (s.b.ready[playerId]) throw new Error('You already locked in your king');
+      if (Object.entries(s.b.heroes).some(([id, h]) => h === a.hero && id !== playerId)) throw new Error('Someone else took that king');
+      s.b.heroes[playerId] = a.hero;
+      cue(s, 'tap');
       return;
+    }
+
+    if (a.type === 'champReady') {
+      if (s.phase !== 'champ') throw new Error('The battle already started');
+      if (!s.b.heroes[playerId]) throw new Error('Pick a king first');
+      s.b.ready[playerId] = true;
+      cue(s, 'tap');
+      if (s.players.every(p => s.b.ready[p.id])) champsDone(s);
+      return;
+    }
+
+    if (a.type === 'royalType') {
+      if (s.mode !== 'royal') return { quiet: true };
+      return royalType(s, playerId, a.text);
     }
 
     if (a.type === 'strike') {
@@ -402,7 +502,6 @@ module.exports = {
     return {
       phase: s.phase,
       modes: MODES,
-      votes: s.votes,
       mode: s.mode,
       startedAt: s.startedAt,
       text: s.mode === 'race' ? s.text : null,
@@ -416,16 +515,28 @@ module.exports = {
       of: s.mode === 'duel' ? DUEL_WORDS : undefined,
       solvers: s.solvers || [],
       gap: !!s.gap,
-      duelMs: DUEL_WORD_MS,
+      duelMs: duelWord ? duelMsFor(duelWord) : DUEL_WORD_MS,
+      raceMs: RACE_MS,
       scores: s.scores || {},
       results: s.results,
       players: s.players,
-      battle: s.b && (s.mode === 'kings' || s.mode === 'raid') ? {
+      battle: s.b && isBattle(s.mode) ? {
         sides: s.b.sides,
         heroes: s.b.heroes,
         scene: s.b.scene,
-        cpuHero: s.b.cpuHero,
-        cpu: s.b.cpu,
+        ready: s.b.ready,
+        heroChoices: heroChoices(s.mode),
+        champMs: CHAMP_MS,
+        royal: s.mode === 'royal' ? {
+          round: s.b.round + 1,
+          total: Math.max(ROYAL_WORDS + ROYAL_SENTENCES, s.b.queue.length),
+          word: s.phase === 'play' && !s.b.gap ? s.b.queue[s.b.round] : null,
+          gap: s.b.gap,
+          lastWin: s.b.lastWin,
+          endsAt: s.timerAt,
+          roundMs: s.b.roundMs,
+          target: ROYAL_WINS,
+        } : null,
         hp: s.b.hp,
         max: s.b.max,
         events: s.b.events,

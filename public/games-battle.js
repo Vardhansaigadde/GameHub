@@ -111,14 +111,14 @@ function buildField(g) {
   const raid = g.mode === 'raid';
   const f = document.createElement('div');
   f.className = 'bf';
+  bt.royal = g.mode === 'royal';
   const count = Math.max(b.sides.a.length, b.sides.b.length);
   f.style.setProperty('--fh', count > 2 ? '56%' : count === 2 ? '64%' : '72%');
-  const enemyHero = raid ? b.boss.art : b.cpuHero;
   const nameA = raid ? 'Your party' : HERO[b.heroes[b.sides.a[0]]].name;
-  const nameB = raid ? b.boss.name : HERO[b.cpu ? b.cpuHero : b.heroes[b.sides.b[0]]].name;
+  const nameB = raid ? b.boss.name : HERO[b.heroes[b.sides.b[0]]].name;
   const rowA = b.sides.a.map((id, i) => fighterHtml(id, b.heroes[id], 'a', SLOTS[b.sides.a.length][i], nameOf(id), id === S.you)).join('');
-  const rowB = raid || b.cpu
-    ? fighterHtml('enemy', enemyHero, 'b', 23, '', false)
+  const rowB = raid
+    ? fighterHtml('enemy', b.boss.art, 'b', 23, '', false)
     : b.sides.b.map((id, i) => fighterHtml(id, b.heroes[id], 'b', SLOTS[b.sides.b.length][i], nameOf(id), id === S.you)).join('');
   f.innerHTML = `
     ${battleScene(b.scene)}
@@ -145,7 +145,8 @@ function setHp(hp, max) {
     const pct = Math.max(0, Math.min(1, hp[side] / max[side]));
     bar.querySelector('.fill').style.transform = `scaleX(${pct})`;
     bar.querySelector('.chip').style.transform = `scaleX(${pct})`;
-    bar.querySelector('.hp-n').textContent = `${hp[side]} / ${max[side]}`;
+    const other = side === 'a' ? 'b' : 'a';
+    bar.querySelector('.hp-n').textContent = bt.royal ? `${max[other] - hp[other]} of ${max[other]} rounds` : `${hp[side]} / ${max[side]}`;
     bar.classList.toggle('danger', pct < 0.25);
   }
 }
@@ -390,7 +391,7 @@ function moveCallout(move, att) {
 const POWER = { sword: 0.85, arrows: 1, fire: 1.12, bolt: 1.3, meteor: 1.5 };
 const heroOfEvent = (g, ev) => {
   if (ev.by) return g.battle.heroes[ev.by];
-  return g.battle.boss ? g.battle.boss.art : g.battle.cpuHero;
+  return g.battle.boss.art;
 };
 
 function impact(ev, targets, tx) {
@@ -406,7 +407,7 @@ function impact(ev, targets, tx) {
       { filter: 'none', translate: '0 0' },
     ], { duration: 300 });
   }
-  const num = fx(`p-dmg ${ev.ult ? 'crit' : ''}`, `-${ev.dmg}`);
+  const num = fx(`p-dmg ${ev.ult ? 'crit' : ''}`, bt.royal ? 'HIT!' : `-${ev.dmg}`);
   num.style.left = `${tx + (Math.random() * 8 - 4)}%`;
   num.animate([{ transform: 'translate(-50%,0) scale(.6)', opacity: 1 }, { transform: 'translate(-50%,-34px) scale(1.2)', opacity: 1, offset: 0.4 }, { transform: 'translate(-50%,-66px) scale(1)', opacity: 0 }], { duration: 800, easing: 'ease-out' }).onfinish = () => num.remove();
   if (ev.down !== undefined) bossDown();
@@ -453,28 +454,71 @@ function playEvent(g, ev) {
 
 function koAnimation(g) {
   const b = g.battle;
-  const loser = b.winner === 'a' ? 'b' : 'a';
+  const loser = !b.winner ? null : b.winner === 'a' ? 'b' : 'a';
   bt.hpEv = Infinity; // nothing still in the air may change the final health
   setHp(b.hp, b.max);
   for (const f of Object.values(bt.fighters)) {
     if (f.side !== loser) continue;
     anim(f.el, [{ rotate: '0deg', translate: '0 0', opacity: 1 }, { rotate: `${loser === 'a' ? -78 : 78}deg`, translate: '0 18px', opacity: 0.7 }], { duration: 700, fill: 'forwards', easing: 'cubic-bezier(.5,0,1,1)' });
   }
-  const text = fx('p-ko', 'K.O.!');
+  const text = fx('p-ko', b.winner ? 'K.O.!' : 'DRAW!');
   anim(text, [{ transform: 'translate(-50%,-50%) scale(3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }], { duration: 450, easing: 'cubic-bezier(.2,1.4,.4,1)' });
   SFX.play('boom');
   FX.shake();
 }
+
+/* ---------- choosing a king ---------- */
+function champSelect(g) {
+  const b = g.battle;
+  const mine = b.heroes[S.you];
+  const locked = !!b.ready[S.you];
+  const takenBy = id => Object.keys(b.heroes).find(p => b.heroes[p] === id && p !== S.you);
+  const shownId = mine || (bt.champView && !takenBy(bt.champView) && bt.champView) || b.heroChoices.find(id => !takenBy(id));
+  const shown = HERO[shownId];
+  const cards = b.heroChoices.map(id => {
+    const owner = takenBy(id);
+    return `<button class="champ-card ${id === mine ? 'on' : ''} ${owner ? 'taken' : ''}" style="--c:${HERO[id].color}" data-game="typing" data-champ="${id}" ${locked || owner ? 'disabled' : ''} aria-label="${esc(HERO[id].name)}${owner ? `, taken by ${esc(nameOf(owner))}` : ''}">
+      <img src="${heroImg(id)}" alt="" draggable="false"><span>${esc(HERO[id].name)}</span>
+      ${owner ? `<i class="champ-taken">${esc(nameOf(owner))}</i>` : ''}
+    </button>`;
+  }).join('');
+  const attacks = shown.attacks.map(m => `<li>${esc(m.name)}</li>`).join('');
+  const waiting = g.players.map(p => `<span class="pill ${b.ready[p.id] ? 'ok' : ''}">${b.ready[p.id] ? icon('check') : ''} ${esc(p.name)}</span>`).join('');
+  return {
+    tone: 'live',
+    turn: locked ? 'Locked in! Waiting for the others' : 'Choose your king',
+    body: `<div class="timebar"><span data-deadline="${g.timerAt}" data-total="${b.champMs}"></span></div>
+      <div class="champ-layout">
+        <div class="champ-hero" style="--c:${shown.color}">
+          <div class="champ-portrait"><img src="${heroImg(shownId)}" alt="${esc(shown.name)}" draggable="false"></div>
+          <div class="champ-info">
+            <h3>${esc(shown.name)}</h3><p>${esc(shown.title)}</p>
+            <ul class="champ-moves">${attacks}<li class="ult"><b>${esc(shown.ult.name)}</b></li></ul>
+            ${locked ? '' : `<button class="btn btn-primary btn-lg" data-game="typing" data-champ-ready ${mine ? '' : 'disabled'}>${mine ? `Fight as ${esc(shown.name)}` : 'Tap a king'}</button>`}
+          </div>
+        </div>
+        <div class="champ-grid">${cards}</div>
+      </div>
+      <div class="pass-status">${waiting}</div>`,
+  };
+}
+
+const prevTypingHandler = handlers.typing;
+handlers.typing = (d, el) => {
+  if ('champ' in d) { bt.champView = d.champ; act({ type: 'champ', hero: d.champ }); }
+  else if ('champReady' in d) act({ type: 'champReady' });
+  else prevTypingHandler(d, el);
+};
 
 /* ---------- the versus screen before a battle ---------- */
 function battleVs(g) {
   const b = g.battle;
   const left = b.heroes[S.you] || b.heroes[b.sides.a[0]];
   const raid = g.mode === 'raid';
-  const rival = b.sides.b[0] && b.sides.a.includes(S.you) ? b.sides.b[0] : b.sides.a.find(id => id !== S.you);
-  const right = raid ? b.boss.art : b.cpu ? b.cpuHero : b.heroes[rival];
+  const rival = b.sides.a.includes(S.you) ? b.sides.b[0] : b.sides.a[0];
+  const right = raid ? b.boss.art : b.heroes[rival];
   const leftWho = 'You';
-  const rightWho = raid ? `Boss 1 of ${b.boss.count}` : b.cpu ? 'Computer' : nameOf(rival);
+  const rightWho = raid ? `Boss 1 of ${b.boss.count}` : nameOf(rival);
   const side = (hero, who, cls) => `<div class="vs-side ${cls}" style="--c:${HERO[hero].color}"><img src="${heroImg(hero)}" alt="" draggable="false"><b>${esc(HERO[hero].name)}</b><small>${esc(who)} · ${esc(HERO[hero].title)}</small></div>`;
   return {
     tone: 'live',
@@ -484,7 +528,52 @@ function battleVs(g) {
 }
 
 /* ---------- the typing panel ---------- */
-const currentWord = g => g.battle.myWords[bt.localIdx - g.battle.myIdx] || '';
+const currentWord = g => (g.battle.royal ? g.battle.royal.word || '' : g.battle.myWords[bt.localIdx - g.battle.myIdx] || '');
+
+// Royal Duel updates in place between rounds, so a phone keyboard stays open
+function royalStatus(g) {
+  const r = g.battle.royal;
+  if (r.lastWin) return r.lastWin === S.you ? 'You struck first!' : `${nameOf(r.lastWin)} struck first!`;
+  return r.gap ? 'Too slow! Nobody got it.' : `First to ${r.target} rounds wins. Type it first!`;
+}
+
+function paintRoyal(g) {
+  const r = g.battle.royal;
+  const input = $('#battleInput');
+  const key = `${r.round}:${r.gap}`;
+  if (bt.royalKey !== key) {
+    bt.royalKey = key;
+    if (input) { input.value = ''; input.classList.remove('bad'); }
+  }
+  if (input) {
+    input.readOnly = r.gap;
+    input.placeholder = r.gap ? 'Get ready…' : r.word.includes(' ') ? 'Type the sentence…' : 'Type the word…';
+  }
+  const wordEl = $('#battleWord');
+  if (wordEl) {
+    wordEl.classList.toggle('long', r.gap || r.word.includes(' '));
+    wordEl.classList.toggle('won', !!r.lastWin);
+    wordEl.innerHTML = r.gap ? esc(r.lastWin ? (r.lastWin === S.you ? 'Your king strikes!' : `${nameOf(r.lastWin)} strikes!`) : 'Nobody got it') : wordHtml(r.word, input ? input.value.trim().toLowerCase() : '');
+  }
+  const tag = $('#battleAttack');
+  if (tag) {
+    tag.textContent = `Round ${r.round} of ${r.total}`;
+    tag.className = 'bw-attack';
+  }
+  const wins = id => g.battle.max.a - g.battle.hp[g.battle.sides.a.includes(id) ? 'b' : 'a'];
+  const meter = $('#battleStreak');
+  if (meter) {
+    const mine = wins(S.you);
+    meter.innerHTML = Array.from({ length: r.target }, (_, i) => `<i class="${i < mine ? 'on' : ''}"></i>`).join('');
+  }
+  const bar = document.querySelector('.bw-royal-bar span');
+  if (bar) {
+    bar.dataset.deadline = r.endsAt;
+    bar.dataset.total = r.gap ? 2400 : r.roundMs;
+  }
+  const turn = document.querySelector('.turn-bar > span:last-child');
+  if (turn) turn.textContent = royalStatus(g);
+}
 
 function wordHtml(word, typed) {
   let good = 0;
@@ -494,6 +583,7 @@ function wordHtml(word, typed) {
 }
 
 function paintPanel(g) {
+  if (g.battle.royal) return paintRoyal(g);
   const word = currentWord(g);
   const input = $('#battleInput');
   const typed = input ? input.value.trim().toLowerCase() : '';
@@ -502,10 +592,13 @@ function paintPanel(g) {
   const pips = bt.streak % every;
   const ultNext = pips === every - 1;
   const hero = HERO[g.battle.heroes[S.you]] || HERO.aldric;
-  if (wordEl) wordEl.innerHTML = wordHtml(word, typed);
+  if (wordEl) {
+    wordEl.innerHTML = wordHtml(word, typed);
+    wordEl.classList.toggle('long', word.includes(' '));
+  }
   const tag = $('#battleAttack');
   if (tag) {
-    tag.textContent = ultNext ? hero.ult.name : hero.name;
+    tag.textContent = ultNext ? hero.ult.name : word.includes(' ') ? `${hero.name} · big hit` : hero.name;
     tag.className = `bw-attack ${ultNext ? 'ult' : ''}`;
   }
   const meter = $('#battleStreak');
@@ -513,10 +606,24 @@ function paintPanel(g) {
 }
 
 function typingBattle(g) {
+  if (g.phase === 'champ') return champSelect(g);
   const b = g.battle;
   const raid = g.mode === 'raid';
   if (g.phase === 'ko') {
     return { tone: 'win', turn: battleHeadline(g), body: '<div id="battleSlot"></div>' };
+  }
+  if (b.royal) {
+    return {
+      tone: 'live',
+      turn: esc(royalStatus(g)),
+      body: `<div id="battleSlot"></div>
+        <div class="timebar bw-royal-bar"><span data-deadline="${b.royal.endsAt}" data-total="${b.royal.roundMs}"></span></div>
+        <div class="bw-panel">
+          <div class="bw-top"><span id="battleAttack" class="bw-attack"></span><span class="bw-streak" title="Rounds you have won"><span id="battleStreak" class="bw-pips"></span></span></div>
+          <div id="battleWord" class="bw-word" aria-live="polite"></div>
+          <input id="battleInput" class="type-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type the word or sentence">
+        </div>`,
+    };
   }
   return {
     tone: 'live',
@@ -526,7 +633,7 @@ function typingBattle(g) {
       <div class="bw-panel">
         <div class="bw-top"><span id="battleAttack" class="bw-attack"></span><span class="bw-streak" title="Five words without a typo unleashes your ultimate"><span id="battleStreak" class="bw-pips"></span></span></div>
         <div id="battleWord" class="bw-word" aria-live="polite"></div>
-        <input id="battleInput" class="type-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type the word…" aria-label="Type the word">
+        <input id="battleInput" class="type-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type it…" aria-label="Type the word or sentence">
       </div>`,
   };
 }
@@ -534,7 +641,7 @@ function typingBattle(g) {
 function battleHeadline(g) {
   const b = g.battle;
   if (g.mode === 'raid') return b.winner === 'a' ? 'Raid cleared! All bosses defeated!' : `The bosses won — ${b.bossesDown} of 3 defeated`;
-  if (b.cpu) return b.winner === 'a' ? `You defeated ${HERO[b.cpuHero].name}!` : `${HERO[b.cpuHero].name} defeated you!`;
+  if (!b.winner) return 'A draw! Nobody takes the throne.';
   const champ = b.sides[b.winner][0];
   return `${esc(nameOf(champ))} wins as ${esc(HERO[b.heroes[champ]].name)}!`;
 }
@@ -546,6 +653,18 @@ $('#stage').addEventListener('input', e => {
   const input = e.target;
   const typed = input.value.trim().toLowerCase();
   const word = currentWord(g);
+  if (g.battle.royal) {
+    if (!word) { input.value = ''; return; }
+    if (typed === word) {
+      act({ type: 'royalType', text: typed });
+      return;
+    }
+    const wrong = !word.startsWith(typed);
+    input.classList.toggle('bad', wrong);
+    SFX.play(wrong ? 'tick' : 'key');
+    paintRoyal(g);
+    return;
+  }
   if (word && typed === word) {
     act({ type: 'strike', text: typed });
     bt.localIdx++;
@@ -582,6 +701,7 @@ livePatch.typing = g => {
 afterRender.push(() => {
   const g = S && S.game;
   if (!g || g.gameId !== 'typing' || !g.battle || (g.phase !== 'play' && g.phase !== 'ko')) {
+    if (g && g.phase === 'pick') bt.champView = null;
     bt.phase = g && g.phase;
     return;
   }
@@ -617,7 +737,8 @@ afterRender.push(() => {
   }
   if (g.phase === 'ko' && !bt.koShown) {
     bt.koShown = true;
-    setTimeout(() => { if (S && S.game && S.game.phase === 'ko') koAnimation(S.game); }, 500);
+    // a winning ultimate takes longer to land
+    setTimeout(() => { if (S && S.game && S.game.phase === 'ko') koAnimation(S.game); }, bt.royal ? 1400 : 500);
   }
   bt.phase = g.phase;
 });

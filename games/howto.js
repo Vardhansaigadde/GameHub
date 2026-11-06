@@ -1,7 +1,7 @@
 // Short "How to play" steps and the home-page section for each game.
 module.exports = {
   categories: [
-    { id: 'top', name: 'Most played' },
+    { id: 'drawing', name: 'Drawing games' },
     { id: 'party', name: 'Party games' },
     { id: 'paper', name: 'Paper & chits' },
     { id: 'board', name: 'Board games' },
@@ -9,17 +9,18 @@ module.exports = {
   ],
   games: {
     telephone: {
-      cat: 'top',
+      cat: 'drawing',
       tagline: 'What you write is never what comes back',
       steps: [
         'Everyone secretly writes a funny sentence.',
         'Each sentence moves to the next player, who draws it.',
         'That drawing moves on, and the next player describes what they see.',
-        'Keep going round. Then watch every chain unfold — and try not to cry laughing.',
+        'Keep going round. Then watch every chain unfold, with drawings replaying line by line, and tap the heart on anything funny.',
+        'Each heart scores 100, the top entry in each story gets 50 more, and the highest score wins. Share your best story as one image.',
       ],
     },
     showdown: {
-      cat: 'top',
+      cat: 'drawing',
       tagline: 'Same sentence. Very different drawings.',
       steps: [
         'Everyone gets the same funny sentence and draws it at the same time.',
@@ -29,17 +30,18 @@ module.exports = {
       ],
     },
     typing: {
-      cat: 'top',
+      cat: 'party',
       tagline: 'Race, zap and duel with your keyboard',
       steps: [
-        "Vote for a challenge. Kings' Battle (2 players): you each get a king, and every word you type launches a random attack.",
-        'Longer words hit harder, and 5 words without a typo unleash an ultimate. Monster Raid: team up against three bosses.',
-        'Car Race: type the sentence and your car drives. Word Rain: zap falling words.',
-        'Speed Duel: one word at a time, fastest typists score most.',
+        "The host picks the challenge. Kings' Battle (2 players): choose your king, and everything you type launches a random attack.",
+        'Royal Duel (2 players): both get the same 3 words and 2 sentences. Whoever types it first strikes, and the first to win 3 rounds wins.',
+        'Longer words hit harder, sentences hit hardest, and 5 in a row without a typo unleash an ultimate. Monster Raid: team up against three bosses.',
+        'Car Race: type the paragraph and your car drives. First home wins, then second, third and so on. Word Rain: zap falling words.',
+        'Speed Duel: one word or sentence at a time, fastest typists score most.',
       ],
     },
     ludo: {
-      cat: 'top',
+      cat: 'board',
       tagline: 'The classic race home',
       steps: [
         'Roll a 6 to bring a token out of your yard.',
@@ -49,7 +51,7 @@ module.exports = {
       ],
     },
     snakes: {
-      cat: 'top',
+      cat: 'board',
       tagline: 'Climb ladders, dodge snakes',
       steps: [
         'Tap the dice on your turn. A 6 rolls again.',
@@ -59,7 +61,7 @@ module.exports = {
       ],
     },
     colorclash: {
-      cat: 'top',
+      cat: 'cards',
       tagline: 'Match, skip, reverse, +4!',
       steps: [
         'Play a card matching the colour or the value, or a wild card.',
@@ -88,7 +90,7 @@ module.exports = {
       ],
     },
     pictionary: {
-      cat: 'party',
+      cat: 'drawing',
       tagline: 'Draw it, guess it',
       steps: [
         'On your turn, pick 1 of 4 words and draw it. The host chooses the theme, and words get harder each round.',

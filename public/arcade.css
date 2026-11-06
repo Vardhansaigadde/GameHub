@@ -1,5 +1,5 @@
 /* Arcade games: Typing Arena, Ludo, Snakes & Ladders, Color Clash, Four in a Row */
-.cat-top { --glow: 255, 200, 61; }
+.cat-drawing { --glow: 255, 200, 61; }
 
 /* ---------- shared dice + board layout ---------- */
 .board-wrap { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; align-items: flex-start; }
@@ -413,3 +413,86 @@ button.sd-card:hover:not(:disabled) { transform: translateY(-4px) scale(1.02); b
   .vs-screen { min-height: 290px; padding: 12px 4px; }
   .vs-side small { font-size: .66rem; }
 }
+
+
+/* ---------- Doodle Telephone hearts and final screen ---------- */
+.tp-heart-hint { margin: 0 0 12px; text-align: center; }
+.tp-who .tp-heart { margin-left: auto; }
+.tp-heart { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 44px; min-height: 40px; padding: 4px 11px; border: 2px solid var(--line); border-radius: 999px; background: var(--raised); color: var(--muted); font: 700 .92rem var(--display); cursor: pointer; transition: transform .15s var(--spring), background .15s, color .15s, border-color .15s; }
+button.tp-heart:hover { transform: scale(1.08); border-color: #ff4d78; color: #ff4d78; }
+.tp-heart svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.200; stroke-linejoin: round; }
+.tp-heart b { font-weight: 700; color: inherit; }
+.tp-heart.on { background: #ff2e63; border-color: #ff2e63; color: #fff; }
+.tp-heart.on svg { fill: #fff; stroke: #fff; }
+.tp-heart.mine { background: transparent; border-color: transparent; color: #ff4d78; cursor: default; min-width: 0; padding: 4px 2px; }
+.tp-heart.mine svg { fill: #ff4d78; stroke: #ff4d78; }
+.tp-heart.pop svg { animation: tpHeartPop .4s var(--spring); }
+@keyframes tpHeartPop { 0% { transform: scale(.5); } 60% { transform: scale(1.4); } 100% { transform: scale(1); } }
+.tp-moment { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 460px; margin: 14px auto 18px; padding: 14px; border-radius: 16px; border: 2px solid var(--gold); background: var(--well); text-align: center; }
+.tp-moment > small { font: 600 .82rem var(--display); letter-spacing: .04em; color: var(--gold); text-transform: uppercase; }
+.tp-moment .tp-bubble, .tp-moment .tp-frame.small { margin: 0; width: 100%; }
+.tp-moment-by { display: flex; align-items: center; gap: 8px; }
+.tp-moment-by .avatar { width: 28px; height: 28px; font-size: .72rem; }
+@media (prefers-reduced-motion: reduce) { .tp-heart.pop svg { animation: none; } }
+
+
+/* ---------- Doodle Telephone replay and sharing ---------- */
+.tp-pic { position: relative; }
+.tp-replay { position: absolute; inset: 0; width: 100%; height: 100%; background: #fff; }
+.tp-replay-btn { position: absolute; right: 6px; bottom: 6px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 4px 11px; border: 0; border-radius: 999px; background: rgba(18, 13, 43, .82); color: #fff; font: 600 .8rem var(--display); cursor: pointer; }
+.tp-replay-btn[hidden] { display: none; }
+.tp-replay-btn svg.icon { width: 15px; height: 15px; }
+.tp-replay-btn:hover { background: #120d2b; }
+.tp-stories { margin: 18px auto 4px; max-width: 620px; text-align: center; }
+.tp-stories h4 { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 0 10px; font: 600 1.05rem var(--display); }
+.tp-stories h4 svg.icon { width: 18px; height: 18px; }
+.tp-stories > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.tp-sharebox { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 12px; background: rgba(5, 3, 18, .78); }
+.tp-sharecard { display: flex; flex-direction: column; gap: 12px; width: min(480px, 100%); max-height: calc(100dvh - 24px); padding: 12px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0, 0, 0, .5); }
+.tp-sharepreview { flex: 1 1 auto; min-height: 0; overflow-y: auto; border-radius: 10px; background: #1b1248; }
+.tp-sharepreview img { display: block; width: 100%; height: auto; }
+.tp-shareactions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.tp-shareactions .btn { flex: 1 1 130px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+
+/* ---------- typing game chooser and Royal Duel ---------- */
+.mode-card:disabled { cursor: default; transform: none; box-shadow: none; }
+.mode-grid.watching .mode-card { opacity: .75; }
+.mode-card:disabled:not(.mode-grid.watching *) { opacity: .55; }
+.scene.kings.royal { background: linear-gradient(180deg, #5a1f8a, #120d2b); }
+.scene.kings.royal .k.a, .scene.kings.royal .k.b { color: #ffc83d; }
+.bw-word.won { color: var(--gold); }
+html[data-theme="light"] .bw-word.won { color: #ffc83d; }
+
+
+/* ---------- choosing a king ---------- */
+.champ-layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 14px; align-items: start; margin-top: 8px; }
+.champ-hero { display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 12fr); gap: 10px; padding: 12px; border-radius: 16px; background: radial-gradient(circle at 25% 40%, color-mix(in srgb, var(--c) 34%, transparent), transparent 70%), var(--well); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); }
+.champ-portrait { height: 320px; display: grid; place-items: center; }
+.champ-portrait img { max-width: 100%; max-height: 100%; animation: champBreathe 2.4s ease-in-out infinite; transform-origin: bottom; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .5)); }
+@keyframes champBreathe { 50% { transform: scaleY(1.025); } }
+.champ-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.champ-info h3 { margin: 0; font: 700 1.35rem/1.1 var(--display); }
+.champ-info p { margin: 0; color: var(--muted); font-weight: 800; font-size: .85rem; }
+.champ-moves { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.champ-moves li { padding: 4px 9px; border-radius: 9px; background: var(--raised); font: 600 .84rem/1.2 var(--display); }
+.champ-moves li.ult { background: linear-gradient(90deg, #ff2e93, #ffc83d); color: #2b0f24; }
+.champ-moves li.ult b { font-weight: 700; }
+.champ-info .btn { width: 100%; margin-top: auto; padding-inline: 8px; font-size: .95rem; }
+.champ-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.champ-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 3px 5px; border-radius: 12px; background: var(--well); border: 2px solid var(--line); color: var(--text); cursor: pointer; transition: transform .15s var(--spring), border-color .15s; min-width: 0; }
+.champ-card img { height: 92px; max-width: 100%; object-fit: contain; object-position: bottom; }
+.champ-card span { font: 600 .7rem/1.1 var(--display); text-align: center; }
+.champ-card:hover:not(:disabled) { transform: translateY(-3px); border-color: var(--c); }
+.champ-card.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 24%, var(--well)); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 60%, transparent); }
+.champ-card:disabled { cursor: default; }
+.champ-card:disabled:not(.on) { opacity: .68; }
+.champ-card.taken { opacity: .5; }
+.champ-card.taken img { filter: grayscale(1); }
+.champ-taken { position: absolute; top: 3px; left: 3px; right: 3px; font: 800 .62rem var(--font); padding: 1px 4px; border-radius: 6px; background: rgba(0, 0, 0, .75); color: #ffc83d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 900px) {
+  .champ-layout { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .champ-portrait { height: 240px; }
+  .champ-moves li { padding: 3px 8px; font-size: .78rem; }
+}
+@media (prefers-reduced-motion: reduce) { .champ-portrait img { animation: none; } }

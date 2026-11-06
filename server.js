@@ -149,11 +149,11 @@ function addChat(room, from, text) {
 io.on('connection', socket => {
   const reply = (cb, data) => typeof cb === 'function' && cb(data);
 
-  socket.on('create', ({ name, token } = {}, cb) => {
+  socket.on('create', ({ name, token, gameId } = {}, cb) => {
     if (!token) return reply(cb, { error: 'Missing token' });
     const code = makeCode();
     const player = { id: newId(), token, name: cleanName(name), socketId: null };
-    const room = { code, hostId: player.id, gameId: 'housie', players: [player], state: null, chat: [] };
+    const room = { code, hostId: player.id, gameId: Object.hasOwn(games, String(gameId)) ? gameId : 'housie', players: [player], state: null, chat: [] };
     rooms.set(code, room);
     attach(socket, room, player);
     reply(cb, { code });
@@ -184,7 +184,7 @@ io.on('connection', socket => {
 
   socket.on('selectGame', ({ gameId } = {}) => {
     const { room, player } = current(socket);
-    if (!room || room.hostId !== player.id || room.state || !games[gameId]) return;
+    if (!room || room.hostId !== player.id || room.state || !Object.hasOwn(games, String(gameId))) return;
     room.gameId = gameId;
     broadcast(room);
   });

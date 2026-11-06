@@ -73,3 +73,5 @@ html[data-theme="light"] .tp-link { background: var(--line); }
 html[data-theme="light"] .bw-panel, html[data-theme="light"] .track, html[data-theme="light"] .vs-screen { --text: #f5f2ff; --muted: #bdb5e3; --gold: #ffc83d; --green: #2fe07f; --blue: #38c6ff; color: #f5f2ff; }
 html[data-theme="light"] .bw-panel input { background: #1c1640; color: #fff; border-color: #4a4080; }
 html[data-theme="light"] .bw-panel input::placeholder { color: #9a90c9; }
+html[data-theme="light"] .result-banner h3 { background: linear-gradient(90deg, #a35f00, #c2146f); -webkit-background-clip: text; background-clip: text; }
+html[data-theme="light"] .brand span { background: linear-gradient(90deg, #a35f00, #c2146f); -webkit-background-clip: text; background-clip: text; }

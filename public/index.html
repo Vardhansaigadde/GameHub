@@ -62,6 +62,7 @@
               <span>Your name</span>
               <input id="nameInput" maxlength="16" placeholder="Enter your name" autocomplete="nickname">
             </label>
+            <p id="pickedGame" class="picked-game hidden"></p>
             <button id="createBtn" class="btn btn-primary btn-lg btn-block">Create room</button>
             <div class="divider"><span>Have a room code?</span></div>
             <div class="join-row">
@@ -104,6 +105,7 @@
           <ul id="playerList" class="player-list"></ul>
           <div class="panel-foot">
             <button id="copyLink" class="btn btn-block"></button>
+            <button id="leaveBtn" class="btn btn-ghost btn-block"></button>
           </div>
         </div>
         <div class="panel chat" id="chatPanel">
@@ -114,7 +116,6 @@
             <button class="btn btn-icon" aria-label="Send" id="chatSend"></button>
           </form>
         </div>
-        <button id="leaveBtn" class="btn btn-ghost btn-block"></button>
       </aside>
     </div>
     <div id="scrim" class="scrim"></div>

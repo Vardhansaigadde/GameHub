@@ -191,3 +191,10 @@ html[data-theme="light"] .duel-word span { color: #fff; }
   body.in-game .drawer-head .btn { flex: 1 1 0; padding-inline: 4px; font-size: .78rem; white-space: nowrap; }
   body.in-game #playerList { max-height: none; overflow: visible; }
 }
+
+
+/* ---------- reconnecting ---------- */
+.net-bar { position: fixed; left: 50%; top: calc(52px + env(safe-area-inset-top)); z-index: 70; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: #120d2b; color: #fff; font: 600 .85rem var(--display); box-shadow: 0 6px 18px rgba(0, 0, 0, .4); }
+.net-bar i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); border-top-color: #ffc83d; animation: netSpin .8s linear infinite; }
+@keyframes netSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .net-bar i { animation: none; } }

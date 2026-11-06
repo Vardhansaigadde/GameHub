@@ -16,6 +16,34 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Kalam:wght@400;700&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* The waking-up screen lives here, not in a stylesheet, so it can show before anything else has loaded. */
+    #bootSplash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; color: #f5f2ff; background: radial-gradient(circle at 50% 42%, #3a1f6e, #120c2e 68%); font: 700 16px "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif; opacity: 0; animation: bootIn .35s ease .5s forwards; transition: opacity .3s; }
+    #bootSplash.leaving { opacity: 0 !important; animation: none; pointer-events: none; }
+    html[data-theme="light"] #bootSplash { color: #1e1742; background: radial-gradient(circle at 50% 42%, #fff, #e4dcfb 70%); }
+    #bootSplash svg { width: min(250px, 66vw); height: auto; overflow: visible; }
+    #bootSplash h2 { margin: 6px 0 0; font: 600 clamp(1.3rem, 5vw, 1.7rem) "Fredoka", "Nunito", system-ui, sans-serif; }
+    #bootTip { min-height: 1.4em; opacity: .85; }
+    #bootBar { position: relative; width: min(280px, 72vw); height: 8px; border-radius: 4px; overflow: hidden; background: rgba(127, 110, 200, .3); }
+    #bootBar i { position: absolute; top: 0; bottom: 0; width: 40%; border-radius: 4px; background: linear-gradient(90deg, #2fe07f, #ffc83d); animation: bootSlide 1.5s ease-in-out infinite; }
+    #bootNote { max-width: 340px; min-height: 2.8em; font-size: .86rem; font-weight: 600; opacity: .72; }
+    #bootActions button { min-height: 44px; padding: 8px 18px; border: 0; border-radius: 12px; background: #ffc83d; color: #3a2300; font: 600 .95rem "Fredoka", system-ui, sans-serif; cursor: pointer; }
+    .boot-gate { animation: bootGate 3.2s ease-in-out infinite alternate; }
+    .boot-glow { transform-box: fill-box; transform-origin: center; animation: bootGlow 1.3s ease-in-out infinite alternate; }
+    .boot-halo { opacity: .2; animation: bootHalo 1.3s ease-in-out infinite alternate; }
+    @keyframes bootHalo { to { opacity: .34; } }
+    .boot-flame { transform-box: fill-box; transform-origin: bottom center; animation: bootFlame .4s ease-in-out infinite alternate; }
+    .boot-crown { transform-box: fill-box; transform-origin: bottom center; animation: bootCrown 1.6s ease-in-out infinite; }
+    .boot-flag { transform-box: fill-box; transform-origin: left center; animation: bootFlag .8s ease-in-out infinite alternate; }
+    @keyframes bootIn { to { opacity: 1; } }
+    @keyframes bootSlide { from { left: -40%; } to { left: 100%; } }
+    @keyframes bootGate { from { transform: translateY(0); } to { transform: translateY(-42px); } }
+    @keyframes bootGlow { from { opacity: .65; } to { opacity: 1; } }
+    @keyframes bootFlame { from { transform: scale(1, 1) rotate(-3deg); } to { transform: scale(.88, 1.14) rotate(4deg); } }
+    @keyframes bootCrown { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-11px) rotate(3deg); } }
+    @keyframes bootFlag { to { transform: scaleX(.8) skewY(8deg); } }
+    @media (prefers-reduced-motion: reduce) { #bootSplash * { animation: none !important; } #bootSplash { animation-duration: .01s; animation-delay: .5s; } #bootBar i { left: 30%; } }
+  </style>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="arena.css">
   <link rel="stylesheet" href="arcade.css">
@@ -23,6 +51,67 @@
   <link rel="stylesheet" href="theme-light.css">
 </head>
 <body>
+  <!-- Shown while the server wakes up; quick loads never see it -->
+  <div id="bootSplash" role="status" aria-live="polite">
+    <svg viewBox="0 0 200 150" aria-hidden="true">
+      <g class="boot-crown"><path d="M78 26l5-20 11 11 6-15 6 15 11-11 5 20z" fill="#ffc83d" stroke="#a86f00" stroke-width="1.500" stroke-linejoin="round"/><circle cx="100" cy="17" r="2.500" fill="#ff2e93"/></g>
+      <path d="M40 18v13" stroke="#6b5a8c" stroke-width="2"/><path class="boot-flag" d="M40 18l14 4-14 5z" fill="#ff4d6d"/><path d="M160 18v13" stroke="#6b5a8c" stroke-width="2"/><path class="boot-flag" d="M160 18l14 4-14 5z" fill="#38c6ff"/>
+      <path d="M22 148V38h6v-6h6v6h6v-6h6v6h6v-6h6v6h6v110z" fill="#4a3d78"/><path d="M122 148V38h6v-6h6v6h6v-6h6v6h6v-6h6v6h6v110z" fill="#4a3d78" transform="translate(-4 0)"/>
+      <path d="M58 148V66h7v-7h8v7h8v-7h8v7h8v-7h8v7h8v-7h8v7h8v-7h8v7h7v82z" fill="#5b4c8f"/>
+      <path d="M72 148v-44a28 28 0 0 1 56 0v44z" fill="#2a1a10"/>
+      <clipPath id="bootDoor"><path d="M72 148v-44a28 28 0 0 1 56 0v44z"/></clipPath>
+      <g clip-path="url(#bootDoor)"><rect class="boot-glow" x="72" y="76" width="56" height="72" fill="#ff9a3d"/><path class="boot-glow" d="M88 148v-52h24v52z" fill="#ffe2a6"/><g class="boot-gate" fill="none" stroke="#1a1820" stroke-width="4"><path d="M80 72v76M90 72v76M100 72v76M110 72v76M120 72v76M72 88h56M72 108h56M72 128h56"/></g></g>
+      <circle class="boot-halo" cx="62" cy="96" r="15" fill="#ff9a3d"/><circle class="boot-halo" cx="138" cy="96" r="15" fill="#ff9a3d"/>
+      <path d="M60 116l-1-16h6l-1 16zM136 116l-1-16h6l-1 16z" fill="#2a1a10"/>
+      <path class="boot-flame" d="M62 86c4 5 6 8 6 11a6 4 0 0 1-12 0c0-3 2-6 6-11z" fill="#ff8a2a"/><path class="boot-flame" d="M138 86c4 5 6 8 6 11a6 4 0 0 1-12 0c0-3 2-6 6-11z" fill="#ff8a2a"/>
+    </svg>
+    <h2>Waking up the arena</h2>
+    <div id="bootTip">Polishing the crowns…</div>
+    <div id="bootBar"><i></i></div>
+    <div id="bootNote"></div>
+    <div id="bootActions"></div>
+  </div>
+  <script>
+    // Stays up until the server has answered. Written without the app so it runs even while that is still loading.
+    (function () {
+      var el = document.getElementById('bootSplash');
+      var need = { socket: true, catalog: true };
+      var tips = ['Polishing the crowns…', 'Shuffling the cards…', 'Sharpening the pencils…', 'Rolling the dice…', 'Lighting the torches…', 'Tuning the race cars…', 'Waking the kings…', 'Raising the castle gate…'];
+      var tip = 0, start = Date.now(), done = false;
+      var timer = setInterval(function () {
+        if (done) return;
+        tip = (tip + 1) % tips.length;
+        document.getElementById('bootTip').textContent = tips[tip];
+        var secs = (Date.now() - start) / 1000;
+        if (secs > 8) document.getElementById('bootNote').textContent = 'Our free server naps when nobody is playing. It usually wakes in under a minute.';
+        var actions = document.getElementById('bootActions');
+        if (secs > 25 && !actions.firstChild) {
+          var open = document.createElement('button');
+          open.textContent = 'Open the site while it wakes';
+          open.onclick = finish;
+          actions.appendChild(open);
+        }
+        if (secs > 90 && actions.firstChild && actions.firstChild.textContent !== 'Try again') {
+          actions.firstChild.textContent = 'Try again';
+          actions.firstChild.onclick = function () { location.reload(); };
+        }
+      }, 2200);
+      function finish() {
+        if (done) return;
+        done = true;
+        clearInterval(timer);
+        el.classList.add('leaving');
+        setTimeout(function () { el.remove(); }, 350);
+      }
+      window.bootMark = function (what) {
+        need[what] = false;
+        if (!need.socket && !need.catalog) finish();
+      };
+      // with no internet there is nothing to wait for: Dumb Charades still works
+      if (navigator.onLine === false) finish();
+      window.addEventListener('offline', finish);
+    })();
+  </script>
   <header class="topbar">
     <a class="brand" href="/" id="brandLink">
       <img src="icons/icon.svg" width="34" height="34" alt="">
@@ -154,6 +243,7 @@
     </div>
   </div>
 
+  <div id="netBar" class="net-bar hidden" role="status"><i></i>Reconnecting…</div>
   <div id="toast" class="toast hidden" role="status"></div>
 
   <script src="/socket.io/socket.io.js"></script>

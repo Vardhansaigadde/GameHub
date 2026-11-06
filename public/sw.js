@@ -1,7 +1,7 @@
 // Keeps the app shell and the movie list cached so Dumb Charades works offline.
-// Network first (so updates show up straight away), cache as the fallback.
-const CACHE = 'gamehub-v19';
-const SHELL = ['/', '/index.html', '/style.css', '/arena.css', '/arcade.css', '/games-arcade.js', '/battle-scenes.js', '/battle-scenes.css', '/theme-light.css', '/games-battle.js', '/games-telephone.js', '/app.js', '/fx.js', '/icons/icon.svg', '/sound.js', '/games-party.js', '/games-ipl.js', '/data/telugu-movies.json', '/manifest.webmanifest', '/icons/icon-192.png'];
+// Network first (so updates show up straight away), the saved copy as the fallback.
+const CACHE = 'gamehub-v20';
+const SHELL = ['/', '/index.html', '/style.css', '/arena.css', '/arcade.css', '/games-arcade.js', '/battle-scenes.js', '/battle-scenes.css', '/theme-light.css', '/games-battle.js', '/games-telephone.js', '/app.js', '/fx.js', '/icons/icon.svg', '/sound.js', '/games-party.js', '/games-ipl.js', '/data/telugu-movies.json', '/manifest.webmanifest', '/socket.io/socket.io.js', '/icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -11,18 +11,37 @@ self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
+// A sleeping server is slow or answers with its own waking-up page, so:
+//  - never store anything that isn't really ours
+//  - if the network hasn't answered in time, open the saved copy; our own loading screen takes it from there
+const NETWORK_WAIT_MS = 3000;
+
+async function isOurs(res, isNav, url) {
+  if (!res.ok) return false;
+  const type = res.headers.get('content-type') || '';
+  if (isNav) return (await res.clone().text()).includes('id="bootSplash"');
+  return url.pathname.endsWith('.html') || !type.includes('text/html');
+}
+
+async function respond(request, url) {
+  const isNav = request.mode === 'navigate';
+  const key = isNav || url.pathname === '/' ? '/' : request;
+  const cached = await caches.match(key);
+  const network = fetch(request).then(async res => {
+    const good = await isOurs(res, isNav, url);
+    if (good) (await caches.open(CACHE)).put(key, res.clone());
+    return { res, good };
+  });
+  if (!cached) return network.then(n => n.res);
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(cached), NETWORK_WAIT_MS);
+    network.then(n => { clearTimeout(timer); resolve(n.good ? n.res : cached); }, () => { clearTimeout(timer); resolve(cached); });
+  });
+}
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/socket.io') || url.pathname.startsWith('/api/')) return;
-  e.respondWith(
-    fetch(e.request)
-      .then(res => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(url.pathname === '/' ? '/' : e.request, copy));
-        }
-        return res;
-      })
-      .catch(() => caches.match(url.pathname === '/' || url.search.includes('charades') ? '/' : e.request))
-  );
+  const live = url.pathname.startsWith('/socket.io') && url.pathname !== '/socket.io/socket.io.js';
+  if (e.request.method !== 'GET' || url.origin !== location.origin || live || url.pathname.startsWith('/api/')) return;
+  e.respondWith(respond(e.request, url));
 });

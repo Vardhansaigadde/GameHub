@@ -157,16 +157,21 @@ function gameTile(g, attrs = '', cls = '') {
 }
 
 let homeGames = [];
-fetch('/api/games').then(r => r.json()).then(({ categories, games }) => {
-  homeGames = games;
-  $('#gameCount').textContent = games.length;
-  $('#catalog').innerHTML = categories.map(c => {
-    const list = games.filter(g => g.cat === c.id);
-    if (!list.length) return '';
-    return `<div class="cat-section cat-${c.id}"><h2 class="section-title">${esc(c.name)} <span class="count">${list.length}</span></h2>
-      <div class="tile-grid">${list.map(g => gameTile(g, `data-howto-home="${g.id}"`)).join('')}</div></div>`;
-  }).join('');
-}).catch(() => {});
+// a sleeping server may answer with something else at first, so keep trying until the games arrive
+function loadCatalog() {
+  fetch('/api/games').then(r => r.json()).then(({ categories, games }) => {
+    homeGames = games;
+    $('#gameCount').textContent = games.length;
+    $('#catalog').innerHTML = categories.map(c => {
+      const list = games.filter(g => g.cat === c.id);
+      if (!list.length) return '';
+      return `<div class="cat-section cat-${c.id}"><h2 class="section-title">${esc(c.name)} <span class="count">${list.length}</span></h2>
+        <div class="tile-grid">${list.map(g => gameTile(g, `data-howto-home="${g.id}"`)).join('')}</div></div>`;
+    }).join('');
+    window.bootMark('catalog');
+  }).catch(() => setTimeout(loadCatalog, 3000));
+}
+loadCatalog();
 
 $('#catalog').addEventListener('click', e => {
   const b = e.target.closest('[data-howto-home]');
@@ -244,6 +249,18 @@ $('#codeInput').addEventListener('keydown', e => e.key === 'Enter' && $('#joinBt
 $('#nameInput').addEventListener('keydown', e => e.key === 'Enter' && ($('#codeInput').value.trim() ? $('#joinBtn') : $('#createBtn')).click());
 
 // Rejoin automatically after refresh / reconnect
+// a slim bar instead of a blocking screen, so a brief drop never interrupts the game view
+let netTimer = null;
+socket.on('disconnect', () => {
+  clearTimeout(netTimer);
+  netTimer = setTimeout(() => $('#netBar').classList.remove('hidden'), 1500);
+});
+socket.on('connect', () => {
+  clearTimeout(netTimer);
+  $('#netBar').classList.add('hidden');
+  window.bootMark('socket');
+});
+
 socket.on('connect', () => {
   const code = localStorage.getItem('gh_room');
   if (code && $('#charades').classList.contains('hidden')) socket.emit('join', { code, token, name: localStorage.getItem('gh_name') || undefined }, res => { if (res.error) { localStorage.removeItem('gh_room'); showHome(); } });

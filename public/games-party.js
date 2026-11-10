@@ -454,3 +454,184 @@ handlers.pictionary = d => {
   else if ('skip' in d) act({ type: 'skip' });
 };
 socket.on('connect', () => { pc.key = null; });
+
+/* ======================= Imposter ======================= */
+// remembers the last screen so a screen's entrance plays once and only new clues, votes and ticks animate
+const ip = { key: null, clues: 0, voted: [], seen: [], vote: null, play: false, focus: null, t: 0 };
+const ipName = (g, id) => (g.players.find(p => p.id === id) || {}).name || '?';
+const ipTime = g => (g.endsAt ? timeBar(g.endsAt, g.totalMs) : '');
+const ipMine = g => (g.myWord ? `<span class="ip-mine">Your word: <b>${esc(g.myWord)}</b></span>` : '');
+
+function ipBoard(g, justIdx) {
+  return `<div class="ip-board">${g.order.map((id, i) => {
+    const bubbles = g.clues.map((c, k) => ({ c, k })).filter(x => x.c.id === id).map(({ c, k }) => (c.skipped
+      ? `<span class="ip-bubble skipped ${k === justIdx ? 'just' : ''}">no clue</span>`
+      : `<span class="ip-bubble ${k === justIdx ? 'just' : ''}">${esc(c.text)}</span>`)).join('');
+    const speaking = g.turnId === id;
+    return `<div class="ip-row ${speaking ? 'speaking' : ''}" style="--i:${i}">
+      <span class="ip-who">${avatar(ipName(g, id))}<span class="ip-pn">${esc(ipName(g, id))}${id === S.you ? ' (you)' : ''}</span></span>
+      <span class="ip-bubbles">${bubbles}${speaking ? '<span class="ip-typing" aria-label="thinking"><i></i><i></i><i></i></span>' : ''}</span></div>`;
+  }).join('')}</div>`;
+}
+
+const ipPills = (g, done, last, fresh) => g.players.map(p => {
+  const has = done.includes(p.id);
+  const pop = !fresh && has && !last.includes(p.id);
+  return `<span class="pill ${has ? 'ok' : ''} ${pop ? 'pop' : ''}">${has ? icon('check') : '…'} ${esc(p.name)}</span>`;
+}).join('');
+
+renderers.imposter = () => {
+  const g = S.game;
+  const key = `${g.round}:${g.phase}`;
+  const fresh = key !== ip.key;
+  if (fresh) { ip.key = key; ip.clues = g.clues.length; ip.voted = []; ip.seen = []; ip.vote = null; }
+  const wrap = body => `<div class="ip${fresh ? ' ip-fresh' : ''}">${body}</div>`;
+  const roundTag = `<span class="pill">Round ${g.round} of ${g.rounds}</span>`;
+
+  if (g.phase === 'word') {
+    const seen = g.seen.includes(S.you);
+    const pills = ipPills(g, g.seen, ip.seen, fresh);
+    ip.seen = [...g.seen];
+    return {
+      tone: seen ? '' : 'mine',
+      turn: seen ? 'Waiting for everyone to read their word…' : 'Look at your secret word',
+      body: wrap(`<div class="ip-top">${roundTag}</div>
+        <div class="ip-card-wrap"><div class="ip-card">
+          <div class="ip-face ip-back" aria-hidden="true">?</div>
+          <div class="ip-face ip-front"><small>Your secret word</small><b>${esc(g.myWord)}</b></div>
+        </div></div>
+        <p class="hint ip-hint">Everyone has this word except one player, who has a similar one and doesn't know it. It could be you!</p>
+        ${ipTime(g)}
+        <div class="actions">${seen ? '<span class="muted">Got it. Waiting for the others…</span>' : `<button class="btn btn-primary btn-lg" data-game="imposter" data-seen>${icon('check')} Got it</button>`}</div>
+        <div class="pass-status">${pills}</div>`),
+    };
+  }
+
+  if (g.phase === 'clue') {
+    const justIdx = !fresh && g.clues.length > ip.clues ? g.clues.length - 1 : -1;
+    ip.clues = g.clues.length;
+    const mine = g.turnId === S.you;
+    const typed = mine && $('#ipInput') ? $('#ipInput').value : '';
+    const lap = g.clueRounds > 1 ? `<span class="pill">Clues ${g.lap} of ${g.clueRounds}</span>` : '';
+    return {
+      tone: mine ? 'mine' : '',
+      turn: mine ? 'Your turn! Give a one-word clue' : `${esc(ipName(g, g.turnId))} is thinking of a clue…`,
+      body: wrap(`<div class="ip-top">${ipMine(g)}<span class="ip-tags">${lap}${roundTag}</span></div>
+        ${ipBoard(g, justIdx)}
+        ${mine ? `<form class="ip-form" data-ip-form><div class="join-row"><input id="ipInput" maxlength="24" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="One word about your word" aria-label="Your clue" value="${esc(typed)}"><button class="btn btn-primary" type="submit">Send</button></div></form>` : ''}
+        ${ipTime(g)}`),
+    };
+  }
+
+  if (g.phase === 'vote') {
+    const justVote = !fresh && g.myVote && g.myVote !== ip.vote;
+    ip.vote = g.myVote;
+    const cards = g.players.map((p, i) => {
+      const me = p.id === S.you;
+      const clues = g.clues.filter(c => c.id === p.id).map(c => `<span class="ip-chip ${c.skipped ? 'skipped' : ''}">${c.skipped ? 'no clue' : esc(c.text)}</span>`).join('');
+      return `<button class="vote-card ip-v ${g.myVote === p.id ? 'on' : ''} ${justVote && g.myVote === p.id ? 'just' : ''}" style="--i:${i}" data-game="imposter" data-vote="${p.id}" ${me ? 'disabled' : ''}>
+        ${avatar(p.name)}<span>${esc(p.name)}${me ? ' (you)' : ''}</span>${g.myVote === p.id ? icon('check') : ''}<span class="ip-vclues">${clues}</span></button>`;
+    }).join('');
+    const pills = ipPills(g, g.voted, ip.voted, fresh);
+    ip.voted = [...g.voted];
+    return {
+      tone: g.myVote ? '' : 'mine',
+      turn: g.myVote ? `Voted — ${g.voted.length} of ${g.players.length} in` : 'Who has the different word? Vote!',
+      body: wrap(`<div class="ip-top">${ipMine(g)}${roundTag}</div>
+        <h3 class="ip-title">Who's the imposter?</h3>
+        <div class="vote-grid">${cards}</div>
+        ${ipTime(g)}
+        <div class="pass-status">${pills}</div>
+        ${isHost() ? `<div class="actions"><button class="btn btn-sm btn-ghost" data-game="imposter" data-revealnow ${g.voted.length ? '' : 'disabled'}>Reveal now</button></div>` : ''}`),
+    };
+  }
+
+  if (g.phase === 'reveal') {
+    const r = g.result;
+    const play = fresh && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (play) ip.play = true;
+    const imp = esc(ipName(g, r.imposterId));
+    const cards = g.players.map(p => {
+      const isImp = p.id === r.imposterId;
+      const n = r.counts[p.id] || 0;
+      return `<div class="ip-pcard ${isImp ? 'imp' : ''}" data-imp="${isImp ? 1 : 0}">
+        ${isImp ? '<span class="ip-stamp">IMPOSTER</span>' : ''}${avatar(p.name)}<b>${esc(p.name)}</b><span class="ip-count">${n} vote${n === 1 ? '' : 's'}</span></div>`;
+    }).join('');
+    const pts = Object.entries(r.points).map(([id, v]) => `<span class="pill ok">+${v} ${esc(ipName(g, id))}</span>`).join('');
+    return {
+      tone: play ? '' : r.caught ? 'win' : 'alert',
+      turn: play ? 'The imposter was…' : r.caught ? `${imp} was the imposter — caught!` : `${imp} was the imposter and got away!`,
+      body: wrap(`<div class="ip-reveal ${play ? '' : 'shown'}">
+          <h3 class="ip-title">The imposter was…</h3>
+          <div class="ip-pgrid">${cards}</div>
+          <div class="ip-words ip-after" style="--k:0">
+            <div class="ip-word civ"><small>Everyone's word</small><b>${esc(r.civilWord)}</b></div>
+            <div class="ip-word odd"><small>${imp}'s word</small><b>${esc(r.oddWord)}</b></div>
+          </div>
+          <div class="ip-verdict ip-after ${r.caught ? 'caught' : 'escaped'}" style="--k:1">${r.caught ? `${icon('check')} Caught!` : 'The imposter escaped!'}</div>
+          ${pts ? `<div class="ip-points ip-after" style="--k:2">${pts}</div>` : ''}
+        </div>
+        <div class="actions">${isHost() ? `<button class="btn btn-primary btn-lg" data-next>${g.round < g.rounds ? 'Next round' : 'See results'} ${icon('arrow')}</button>` : `<span class="muted">${esc(nameOf(S.room.hostId))} starts the next round</span>`}</div>`),
+    };
+  }
+
+  return {
+    tone: 'win',
+    turn: 'Game over!',
+    body: wrap(`<h3 class="ip-title">Final scores</h3>${scoreboard(g.scores)}<div class="actions">${rematchBtn()}</div>`),
+  };
+};
+
+handlers.imposter = d => {
+  if ('seen' in d) act({ type: 'seen' });
+  else if ('vote' in d) act({ type: 'vote', targetId: d.vote });
+  else if ('revealnow' in d) act({ type: 'revealNow' });
+};
+$('#stage').addEventListener('submit', e => {
+  if (!e.target.matches('[data-ip-form]')) return;
+  e.preventDefault();
+  const text = $('#ipInput').value.trim();
+  if (text) act({ type: 'clue', text });
+});
+
+// the reveal: a spotlight runs across the players, slows down and stops on the imposter
+function ipRunReveal(caught) {
+  const box = $('.ip-reveal');
+  const cards = box ? [...box.querySelectorAll('.ip-pcard')] : [];
+  if (!cards.length) return;
+  const target = cards.findIndex(c => c.dataset.imp === '1');
+  const loops = cards.length <= 4 ? 2 : 1;
+  const steps = loops * cards.length + target + 1;
+  let i = 0;
+  clearTimeout(ip.t);
+  const tick = () => {
+    if (!document.body.contains(box)) return;
+    cards.forEach(c => c.classList.remove('lit'));
+    cards[i % cards.length].classList.add('lit');
+    i++;
+    if (i < steps) { ip.t = setTimeout(tick, 70 + 300 * (i / steps) ** 2); return; }
+    ip.t = setTimeout(() => {
+      if (!document.body.contains(box)) return;
+      cards.forEach(c => c.classList.remove('lit'));
+      box.classList.add('shown', 'ip-anim');
+      if (typeof FX !== 'undefined') {
+        if (caught) FX.burst(cards[target], ['#2fe07f', '#ffc83d', '#ffffff']);
+        else FX.shake();
+      }
+      if (window.SFX) SFX.play(caught ? 'correct' : 'fail');
+      // once the words and points have landed, redraw so the bar at the top shows the result
+      ip.t = setTimeout(() => { const g = S.game; if (g && g.gameId === 'imposter' && g.phase === 'reveal') render(); }, 1800);
+    }, 500);
+  };
+  tick();
+}
+
+afterRender.push(() => {
+  const g = S.game;
+  if (!g || g.gameId !== 'imposter') return;
+  if (g.phase === 'clue' && g.turnId === S.you) {
+    const k = `${g.round}:${g.clues.length}`;
+    if (ip.focus !== k) { ip.focus = k; const i = $('#ipInput'); if (i) i.focus(); }
+  }
+  if (ip.play) { ip.play = false; ipRunReveal(g.result.caught); }
+});

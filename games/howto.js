@@ -119,6 +119,16 @@ module.exports = {
         'Vote with the group to earn mind-reader points.',
       ],
     },
+    imposter: {
+      cat: 'party',
+      tagline: 'One of you has a different word…',
+      steps: [
+        'Everyone gets the same secret word except one player, who gets a similar one. Nobody knows who it is, not even the imposter.',
+        'One by one, give a one-word clue about your word. Do not make it too obvious!',
+        'Vote for who you think has the different word.',
+        'Catch the imposter and everyone who voted for them scores. If the imposter escapes, they score big.',
+      ],
+    },
     housie: {
       cat: 'paper',
       tagline: 'Tambola with the gang',

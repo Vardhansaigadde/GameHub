@@ -141,6 +141,13 @@ function thumb(id) {
       <g class="em-q"><circle cx="73" cy="16" r="6" fill="#ff2e93"/><text x="73" y="19.200" font-family="Fredoka,Arial" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">?</text></g>
       <g fill="#0b0622">${[0, 1, 2, 3, 4, 5].map(i => `<circle cx="${20 + i * 11.200}" cy="60" r="5"/>`).join('')}</g>`,
     mostlikely: `<rect width="96" height="64" fill="#2e3a24"/><rect x="10" y="10" width="76" height="12" rx="3" fill="#81b64c"/><rect x="10" y="27" width="56" height="8" rx="2" fill="#95c45f"/><rect x="10" y="39" width="34" height="8" rx="2" fill="#6d9f43"/><rect x="10" y="51" width="18" height="8" rx="2" fill="#537a2f"/><circle cx="78" cy="31" r="4" fill="#f2c14e"/>`,
+    imposter: `<rect width="96" height="64" fill="#24124f"/><path d="M0 64V44c20-8 76-8 96 0v20z" fill="#33206e"/>
+      ${[16, 36, 56, 76].map((x, i) => i === 2
+        ? `<g class="im-odd"><path d="M${x - 9} 58q0-13 9-13t9 13z" fill="#ff2e93"/><circle cx="${x}" cy="36" r="6.500" fill="#ff7ac0"/><rect x="${x - 5.500}" y="34" width="4.500" height="2.600" rx="1" fill="#24124f"/><rect x="${x + 1}" y="34" width="4.500" height="2.600" rx="1" fill="#24124f"/>
+            <rect x="${x - 8}" y="10" width="16" height="11" rx="5.500" fill="#ff2e93"/><path d="M${x - 3} 20l-1 4 5-4z" fill="#ff2e93"/><text x="${x}" y="18.600" font-family="Fredoka,Arial" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">?</text></g>`
+        : `<path d="M${x - 9} 58q0-13 9-13t9 13z" fill="#38c6ff"/><circle cx="${x}" cy="36" r="6.500" fill="#9be3ff"/><circle cx="${x - 2.300}" cy="35.500" r="1.100" fill="#24124f"/><circle cx="${x + 2.300}" cy="35.500" r="1.100" fill="#24124f"/>
+            <rect x="${x - 8}" y="10" width="16" height="11" rx="5.500" fill="#fff"/><path d="M${x - 3} 20l-1 4 5-4z" fill="#fff"/>${[-4, 0, 4].map(d => `<circle cx="${x + d}" cy="15.500" r="1.200" fill="#24124f"/>`).join('')}`).join('')}
+      <g class="im-glass"><circle r="9" fill="rgba(255,255,255,.18)" stroke="#ffc83d" stroke-width="2.600"/><path d="M6.500 6.500L13 13" stroke="#ffc83d" stroke-width="3.400" stroke-linecap="round"/></g>`,
     sequence: `<rect width="96" height="64" fill="#22603a"/>
       <g transform="rotate(-16 30 40)"><rect x="18" y="16" width="24" height="34" rx="3" fill="#fff"/><text x="22" y="26" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">5♥</text></g>
       <g transform="rotate(-4 46 38)"><rect x="34" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="38" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">6♥</text></g>

@@ -14,6 +14,7 @@ const list = [
   require('./show'),
   require('./emojimovie'),
   require('./mostlikely'),
+  require('./imposter'),
   require('./sequence'),
   require('./rummy'),
   require('./bingo'),

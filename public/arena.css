@@ -443,3 +443,80 @@ button.purse:active { transform: scale(.96); }
 @media (prefers-reduced-motion: reduce) {
   .ml *, .ml *::after { animation: none !important; }
 }
+
+/* ---------- Imposter ---------- */
+.ip-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.ip-tags { display: flex; gap: 6px; margin-left: auto; }
+.ip-mine { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; background: var(--well); border: 1px solid rgba(255, 255, 255, .1); font-weight: 700; }
+.ip-mine b { color: var(--gold); font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
+.ip-title { text-align: center; font-size: 1.4rem; margin: 4px 0 14px; }
+.ip-hint { text-align: center; max-width: 440px; margin: 0 auto 6px; }
+
+/* the secret word card flips over */
+.ip-card-wrap { display: flex; justify-content: center; perspective: 900px; margin: 6px 0 16px; }
+.ip-card { position: relative; width: min(320px, 86%); aspect-ratio: 16 / 9; transform-style: preserve-3d; }
+.ip-face { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 20px; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.ip-front { background: linear-gradient(145deg, #7c4dff, #ff2e93); color: #fff; box-shadow: 0 16px 34px rgba(0, 0, 0, .35); padding: 10px; text-align: center; }
+.ip-front small { font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+.ip-front b { font-family: var(--display); font-weight: 700; font-size: clamp(1.8rem, 7vw, 2.6rem); line-height: 1.1; text-shadow: 0 3px 0 rgba(0, 0, 0, .18); }
+.ip-back { transform: rotateY(180deg); background: repeating-linear-gradient(45deg, #2a2060 0 12px, #33296a 12px 24px); border: 2px solid rgba(255, 255, 255, .14); color: var(--gold); font-family: var(--display); font-size: 3.4rem; font-weight: 700; }
+.ip-fresh .ip-card { animation: ipFlip 1s .35s var(--spring) both; }
+@keyframes ipFlip { from { transform: rotateY(180deg) scale(.88); } }
+
+/* clue board: one row per player, their clues as speech bubbles */
+.ip-board { display: grid; gap: 8px; margin: 4px 0 14px; }
+.ip-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 14px; background: var(--well-2); border: 2px solid transparent; transition: border-color .2s, background .2s; }
+.ip-row.speaking { border-color: var(--gold); background: rgba(255, 200, 61, .1); }
+.ip-row.speaking .avatar { animation: ipTalk 1s ease-in-out infinite; }
+.ip-who { display: flex; align-items: center; gap: 8px; font-weight: 700; width: 140px; flex: none; min-width: 0; }
+.ip-pn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ip-bubbles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 32px; }
+.ip-bubble { padding: 4px 12px; border-radius: 14px 14px 14px 4px; background: #fff; color: #1e1742; font-family: var(--display); font-weight: 600; font-size: 1.02rem; transform-origin: left bottom; }
+.ip-bubble.skipped { background: transparent; color: var(--faint); border: 1px dashed rgba(255, 255, 255, .28); font-family: var(--font); font-size: .85rem; }
+.ip-bubble.just { animation: ipBubble .5s var(--spring) both; }
+.ip-typing { display: inline-flex; gap: 4px; padding: 10px 12px; border-radius: 14px 14px 14px 4px; background: rgba(255, 255, 255, .12); }
+.ip-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--text); animation: ipDot 1s ease-in-out infinite; }
+.ip-typing i:nth-child(2) { animation-delay: .15s; }
+.ip-typing i:nth-child(3) { animation-delay: .3s; }
+.ip-fresh .ip-row { animation: mlSlide .4s var(--spring) both; animation-delay: calc(var(--i) * 70ms); }
+.ip-form { margin: 4px 0 10px; }
+@keyframes ipTalk { 50% { transform: scale(1.12); } }
+@keyframes ipBubble { from { opacity: 0; transform: scale(.2); } }
+@keyframes ipDot { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+/* voting: each card shows that player's clues */
+.vote-card.ip-v { flex-wrap: wrap; align-items: center; text-align: left; }
+.vote-card.ip-v:disabled { opacity: .55; cursor: not-allowed; }
+.ip-vclues { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 4px; }
+.ip-vclues:empty { display: none; }
+.ip-chip { padding: 1px 9px; border-radius: 999px; background: rgba(255, 255, 255, .12); font-size: .82rem; font-weight: 700; }
+.ip-chip.skipped { opacity: .6; font-weight: 600; }
+.ip-fresh .vote-card.ip-v { animation: mlPop .45s var(--spring) both; animation-delay: calc(.2s + var(--i) * 70ms); }
+
+/* reveal: the spotlight lands on the imposter, then their stamp, the two words and the points */
+.ip-pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.ip-pcard { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 8px 12px; border-radius: 16px; background: var(--well-2); border: 2px solid transparent; transition: transform .12s, border-color .12s, box-shadow .12s, opacity .4s; }
+.ip-pcard .avatar { width: 46px; height: 46px; font-size: 1rem; }
+.ip-pcard b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ip-count { font-size: .8rem; color: var(--muted); font-weight: 700; }
+.ip-pcard.lit { border-color: var(--gold); transform: translateY(-4px) scale(1.04); box-shadow: 0 0 22px rgba(255, 200, 61, .5); }
+.ip-stamp { position: absolute; top: 4px; left: 50%; transform: translateX(-50%) rotate(-10deg); padding: 1px 8px; border: 2px solid var(--pink); border-radius: 6px; background: rgba(20, 15, 45, .9); color: var(--pink); font-family: var(--display); font-weight: 700; font-size: .72rem; letter-spacing: .08em; z-index: 1; }
+.ip-reveal:not(.shown) .ip-stamp, .ip-reveal:not(.shown) .ip-after { visibility: hidden; }
+.ip-reveal.shown .ip-pcard:not(.imp) { opacity: .5; }
+.ip-reveal.shown .ip-pcard.imp { border-color: var(--pink); transform: scale(1.06); box-shadow: 0 0 26px rgba(255, 46, 147, .5); }
+.ip-reveal.ip-anim .ip-stamp { animation: ipStamp .5s var(--spring) both; }
+.ip-reveal.ip-anim .ip-after { animation: mlPop .5s var(--spring) both; animation-delay: calc(var(--k, 0) * 160ms + .35s); }
+@keyframes ipStamp { from { opacity: 0; transform: translateX(-50%) rotate(-10deg) scale(2.6); } }
+.ip-words { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 18px 0 6px; }
+.ip-word { min-width: 140px; padding: 10px 16px; border-radius: 14px; background: var(--well); border: 1px solid rgba(255, 255, 255, .08); text-align: center; }
+.ip-word small { display: block; color: var(--muted); font-size: .75rem; font-weight: 700; }
+.ip-word b { font-family: var(--display); font-weight: 600; font-size: 1.35rem; }
+.ip-word.civ b { color: var(--green); }
+.ip-word.odd b { color: var(--pink); }
+.ip-verdict { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-family: var(--display); font-weight: 600; font-size: 1.5rem; }
+.ip-verdict.caught { color: var(--green); }
+.ip-verdict.escaped { color: var(--pink); }
+.ip-verdict svg.icon { width: 26px; height: 26px; }
+.ip-points { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+@media (max-width: 560px) { .ip-who { width: auto; max-width: 46%; } .ip-row { gap: 8px; padding: 8px; } }
+@media (prefers-reduced-motion: reduce) { .ip *, .ip *::after { animation: none !important; } }

@@ -76,3 +76,10 @@ html[data-theme="light"] .result-banner h3 { background: linear-gradient(90deg, 
 html[data-theme="light"] .brand span { background: linear-gradient(90deg, #a35f00, #c2146f); -webkit-background-clip: text; background-clip: text; }
 html[data-theme="light"] .emoji-card, html[data-theme="light"] .question-card { background: radial-gradient(circle at 50% 0%, #e4dbff, #f6f3ff 75%); border-color: var(--line); color: var(--text); }
 html[data-theme="light"] .question-card small { color: var(--muted); }
+html[data-theme="light"] .ip-mine, html[data-theme="light"] .ip-word { background: #fff; border-color: var(--line); }
+html[data-theme="light"] .ip-chip, html[data-theme="light"] .ip-typing { background: var(--raised); }
+html[data-theme="light"] .ip-bubble { box-shadow: 0 2px 6px rgba(70, 50, 140, .15); }
+html[data-theme="light"] .ip-bubble.skipped { border-color: var(--line); box-shadow: none; }
+html[data-theme="light"] .ip-row.speaking { background: #fff6dc; border-color: #e0a400; }
+html[data-theme="light"] .ip-pcard.lit { border-color: #e0a400; }
+html[data-theme="light"] .ip-stamp { background: #fff; }

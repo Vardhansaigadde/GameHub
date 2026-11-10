@@ -247,3 +247,12 @@ html[data-theme="light"] .duel-word span { color: #fff; }
   .em-bulb, .em-face, .em-q, .tp-draw, .tp-eye, .tp-pencil, .tp-cord, .tp-dot, .tp-turn { animation: none; }
   .tp-pencil { transform: translate(37px, 36px); }
 }
+
+.im-glass { animation: imGlass 4s ease-in-out infinite; }
+@keyframes imGlass {
+  0% { transform: translate(16px, 36px); } 18% { transform: translate(36px, 36px); } 36%, 72% { transform: translate(56px, 36px); }
+  86% { transform: translate(76px, 36px); } 100% { transform: translate(16px, 36px); }
+}
+.im-odd { transform-box: view-box; transform-origin: 56px 58px; animation: imOdd 4s ease-in-out infinite; }
+@keyframes imOdd { 0%, 38%, 72%, 100% { transform: none; } 44% { transform: rotate(-7deg); } 52% { transform: rotate(7deg) translateY(-2px); } 60% { transform: rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) { .im-glass { animation: none; transform: translate(56px, 36px); } .im-odd { animation: none; } }

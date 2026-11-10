@@ -74,3 +74,5 @@ html[data-theme="light"] .bw-panel input { background: #1c1640; color: #fff; bor
 html[data-theme="light"] .bw-panel input::placeholder { color: #9a90c9; }
 html[data-theme="light"] .result-banner h3 { background: linear-gradient(90deg, #a35f00, #c2146f); -webkit-background-clip: text; background-clip: text; }
 html[data-theme="light"] .brand span { background: linear-gradient(90deg, #a35f00, #c2146f); -webkit-background-clip: text; background-clip: text; }
+html[data-theme="light"] .emoji-card, html[data-theme="light"] .question-card { background: radial-gradient(circle at 50% 0%, #e4dbff, #f6f3ff 75%); border-color: var(--line); color: var(--text); }
+html[data-theme="light"] .question-card small { color: var(--muted); }

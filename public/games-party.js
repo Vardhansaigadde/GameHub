@@ -73,41 +73,68 @@ handlers.emojimovie = d => { if ('skip' in d) act({ type: 'skip' }); };
 /* ======================= Who's Most Likely To ======================= */
 const ML_IDEAS = ['fall asleep in a movie', 'reply "hmm" to a long message', 'eat the last slice', 'get lost even with Google Maps', 'become famous', 'cry at a movie', 'be late to their own wedding', 'forget a friend\'s birthday', 'win a lottery and lose the ticket', 'start a YouTube channel'];
 
+// remembers what was on screen last time, so only new things animate and a screen's entrance plays once
+const ml = { key: null, ready: [], wrote: {}, voted: [], qs: 0, vote: null, burst: 0, t: 0 };
+const ML_CROWN = '<svg class="ml-crown" viewBox="0 0 20 14" aria-hidden="true"><path d="M1 4l4.5 4L10 1l4.5 7L19 4l-2 9H3z" fill="#ffc83d" stroke="#b77a00" stroke-width="1" stroke-linejoin="round"/></svg>';
+const mlAv = (name, crown) => `<span class="ml-av">${avatar(name)}${crown ? ML_CROWN : ''}</span>`;
+
 renderers.mostlikely = () => {
   const g = S.game;
   const n = g.players.length;
+  const key = `${g.phase}:${g.number || 0}`;
+  const fresh = key !== ml.key;
+  if (fresh) { ml.key = key; ml.ready = []; ml.wrote = {}; ml.voted = []; ml.vote = null; ml.qs = (g.myQuestions || []).length; }
+  const wrap = body => `<div class="ml${fresh ? ' ml-fresh' : ''}">${body}</div>`;
 
   if (g.phase === 'write') {
     const me = g.players.find(p => p.id === S.you);
-    const mine = g.myQuestions.map(q => `<li><span>…${esc(q.text)}?</span><button class="btn btn-sm btn-ghost" data-game="mostlikely" data-unask="${q.id}" aria-label="Remove">${icon('x')}</button></li>`).join('');
-    const pills = g.players.map(p => `<span class="pill ${p.ready ? 'ok' : ''}">${p.ready ? icon('check') : icon('pen')} ${esc(p.name)} · ${p.wrote}</span>`).join('');
+    const justQ = !fresh && g.myQuestions.length > ml.qs;
+    ml.qs = g.myQuestions.length;
+    const mine = g.myQuestions.map((q, i) => `<li class="${justQ && i === g.myQuestions.length - 1 ? 'just' : ''}"><span>…${esc(q.text)}?</span><button class="btn btn-sm btn-ghost" data-game="mostlikely" data-unask="${q.id}" aria-label="Remove">${icon('x')}</button></li>`).join('');
+    const pills = g.players.map(p => {
+      const pop = !fresh && ((p.ready && !ml.ready.includes(p.id)) || p.wrote > (ml.wrote[p.id] || 0));
+      return `<span class="pill ${p.ready ? 'ok' : ''} ${pop ? 'pop' : ''}">${p.ready ? icon('check') : icon('pen')} ${esc(p.name)} · ${p.wrote}</span>`;
+    }).join('');
+    ml.ready = g.players.filter(p => p.ready).map(p => p.id);
+    ml.wrote = Object.fromEntries(g.players.map(p => [p.id, p.wrote]));
     return {
       tone: me.ready ? '' : 'mine',
       turn: me.ready ? 'Ready! Waiting for everyone else…' : 'Write questions about your group',
-      body: `<form class="ml-form" data-ml-form>
+      body: wrap(`<form class="ml-form" data-ml-form>
           <label class="ml-prefix" for="mlInput">Who's most likely to…</label>
           <div class="join-row"><input id="mlInput" maxlength="120" autocomplete="off" placeholder="fall asleep in a movie"><button class="btn btn-primary" type="submit">Add</button></div>
         </form>
-        <div class="chips">${ML_IDEAS.map(t => `<button class="chip" data-game="mostlikely" data-idea="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+        <div class="chips">${ML_IDEAS.map((t, i) => `<button class="chip" style="--i:${i}" data-game="mostlikely" data-idea="${esc(t)}">${esc(t)}</button>`).join('')}</div>
         ${mine ? `<ul class="ml-mine">${mine}</ul>` : '<p class="hint">Your questions stay anonymous. Add up to 5.</p>'}
         <div class="actions sticky-actions">
           <button class="btn ${me.ready ? '' : 'btn-primary'} btn-lg" data-game="mostlikely" data-ready ${g.myQuestions.length ? '' : 'disabled'}>${me.ready ? 'Edit more' : `${icon('check')} I'm ready`}</button>
           ${isHost() ? `<button class="btn btn-lg" data-game="mostlikely" data-begin ${g.totalQuestions ? '' : 'disabled'}>Start voting (${g.totalQuestions})</button>` : ''}
         </div>
-        <div class="pass-status">${pills}</div>`,
+        <div class="pass-status">${pills}</div>`),
     };
   }
 
+  const card = `<div class="question-card"><span class="ml-q q1" aria-hidden="true">?</span><span class="ml-q q2" aria-hidden="true">?</span><span class="ml-q q3" aria-hidden="true">?</span>
+      <small>Question ${g.number} of ${g.of}</small><div>Who's most likely to <b>${esc(g.question)}</b>?</div></div>`;
+
   if (g.phase === 'vote') {
-    const grid = g.players.map(p => `<button class="vote-card ${g.myVote === p.id ? 'on' : ''}" data-game="mostlikely" data-vote="${p.id}">
+    const justVote = !fresh && g.myVote && g.myVote !== ml.vote;
+    ml.vote = g.myVote;
+    const grid = g.players.map((p, i) => `<button class="vote-card ${g.myVote === p.id ? 'on' : ''} ${justVote && g.myVote === p.id ? 'just' : ''}" style="--i:${i}" data-game="mostlikely" data-vote="${p.id}">
         ${avatar(p.name)}<span>${esc(p.name)}${p.id === S.you ? ' (you)' : ''}</span>${g.myVote === p.id ? icon('check') : ''}</button>`).join('');
+    const pills = g.players.map(p => {
+      const has = g.voted.includes(p.id);
+      const pop = !fresh && has && !ml.voted.includes(p.id);
+      return `<span class="pill ${has ? 'ok' : ''} ${pop ? 'pop' : ''}">${has ? icon('check') : '…'} ${esc(p.name)}</span>`;
+    }).join('');
+    ml.voted = [...g.voted];
     return {
       tone: g.myVote ? '' : 'mine',
       turn: g.myVote ? `Voted — ${g.voted.length} of ${n} in` : 'Vote! Nobody will see who you picked',
-      body: `<div class="question-card"><small>Question ${g.number} of ${g.of}</small><div>Who's most likely to <b>${esc(g.question)}</b>?</div></div>
+      body: wrap(`${card}
         <div class="vote-grid">${grid}</div>
-        <div class="pass-status">${g.players.map(p => `<span class="pill ${g.voted.includes(p.id) ? 'ok' : ''}">${g.voted.includes(p.id) ? icon('check') : '…'} ${esc(p.name)}</span>`).join('')}</div>
-        ${isHost() ? `<div class="actions"><button class="btn btn-sm btn-ghost" data-game="mostlikely" data-revealnow ${g.voted.length ? '' : 'disabled'}>Reveal now</button></div>` : ''}`,
+        <div class="pass-status">${pills}</div>
+        ${isHost() ? `<div class="actions"><button class="btn btn-sm btn-ghost" data-game="mostlikely" data-revealnow ${g.voted.length ? '' : 'disabled'}>Reveal now</button></div>` : ''}`),
     };
   }
 
@@ -115,34 +142,59 @@ renderers.mostlikely = () => {
     const r = g.result;
     const rows = g.players.map(p => ({ p, c: r.counts[p.id] || 0 })).sort((a, b) => b.c - a.c);
     const max = Math.max(1, ...rows.map(x => x.c));
-    const bars = rows.map(({ p, c }) => `<div class="bar-row ${r.winners.includes(p.id) ? 'top' : ''}">
-        <span class="who">${avatar(p.name)} ${esc(p.name)}</span>
+    // bars fill from the fewest votes up, so the winner comes last; then the crown drops
+    const base = 0.6, step = 0.35;
+    const win = base + (rows.length - 1) * step + 0.85;
+    const bars = rows.map(({ p, c }, i) => {
+      const top = r.winners.includes(p.id);
+      const d = base + (rows.length - 1 - i) * step;
+      return `<div class="bar-row ${top ? 'top' : ''}" style="--d:${d.toFixed(2)}s;--win:${win.toFixed(2)}s">
+        <span class="who">${mlAv(p.name, top)} <span class="ml-name">${esc(p.name)}</span></span>
         <span class="bar"><span style="width:${(c / max) * 100}%"></span></span>
-        <span class="num">${c}</span></div>`).join('');
+        <span class="num">${c}</span></div>`;
+    }).join('');
+    const names = r.winners.map(nameOf).map(esc).join(' & ');
+    if (fresh && r.winners.length) ml.burst = Math.round(win * 1000) + 150;
     return {
       tone: 'win',
-      turn: r.winners.length ? `${r.winners.map(nameOf).map(esc).join(' & ')} — most likely to ${esc(g.question)}!` : 'Nobody voted',
-      body: `<div class="question-card"><small>Question ${g.number} of ${g.of}</small><div>Who's most likely to <b>${esc(g.question)}</b>?</div></div>
+      turn: !r.winners.length ? 'Nobody voted' : fresh ? 'And the group says…' : `${names} — most likely to ${esc(g.question)}!`,
+      body: wrap(`${card}
         <div class="bars">${bars}</div>
-        <div class="actions"><button class="btn btn-primary btn-lg" data-next>${g.number < g.of ? 'Next question' : 'See results'} ${icon('arrow')}</button></div>`,
+        ${r.winners.length ? `<div class="ml-verdict" style="--win:${win.toFixed(2)}s">${icon('trophy')} ${names}!</div>` : ''}
+        <div class="actions"><button class="btn btn-primary btn-lg" data-next>${g.number < g.of ? 'Next question' : 'See results'} ${icon('arrow')}</button></div>`),
     };
   }
 
   // over: everyone's titles
-  const titles = g.players.map(p => {
+  const titles = g.players.map((p, i) => {
     const won = g.results.filter(r => r.winners.includes(p.id)).map(r => `most likely to ${esc(r.text)}`);
-    return `<div class="title-card">${avatar(p.name)}<div><b>${esc(p.name)}</b>${won.length ? `<ul>${won.map(t => `<li>${t}</li>`).join('')}</ul>` : '<div class="muted">Got away clean 😇</div>'}</div></div>`;
+    return `<div class="title-card" style="--i:${i}">${mlAv(p.name, won.length > 0)}<div><b>${esc(p.name)}</b>${won.length ? `<ul>${won.map(t => `<li>${t}</li>`).join('')}</ul>` : '<div class="muted">Got away clean 😇</div>'}</div></div>`;
   }).join('');
   const mind = Object.fromEntries(g.players.map(p => [p.id, g.mind[p.id] || 0]));
   return {
     tone: 'win',
     turn: 'The verdict is in',
-    body: `<div class="titles">${titles}</div>
+    body: wrap(`<div class="titles">${titles}</div>
       <h3 class="hand-title">Mind readers <span class="muted">· voted with the winner</span></h3>
       ${scoreboard(mind)}
-      <div class="actions">${rematchBtn()}</div>`,
+      <div class="actions">${rematchBtn()}</div>`),
   };
 };
+
+// the confetti for the winner waits until their bar has filled and the crown has landed
+afterRender.push(() => {
+  if (!ml.burst) return;
+  const wait = ml.burst;
+  ml.burst = 0;
+  clearTimeout(ml.t);
+  ml.t = setTimeout(() => {
+    const g = S.game;
+    if (!g || g.gameId !== 'mostlikely' || g.phase !== 'reveal') return;
+    const el = $('.bar-row.top .ml-av');
+    if (el && typeof FX !== 'undefined') FX.burst(el, ['#ffc83d', '#ff2e93', '#38c6ff', '#ffffff']);
+    if (window.SFX) SFX.play('reveal');
+  }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : wait);
+});
 
 handlers.mostlikely = d => {
   if ('unask' in d) act({ type: 'unask', id: +d.unask });

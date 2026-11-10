@@ -219,3 +219,31 @@ html[data-theme="light"] .duel-word span { color: #fff; }
 @media (prefers-reduced-motion: reduce) { .emoji-hint.fresh { animation: none; } }
 /* each word stays together with a clear gap, so players can see how many words the name has */
 .hm-word { display: inline-block; margin: 0 .55em; }
+
+/* ---------- game list: Emoji Movie Guess and Doodle Telephone pictures ---------- */
+.em-bulb { animation: emBulb 1.200s steps(1) infinite; }
+@keyframes emBulb { 50% { opacity: .25; } }
+.em-face { transform-box: fill-box; transform-origin: center; animation: emPop 3s ease-in-out infinite both; }
+@keyframes emPop { 0%, 6% { transform: scale(0); } 16%, 82% { transform: scale(1); } 22% { transform: scale(1.15); } 94%, 100% { transform: scale(0); } }
+.em-q { transform-box: fill-box; transform-origin: center; animation: emQ 1.500s ease-in-out infinite; }
+@keyframes emQ { 50% { transform: scale(1.18) rotate(10deg); } }
+.tp-draw { animation: tpDraw 3.600s linear infinite; }
+@keyframes tpDraw { 0% { stroke-dashoffset: 76; opacity: 1; } 55%, 88% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.tp-eye { animation: tpEye 3.600s linear infinite; }
+@keyframes tpEye { 0%, 55% { opacity: 0; } 60%, 88% { opacity: 1; } 100% { opacity: 0; } }
+.tp-pencil { animation: tpPencil 3.600s linear infinite; }
+@keyframes tpPencil {
+  0% { transform: translate(13px, 36px); } 10.700% { transform: translate(17px, 22px); } 16.400% { transform: translate(22px, 28px); }
+  20.800% { transform: translate(28px, 28px); } 26.500% { transform: translate(33px, 22px); } 37.300% { transform: translate(37px, 36px); }
+  55% { transform: translate(13px, 36px); } 72% { transform: translate(22px, 40px); } 100% { transform: translate(13px, 36px); }
+}
+.tp-cord { animation: tpCord .6s linear infinite; }
+@keyframes tpCord { to { stroke-dashoffset: -6; } }
+.tp-dot { animation: tpDot 1.200s ease-in-out infinite; }
+@keyframes tpDot { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-2.500px); } }
+.tp-turn { transform-box: fill-box; transform-origin: center; opacity: .55; animation: tpTurn 2.400s ease-in-out infinite; }
+@keyframes tpTurn { 0%, 30% { opacity: 1; transform: scale(1.25); } 40%, 100% { opacity: .55; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .em-bulb, .em-face, .em-q, .tp-draw, .tp-eye, .tp-pencil, .tp-cord, .tp-dot, .tp-turn { animation: none; }
+  .tp-pencil { transform: translate(37px, 36px); }
+}

@@ -385,3 +385,61 @@ button.purse:active { transform: scale(.96); }
   .sold-line { margin-top: 2px; font-size: .92rem; }
   .sold-price { font-size: 1.3rem; line-height: 1.15; }
 }
+
+/* ---------- Who's Most Likely To: a little show ---------- */
+.ml .question-card { position: relative; overflow: hidden; }
+.ml-fresh .question-card { animation: mlCardIn .6s var(--spring) both; }
+@keyframes mlCardIn { from { opacity: 0; transform: translateY(-14px) scale(.94); } }
+.ml .question-card::after { content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-110%);
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .16) 50%, transparent 70%); }
+.ml-fresh .question-card::after { animation: mlShine 1.1s .4s ease-out both; }
+@keyframes mlShine { to { transform: translateX(110%); } }
+.ml-q { position: absolute; font-family: var(--display); font-weight: 700; color: var(--gold); opacity: .25; pointer-events: none; animation: mlFloat 4s ease-in-out infinite; }
+.ml-q.q1 { left: 6%; top: 16%; font-size: 1.7rem; }
+.ml-q.q2 { right: 8%; top: 10%; font-size: 1.1rem; color: var(--pink); animation-delay: -1.3s; }
+.ml-q.q3 { right: 16%; bottom: 8%; font-size: 1.3rem; color: var(--blue); animation-delay: -2.6s; }
+@keyframes mlFloat { 50% { transform: translateY(-8px) rotate(12deg); } }
+
+.ml-fresh .chips .chip { animation: mlPop .4s var(--spring) both; animation-delay: calc(var(--i) * 40ms); }
+.ml-mine li.just { animation: mlSlide .45s var(--spring) both; }
+.pill.pop { animation: mlPill .5s var(--spring); }
+.ml-fresh .vote-card { animation: mlPop .45s var(--spring) both; animation-delay: calc(.25s + var(--i) * 70ms); }
+.vote-card.just { animation: mlStamp .45s var(--spring); }
+.vote-card.just svg.icon { animation: mlTick .45s .1s var(--spring) both; }
+@keyframes mlPop { from { opacity: 0; transform: scale(.7) translateY(10px); } }
+@keyframes mlSlide { from { opacity: 0; transform: translateX(-18px); } }
+@keyframes mlPill { 40% { transform: scale(1.2); } }
+@keyframes mlStamp { 35% { transform: scale(.92); } 70% { transform: scale(1.06); } }
+@keyframes mlTick { from { transform: scale(0) rotate(-45deg); } }
+
+/* reveal: the bars fill one by one, the winner last, then a crown drops on them */
+.ml .bars { padding-top: 10px; }
+.ml .bar-row { padding: 4px 6px; border-radius: 12px; }
+.ml .bar-row .who { overflow: visible; }
+.ml-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; }
+.ml .bars .bar span { animation: none; transform-origin: left; }
+.ml-fresh .bar-row { animation: mlSlide .4s var(--spring) both; animation-delay: calc(var(--d) - .3s); }
+.ml-fresh .bars .bar span { animation: mlBar .8s cubic-bezier(.3, .9, .3, 1) both; animation-delay: var(--d); }
+.ml-fresh .bar-row .num { animation: mlNum .45s var(--spring) both; animation-delay: calc(var(--d) + .7s); }
+.ml-fresh .bar-row.top { animation: mlSlide .4s var(--spring) both, mlGlow 1.4s ease-out both; animation-delay: calc(var(--d) - .3s), var(--win); }
+@keyframes mlBar { from { transform: scaleX(0); } }
+@keyframes mlNum { from { opacity: 0; transform: scale(2.2); } }
+@keyframes mlGlow { from { background: rgba(255, 200, 61, .38); } to { background: transparent; } }
+.ml-av { position: relative; display: inline-flex; flex: none; }
+.ml-crown { position: absolute; left: 50%; top: -12px; width: 20px; height: 14px; transform: translateX(-50%) rotate(-8deg); filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35)); }
+.ml-fresh .ml-crown { animation: mlCrown .6s var(--spring) both; animation-delay: var(--win, 0s); }
+@keyframes mlCrown { from { opacity: 0; transform: translate(-50%, -28px) rotate(-40deg); } }
+.ml-verdict { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-family: var(--display); font-weight: 600; font-size: 1.35rem; color: var(--gold); }
+.ml-verdict svg.icon { width: 24px; height: 24px; }
+.ml-fresh .ml-verdict { animation: mlVerdict .6s var(--spring) both; animation-delay: var(--win); }
+@keyframes mlVerdict { from { opacity: 0; transform: scale(.5); } }
+
+/* results: the title cards flip in one after another */
+.ml .title-card { align-items: flex-start; padding-top: 16px; }
+.ml-fresh .title-card { animation: mlFlip .55s var(--spring) both; animation-delay: calc(var(--i) * 120ms); }
+.ml-fresh .title-card .ml-crown { animation-delay: calc(var(--i) * 120ms + .45s); }
+@keyframes mlFlip { from { opacity: 0; transform: perspective(600px) rotateY(-70deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ml *, .ml *::after { animation: none !important; }
+}

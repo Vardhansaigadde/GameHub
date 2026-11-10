@@ -404,6 +404,7 @@ const modeIcon = {
   race: `<span class="scene race"><i class="sc-car a">${carSvg('#ff3d6e', 0)}</i><i class="sc-car b">${carSvg('#38c6ff', 1)}</i><i class="sc-road"></i></span>`,
   rain: '<span class="scene rain"><i>mango</i><i>rocket</i><i>tiger</i><i>dosa</i></span>',
   duel: '<span class="scene duel"><b>A</b><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><b>B</b></span>',
+  blitz: '<span class="scene blitz"><i class="bz-w">tiger</i><i class="bz-r r1"><b></b></i><i class="bz-r r2"><b></b><svg class="bz-mini-crown" viewBox="0 0 20 14"><path d="M1 4l4.5 4L10 1l4.5 7L19 4l-2 9H3z"/></svg></i><i class="bz-r r3"><b></b></i></span>',
 };
 const typeAttrs = 'autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
 
@@ -422,12 +423,34 @@ const liveWpm = n => {
   return Math.round(n / 5 / mins);
 };
 
+// Word Blitz: the host's rounds choice before it starts
+const bz = { setup: false, rounds: 10 };
+const BZ_QUICK = [5, 10, 15, 20, 30];
+const bzClamp = n => Math.max(1, Math.min(100, Math.round(Number(n)) || 1));
+
+function blitzSetup() {
+  return {
+    tone: 'live',
+    turn: 'Word Blitz — how many rounds?',
+    body: `<div class="bz-setup">
+        <div class="bz-setup-head">${modeIcon.blitz}<div><b>Word Blitz</b><small>Everyone gets the same word. The first to type it wins the round.</small></div></div>
+        <span class="opt-label">Rounds</span>
+        <div class="seg bz-seg">${BZ_QUICK.map(n => `<button class="${bz.rounds === n ? 'on' : ''}" data-game="typing" data-bz-rounds="${n}">${n}</button>`).join('')}</div>
+        <label class="bz-custom">Or type any number (1–100) <input type="number" id="bzRounds" inputmode="numeric" min="1" max="100" step="1" value="${bz.rounds}" aria-label="Number of rounds"></label>
+        <div class="actions"><button class="btn btn-ghost" data-game="typing" data-bz-cancel>Back</button><button class="btn btn-primary btn-lg" data-game="typing" data-bz-go>${icon('arrow')} <span id="bzGoText">Start ${bz.rounds} round${bz.rounds === 1 ? '' : 's'}</span></button></div>
+      </div>`,
+  };
+}
+
 function typingPick(g) {
   const host = isHost();
+  if (host && bz.setup) return blitzSetup();
   const cards = g.modes.map(m => {
-    const closed = m.exactPlayers && g.players.length !== m.exactPlayers;
-    return `<button class="mode-card" ${closed || !host ? 'disabled' : ''} data-game="typing" data-choose-mode="${m.id}">
-      ${modeIcon[m.id]}<b>${esc(m.name)}</b><small>${closed ? `Only when exactly ${m.exactPlayers} players are in the room` : esc(m.tagline)}</small></button>`;
+    const exact = m.exactPlayers && g.players.length !== m.exactPlayers;
+    const few = m.minPlayers && g.players.length < m.minPlayers;
+    const note = exact ? `Only when exactly ${m.exactPlayers} players are in the room` : few ? `Needs at least ${m.minPlayers} players` : m.tagline;
+    return `<button class="mode-card ${m.id === 'blitz' ? 'mode-new' : ''}" ${exact || few || !host ? 'disabled' : ''} data-game="typing" data-choose-mode="${m.id}">
+      ${modeIcon[m.id]}<b>${esc(m.name)}</b><small>${esc(note)}</small></button>`;
   }).join('');
   return {
     tone: host ? 'live' : '',
@@ -490,11 +513,117 @@ function typingDuel(g) {
   };
 }
 
+const bzs = { key: null, number: 0, typed: '', good: 0, sent: 0, prog: {}, fx: null, focus: null };
+const BZ_FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-4 2-5 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg>';
+const BZ_CROWN = '<svg class="bz-crown" viewBox="0 0 20 14" aria-hidden="true"><path d="M1 4l4.5 4L10 1l4.5 7L19 4l-2 9H3z" fill="#ffc83d" stroke="#b77a00" stroke-width="1" stroke-linejoin="round"/></svg>';
+
+function typingBlitz(g) {
+  const b = g.blitz;
+  const key = `${b.number}:${b.gap}`;
+  const fresh = key !== bzs.key;
+  bzs.key = key;
+  if (b.number !== bzs.number) { bzs.number = b.number; bzs.typed = ''; bzs.good = 0; bzs.sent = 0; bzs.prog = {}; }
+  const last = b.last;
+  const myStreak = b.streak[S.you] || 0;
+  const order = [...g.players].sort((x, y) => (g.scores[y.id] || 0) - (g.scores[x.id] || 0));
+  const leader = order[0] && (g.scores[order[0].id] || 0) > 0 ? order[0].id : null;
+  const pct = id => {
+    if (!b.word) return 0;
+    const n = id === S.you ? bzs.good : Math.max(bzs.prog[id] || 0, b.prog[id] || 0);
+    return Math.round((n / b.word.length) * 100);
+  };
+  const tiles = order.map(p => {
+    const won = b.gap && last && last.winner === p.id;
+    const streak = b.streak[p.id] || 0;
+    return `<div class="bz-pl ${p.id === S.you ? 'me' : ''} ${won ? 'won' : ''}" data-bz="${p.id}">
+      ${leader === p.id ? BZ_CROWN : ''}${avatar(p.name)}<span class="bz-nm" title="${p.id === S.you ? 'You' : esc(p.name)}">${esc(p.name)}</span><b class="bz-sc">${g.scores[p.id] || 0}</b>
+      <span class="bz-bar"><i style="width:${pct(p.id)}%"></i></span>${streak >= 2 ? `<span class="bz-fire">${BZ_FLAME}${streak}</span>` : ''}</div>`;
+  }).join('');
+
+  let card, turn, tone;
+  if (!b.gap) {
+    card = `<div class="bz-card"><div class="bz-word" id="bzWord">${[...b.word].map((ch, i) => `<span style="--i:${i}">${esc(ch)}</span>`).join('')}</div></div>`;
+    turn = `Word ${b.number} of ${b.of} — first to type it wins!`;
+    tone = 'live';
+  } else if (last && last.winner) {
+    const me = last.winner === S.you;
+    card = `<div class="bz-card won"><div class="bz-win">${avatar(nameOf(last.winner))}
+        <div><b>${me ? 'You got it!' : `${esc(nameOf(last.winner))} got it!`}</b><small>typed <em>${esc(last.word)}</em> in ${(last.ms / 1000).toFixed(1)}s</small></div>
+        <span class="bz-plus">+${last.pts}</span>
+        ${last.streak >= 2 ? `<span class="bz-streak">${BZ_FLAME} ${last.streak} in a row! +${last.pts - 100} bonus</span>` : ''}</div></div>`;
+    turn = me ? 'You were the fastest!' : `${esc(nameOf(last.winner))} was the fastest!`;
+    tone = me ? 'win' : '';
+  } else {
+    card = `<div class="bz-card miss"><div class="bz-miss"><b>Time's up!</b><small>The word was <em>${esc(last ? last.word : '')}</em></small></div></div>`;
+    turn = 'Nobody got that one';
+    tone = 'alert';
+  }
+  return {
+    tone,
+    turn,
+    body: `<div class="bz ${fresh ? 'bz-fresh' : ''}">
+        <div class="bz-top"><span class="bz-round">Word <b>${b.number}</b> of ${b.of}</span>${myStreak >= 2 ? `<span class="bz-mystreak">${BZ_FLAME} ${myStreak} in a row</span>` : ''}</div>
+        ${card}
+        <div class="timebar bz-time">${b.gap ? '' : `<span data-deadline="${b.endsAt}" data-total="${b.roundMs}"></span>`}</div>
+        <input id="bzInput" class="type-input bz-input" ${typeAttrs} ${b.gap ? 'disabled placeholder="Next word coming…"' : 'placeholder="Type it here, fast!"'} aria-label="Type the word" value="${b.gap ? '' : esc(bzs.typed)}">
+        <div class="bz-players">${tiles}</div>
+      </div>`,
+  };
+}
+
+// colour the big word as you type: green while right, red at the first mistake
+function bzPaint(word, value) {
+  const box = $('#bzWord');
+  const val = value.toLowerCase();
+  let good = 0;
+  while (good < val.length && val[good] === word[good]) good++;
+  const bad = val.length > good;
+  bzs.good = good;
+  if (box) [...box.children].forEach((sp, i) => { sp.classList.toggle('ok', i < good); sp.classList.toggle('bad', bad && i === good); });
+  const input = $('#bzInput');
+  if (input) input.classList.toggle('bad', bad);
+  const mine = document.querySelector(`[data-bz="${S.you}"] .bz-bar i`);
+  if (mine) mine.style.width = `${Math.round((good / word.length) * 100)}%`;
+  return good;
+}
+
+function onBlitzInput(el) {
+  const b = S.game && S.game.blitz;
+  if (!b || !b.word) return;
+  SFX.play('key');
+  bzs.typed = el.value;
+  const good = bzPaint(b.word, el.value);
+  if (good !== bzs.sent) { bzs.sent = good; socket.emit('stream', { t: 'b', n: good }); }
+  if (el.value.trim().toLowerCase() === b.word) act({ type: 'blitz', text: el.value });
+}
+
+function blitzAfter(g) {
+  const b = g.blitz;
+  if (!b) return;
+  if (g.phase === 'play' && b.word) {
+    const input = $('#bzInput');
+    if (input) {
+      if (bzs.focus !== b.number) { bzs.focus = b.number; input.focus(); }
+      if (input.value) bzPaint(b.word, input.value);
+    }
+  }
+  if (b.gap) { const input = $('#bzInput'); if (input) input.value = ''; }
+  const fx = `${b.number}:${b.gap}`;
+  if (b.gap && bzs.fx !== fx) {
+    bzs.fx = fx;
+    if (b.last && b.last.winner) {
+      const el = document.querySelector('.bz-pl.won');
+      if (el && typeof FX !== 'undefined') FX.burst(el, ['#ffc83d', '#2fe07f', '#ffffff', '#ff2e93']);
+      if (b.last.winner === S.you && window.SFX) SFX.play('correct');
+    } else if (typeof FX !== 'undefined') FX.shake();
+  }
+}
+
 function typingOver(g) {
   const rows = g.results;
   const battle = !!g.battle;
   const val = r => (g.mode === 'race' ? `${r.wpm} wpm` : g.mode === 'royal' ? `${r.score} round${r.score === 1 ? '' : 's'}` : battle ? `${r.score} dmg` : `${r.score} pts`);
-  const sub = r => (g.mode === 'race' ? (r.done ? `${(r.ms / 1000).toFixed(1)}s · ${r.acc}% accuracy` : `${r.pct}% done`) : g.mode === 'rain' ? `${r.lives} lives left` : g.mode === 'royal' ? '' : battle ? `${r.words} word${r.words === 1 ? '' : 's'}` : '');
+  const sub = r => (g.mode === 'blitz' ? `${r.wins} word${r.wins === 1 ? '' : 's'}${r.best >= 2 ? ` · best streak ${r.best}` : ''}` : g.mode === 'race' ? (r.done ? `${(r.ms / 1000).toFixed(1)}s · ${r.acc}% accuracy` : `${r.pct}% done`) : g.mode === 'rain' ? `${r.lives} lives left` : g.mode === 'royal' ? '' : battle ? `${r.words} word${r.words === 1 ? '' : 's'}` : '');
   const podium = [1, 0, 2].map(i => rows[i]).filter(Boolean).map(r => {
     const place = rows.indexOf(r) + 1;
     return `<div class="pod pod${place}">${avatar(nameOf(r.id))}<b>${esc(nameOf(r.id))}</b><small>${val(r)}</small><div class="pod-bar"><span>${place}</span></div></div>`;
@@ -518,16 +647,40 @@ renderers.typing = () => {
     return { tone: 'live', turn: `${esc(m.name)} — get your fingers ready`, body: `<div class="count-wrap"><div class="count-big" data-deadline="${g.timerAt}"></div><b>${esc(m.name)}</b><small>${esc(m.tagline)}</small></div>` };
   }
   if (g.battle) return typingBattle(g);
+  if (g.mode === 'blitz' && g.blitz) return typingBlitz(g);
   return g.mode === 'race' ? typingRace(g) : g.mode === 'rain' ? typingRain(g) : typingDuel(g);
 };
 handlers.typing = d => {
-  if ('chooseMode' in d) act({ type: 'choose', mode: d.chooseMode });
+  if ('chooseMode' in d) {
+    if (d.chooseMode === 'blitz') { bz.setup = true; render(); return; }
+    act({ type: 'choose', mode: d.chooseMode });
+  } else if ('bzRounds' in d) { bz.rounds = bzClamp(d.bzRounds); render(); }
+  else if ('bzCancel' in d) { bz.setup = false; render(); }
+  else if ('bzGo' in d) { bz.setup = false; act({ type: 'choose', mode: 'blitz', rounds: bz.rounds }); }
   else if ('again' in d) act({ type: 'again' });
 };
+// typed rounds update the start button without redrawing, so the box keeps focus
+$('#stage').addEventListener('input', e => {
+  if (e.target.id !== 'bzRounds') return;
+  if (e.target.value === '') return;
+  bz.rounds = bzClamp(e.target.value);
+  const t = $('#bzGoText');
+  if (t) t.textContent = `Start ${bz.rounds} round${bz.rounds === 1 ? '' : 's'}`;
+  document.querySelectorAll('[data-bz-rounds]').forEach(b => b.classList.toggle('on', +b.dataset.bzRounds === bz.rounds));
+});
+$('#stage').addEventListener('change', e => { if (e.target.id === 'bzRounds') e.target.value = bz.rounds; });
 
 // live updates from other players, without re-rendering the page
 socket.on('stream', d => {
   if (!S || !S.game || S.game.gameId !== 'typing') return;
+  if (d.t === 'b') {
+    const b = S.game.blitz;
+    if (!b || !b.word || d.i !== b.number - 1) return;
+    bzs.prog[d.id] = d.n;
+    const bar = document.querySelector(`[data-bz="${d.id}"] .bz-bar i`);
+    if (bar) bar.style.width = `${Math.round((d.n / b.word.length) * 100)}%`;
+    return;
+  }
   if (d.t === 'p') {
     ty.prog[d.id] = d.n;
     const car = document.querySelector(`[data-car="${d.id}"]`);
@@ -697,6 +850,7 @@ function onRainInput(input) {
 $('#stage').addEventListener('input', e => {
   if (e.target.id === 'typeInput') onRaceInput(e.target);
   else if (e.target.id === 'rainInput') onRainInput(e.target);
+  else if (e.target.id === 'bzInput') onBlitzInput(e.target);
   else if (e.target.id === 'duelInput') {
     const g = S.game;
     SFX.play('key');
@@ -742,6 +896,8 @@ function typingAfter(g) {
     const input = $('#duelInput');
     if (input && document.activeElement !== input) input.focus();
   }
+  if (g.mode === 'blitz') blitzAfter(g);
+  if (g.phase !== 'pick') bz.setup = false;
 }
 
 afterRender.push(() => {

@@ -2,6 +2,7 @@
 //   Car Race    - everyone types the same sentence; your car moves as you type.
 //   Word Rain   - the same words fall for everyone; type them before they land. 5 lives.
 //   Speed Duel  - one word at a time; the fastest typists score.
+//   Word Blitz  - the whole group gets the same word; the first to type it wins the round. The host sets the rounds.
 //   Kings' Battle - one player against another; each typed word launches a random attack of your king.
 //   Monster Raid  - everyone teams up to type down three bosses before they destroy you.
 const { shuffle, findPlayer, cue } = require('./util');
@@ -19,6 +20,12 @@ const DUEL_SENTENCES = 4;       // of the DUEL_WORDS rounds
 const BATTLE_SENTENCE_EVERY = 4; // every 4th thing to type in a battle is a sentence
 const DUEL_GAP_MS = 1500;
 const DUEL_POINTS = [100, 70, 50, 40];
+const BLITZ_ROUNDS = { min: 1, max: 100, default: 10 };
+const BLITZ_MS = 10000;          // time to type each word
+const BLITZ_GAP_MS = 2600;       // time to enjoy the winner before the next word
+const BLITZ_POINTS = 100;
+const BLITZ_STREAK_BONUS = 25;   // per win in a row after the first, up to BLITZ_STREAK_MAX
+const BLITZ_STREAK_MAX = 100;
 
 const BATTLE_MS = 150000;
 const KO_MS = 2400;
@@ -55,9 +62,18 @@ const MODES = [
   { id: 'race', name: 'Car Race', tagline: 'Type the paragraph. First car home wins.' },
   { id: 'rain', name: 'Word Rain', tagline: 'Zap falling words before they land.' },
   { id: 'duel', name: 'Speed Duel', tagline: 'Fastest fingers take the points.' },
+  { id: 'blitz', name: 'Word Blitz', tagline: 'Same word for the whole group. First to type it scores!', minPlayers: 2, rounds: BLITZ_ROUNDS },
 ];
 
 const pick = (list, n) => shuffle(list).slice(0, n);
+function blitzWords(n) {
+  const out = [];
+  while (out.length < n) {
+    const next = shuffle(words).filter(w => w !== out[out.length - 1]);
+    out.push(...next);
+  }
+  return out.slice(0, n);
+}
 
 function rainSchedule() {
   const pool = pick(words, words.length);
@@ -105,6 +121,16 @@ function begin(s, mode) {
   if (mode === 'race') s.text = pick(paragraphs, 1)[0];
   if (mode === 'rain') s.words = rainSchedule();
   if (battle) s.b = newBattle(s, mode);
+  if (mode === 'blitz') {
+    s.queue = blitzWords(s.blitzRounds || BLITZ_ROUNDS.default);
+    s.idx = 0;
+    s.gap = false;
+    s.last = null;
+    s.wins = Object.fromEntries(s.players.map(p => [p.id, 0]));
+    s.streak = Object.fromEntries(s.players.map(p => [p.id, 0]));
+    s.bestStreak = Object.fromEntries(s.players.map(p => [p.id, 0]));
+    s.bprog = {};
+  }
   if (mode === 'duel') {
     s.queue = shuffle([...pick(words, DUEL_WORDS - DUEL_SENTENCES), ...pick(shortSentences, DUEL_SENTENCES)]);
     s.idx = 0;
@@ -321,6 +347,9 @@ function finishGame(s) {
   } else if (s.mode === 'rain') {
     rows = s.players.map(p => ({ id: p.id, score: s.rain[p.id].score, lives: s.rain[p.id].lives }))
       .sort((a, b) => b.score - a.score);
+  } else if (s.mode === 'blitz') {
+    rows = s.players.map(p => ({ id: p.id, score: s.scores[p.id], wins: s.wins[p.id], best: s.bestStreak[p.id] }))
+      .sort((a, b) => b.score - a.score || b.wins - a.wins);
   } else {
     rows = s.players.map(p => ({ id: p.id, score: s.scores[p.id] })).sort((a, b) => b.score - a.score);
   }
@@ -331,6 +360,37 @@ function finishGame(s) {
 }
 
 const duelMsFor = text => (text.includes(' ') ? DUEL_SENTENCE_MS : DUEL_WORD_MS);
+
+function blitzStart(s) {
+  s.gap = false;
+  s.bprog = {};
+  s.roundStart = Date.now();
+  s.timerAt = s.roundStart + BLITZ_MS;
+}
+
+// a round ends the moment someone types the word, or when time runs out
+function blitzEnd(s, winnerId) {
+  const word = s.queue[s.idx];
+  let pts = 0;
+  if (winnerId) {
+    s.streak[winnerId] = (s.streak[winnerId] || 0) + 1;
+    pts = BLITZ_POINTS + Math.min(BLITZ_STREAK_MAX, (s.streak[winnerId] - 1) * BLITZ_STREAK_BONUS);
+    s.scores[winnerId] += pts;
+    s.wins[winnerId]++;
+    s.bestStreak[winnerId] = Math.max(s.bestStreak[winnerId], s.streak[winnerId]);
+  }
+  for (const p of s.players) if (p.id !== winnerId) s.streak[p.id] = 0;
+  s.last = { winner: winnerId || null, word, pts, ms: Date.now() - s.roundStart, streak: winnerId ? s.streak[winnerId] : 0 };
+  s.gap = true;
+  s.timerAt = Date.now() + BLITZ_GAP_MS;
+  cue(s, winnerId ? 'reveal' : 'tick');
+}
+
+function blitzNext(s) {
+  s.idx++;
+  if (s.idx >= s.queue.length) return finishGame(s);
+  blitzStart(s);
+}
 
 function duelNext(s) {
   s.idx++;
@@ -363,6 +423,7 @@ module.exports = {
     } else if (s.phase === 'countdown') {
       s.phase = 'play';
       s.startedAt = Date.now();
+      if (s.mode === 'blitz') { blitzStart(s); cue(s, 'go'); return; }
       s.timerAt = s.startedAt + (s.mode === 'race' ? RACE_MS : s.mode === 'rain' ? RAIN_MS : s.mode === 'duel' ? duelMsFor(s.queue[s.idx]) : DUEL_WORD_MS);
       if (s.mode === 'royal') royalStartRound(s);
       else if (s.b && (s.mode === 'kings' || s.mode === 'raid')) {
@@ -376,7 +437,10 @@ module.exports = {
     } else if (s.phase === 'play') {
       if (s.mode === 'royal') royalTick(s);
       else if (s.mode === 'kings' || s.mode === 'raid') battleTick(s);
-      else if (s.mode === 'duel') {
+      else if (s.mode === 'blitz') {
+        if (s.gap) blitzNext(s);
+        else blitzEnd(s, null);
+      } else if (s.mode === 'duel') {
         if (s.gap) duelNext(s);
         else { duelGap(s); cue(s, 'tick'); }
       } else finishGame(s);
@@ -394,6 +458,12 @@ module.exports = {
       const n = Math.max(0, Math.min(s.text.length, Number(d.n) || 0));
       s.prog[playerId] = n;
       return { t: 'p', id: playerId, n };
+    }
+    // how far into the word each player has typed, so everyone can watch the race
+    if (d.t === 'b' && s.mode === 'blitz' && !s.gap) {
+      const n = Math.max(0, Math.min(s.queue[s.idx].length, Number(d.n) || 0));
+      s.bprog[playerId] = n;
+      return { t: 'b', id: playerId, n, i: s.idx };
     }
     if (d.t === 's' && s.mode === 'rain') {
       const r = s.rain[playerId];
@@ -414,6 +484,11 @@ module.exports = {
       const picked = MODES.find(m => m.id === a.mode);
       if (!picked) throw new Error('Pick a typing game');
       if (picked.exactPlayers && s.players.length !== picked.exactPlayers) throw new Error(`${picked.name} is for ${picked.exactPlayers} players only`);
+      if (picked.minPlayers && s.players.length < picked.minPlayers) throw new Error(`${picked.name} needs at least ${picked.minPlayers} players`);
+      if (picked.id === 'blitz') {
+        const n = Math.round(Number(a.rounds));
+        s.blitzRounds = Number.isFinite(n) ? Math.max(BLITZ_ROUNDS.min, Math.min(BLITZ_ROUNDS.max, n)) : BLITZ_ROUNDS.default;
+      }
       begin(s, picked.id);
       return;
     }
@@ -473,6 +548,13 @@ module.exports = {
       return;
     }
 
+    if (a.type === 'blitz') {
+      if (s.phase !== 'play' || s.mode !== 'blitz' || s.gap) return { quiet: true };
+      if (String(a.text || '').trim().toLowerCase() !== s.queue[s.idx]) return { message: 'Not quite — check the spelling' };
+      blitzEnd(s, playerId);
+      return;
+    }
+
     if (a.type === 'duel') {
       if (s.phase !== 'play' || s.mode !== 'duel' || s.gap) return;
       if (s.solvers.includes(playerId)) return;
@@ -517,6 +599,18 @@ module.exports = {
       gap: !!s.gap,
       duelMs: duelWord ? duelMsFor(duelWord) : DUEL_WORD_MS,
       raceMs: RACE_MS,
+      blitz: s.mode === 'blitz' && s.queue ? {
+        number: Math.min(s.idx + 1, s.queue.length),
+        of: s.queue.length,
+        word: s.phase === 'play' && !s.gap ? s.queue[s.idx] : null,
+        gap: !!s.gap,
+        last: s.gap ? s.last : null,
+        wins: s.wins,
+        streak: s.streak,
+        prog: s.bprog || {},
+        endsAt: s.timerAt,
+        roundMs: BLITZ_MS,
+      } : null,
       scores: s.scores || {},
       results: s.results,
       players: s.players,

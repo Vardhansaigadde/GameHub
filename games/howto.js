@@ -38,6 +38,7 @@ module.exports = {
         'Longer words hit harder, sentences hit hardest, and 5 in a row without a typo unleash an ultimate. Monster Raid: team up against three bosses.',
         'Car Race: type the paragraph and your car drives. First home wins, then second, third and so on. Word Rain: zap falling words.',
         'Speed Duel: one word or sentence at a time, fastest typists score most.',
+        'Word Blitz (the whole group): the host sets any number of rounds. Everyone gets the same word, and the first to type it wins the round. Win in a row for bonus points.',
       ],
     },
     ludo: {

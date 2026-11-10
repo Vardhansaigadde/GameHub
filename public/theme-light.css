@@ -83,3 +83,7 @@ html[data-theme="light"] .ip-bubble.skipped { border-color: var(--line); box-sha
 html[data-theme="light"] .ip-row.speaking { background: #fff6dc; border-color: #e0a400; }
 html[data-theme="light"] .ip-pcard.lit { border-color: #e0a400; }
 html[data-theme="light"] .ip-stamp { background: #fff; }
+html[data-theme="light"] .bz-bar { background: var(--raised); }
+html[data-theme="light"] .bz-setup { background: #fff; border-color: var(--line); }
+html[data-theme="light"] .bz-pl.me { border-color: #0877b5; }
+html[data-theme="light"] .bz-sc { color: #a86f00; }

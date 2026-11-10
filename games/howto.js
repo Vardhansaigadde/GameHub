@@ -144,12 +144,12 @@ module.exports = {
     },
     story: {
       cat: 'party',
-      tagline: 'One line each. Total chaos.',
+      tagline: 'One story. Everyone adds a line.',
       steps: [
-        'Every story starts with a silly opening line.',
-        'Add one line to a story, but you only see the line just before yours.',
-        'The stories pass around until everyone has written in each one.',
-        'Then the host reads them out line by line. Tap the laugh button on the funniest lines: each laugh scores 50.',
+        'A random player writes the first line of the story (there are ideas if you get stuck).',
+        'The story passes to the next player, who adds the next line, and so on round the circle.',
+        'Every line appears for everyone straight away, so the whole group reads the story as it grows.',
+        'Tap the laugh button on the funniest lines (not your own): each laugh scores 50.',
       ],
     },
     npat: {

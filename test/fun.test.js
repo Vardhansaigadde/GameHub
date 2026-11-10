@@ -59,53 +59,51 @@ test('fillin: timers and gone players keep it moving; the best answers are kept 
 /* ---------- Story Chain ---------- */
 const story = games.story;
 
-test('story: everyone writes in every story once, seeing only the line before', () => {
-  const s = story.setup(P.slice(0, 3));
-  const seen = new Set();
-  for (let step = 0; step < 3; step++) {
-    for (const id of ids(3)) {
-      const v = story.view(s, id);
-      seen.add(`${id}:${v.myPrev}`);
-      assert.ok(!('stories' in v) || v.stories === null, 'no peeking at whole stories');
-      story.action(s, id, { type: 'line', text: `${id} wrote at step ${step}` }, guest);
-    }
+test('story: one shared story; the turn passes round and everyone sees every line', () => {
+  const s = story.setup(P.slice(0, 3), { laps: 2 });
+  assert.strictEqual(s.totalTurns, 6);
+  const order = s.seats;
+  const starter = order[0];
+  assert.ok(story.view(s, starter).ideas.length > 0, 'the starter gets ideas');
+  assert.strictEqual(story.view(s, order[1]).ideas, null);
+  assert.throws(() => story.action(s, order[1], { type: 'line', text: 'jumping in early' }, guest), /not your turn/);
+  for (let k = 0; k < 6; k++) {
+    const id = story.view(s, 'p0').writerId;
+    assert.strictEqual(id, order[k % 3], 'turns go round the circle');
+    story.action(s, id, { type: 'line', text: `line number ${k}` }, guest);
+    for (const viewer of order) assert.strictEqual(story.view(s, viewer).lines.length, k + 1, 'everyone sees the new line at once');
   }
-  assert.strictEqual(s.phase, 'reveal');
-  for (const st of s.stories) {
-    assert.strictEqual(st.lines.length, 3);
-    assert.deepStrictEqual(st.lines.map(l => l.by).sort(), ids(3));
-  }
-});
-
-test('story: the host reads line by line; laughs score, but not on your own line', () => {
-  const s = story.setup(P.slice(0, 3));
-  story.onTimer(s); story.onTimer(s);
-  ids(3).forEach(id => story.action(s, id, { type: 'line', text: 'a funny line ' + id }, guest));
-  assert.strictEqual(s.phase, 'reveal');
-  assert.throws(() => story.action(s, 'p0', { type: 'laugh', story: 0, line: 2 }, guest), /Not read out yet|Pick a line/);
-  assert.throws(() => story.action(s, 'p1', { type: 'next' }, guest), /host/);
-  story.action(s, 'p0', { type: 'next' }, host); story.action(s, 'p0', { type: 'next' }, host); story.action(s, 'p0', { type: 'next' }, host);
-  const line = s.stories[0].lines[2];
-  const fan = ids(3).find(id => id !== line.by);
-  assert.throws(() => story.action(s, line.by, { type: 'laugh', story: 0, line: 2 }, guest), /own/);
-  story.action(s, fan, { type: 'laugh', story: 0, line: 2 }, guest);
-  assert.strictEqual(s.scores[line.by], 50);
-  story.action(s, fan, { type: 'laugh', story: 0, line: 2 }, guest);
-  assert.strictEqual(s.scores[line.by], 0, 'tapping again takes it back');
-  assert.throws(() => story.action(s, fan, { type: 'laugh', story: 0, line: 0 }, guest), /Pick a line/, 'skipped lines cannot be laughed at');
-});
-
-test('story: a gone player is skipped, and the end shows every story', () => {
-  const s = story.setup(P.slice(0, 3));
-  story.action(s, 'p0', { type: 'line', text: 'hello there' }, guest);
-  story.action(s, 'p1', { type: 'line', text: 'general kenobi' }, guest);
-  assert.strictEqual(story.absentBlock(s, ['p2']), 'p2');
-  story.skipAbsent(s, 'p2');
-  assert.strictEqual(s.step, 1);
-  story.onTimer(s); story.onTimer(s);
-  while (s.phase === 'reveal') story.action(s, 'p0', { type: 'next' }, host);
   assert.strictEqual(s.phase, 'over');
-  assert.strictEqual(story.view(s, 'p1').stories.length, 3);
+  assert.deepStrictEqual(s.lines.map(l => l.by), [...order, ...order]);
+});
+
+test('story: laughs score for the writer, never your own line, and can be taken back', () => {
+  const s = story.setup(P.slice(0, 2), { laps: 2 });
+  const [a, b] = s.seats;
+  story.action(s, a, { type: 'line', text: 'Once a cat ran for mayor' }, guest);
+  assert.throws(() => story.action(s, a, { type: 'laugh', line: 0 }, guest), /own line/);
+  story.action(s, b, { type: 'laugh', line: 0 }, guest);
+  assert.strictEqual(s.scores[a], 50);
+  assert.strictEqual(story.view(s, b).lines[0].mine, true);
+  story.action(s, b, { type: 'laugh', line: 0 }, guest);
+  assert.strictEqual(s.scores[a], 0);
+});
+
+test('story: running out of time skips a turn; a missing first line becomes a ready-made start', () => {
+  const s = story.setup(P.slice(0, 3), { laps: 2 });
+  story.onTimer(s);
+  assert.strictEqual(s.lines[0].auto, true);
+  assert.ok(s.lines[0].text.length > 10);
+  assert.throws(() => story.action(s, s.seats[1], { type: 'laugh', line: 0 }, guest), /Pick a line/);
+  const gone = story.view(s, 'p0').writerId;
+  assert.strictEqual(story.absentBlock(s, [gone]), gone);
+  story.skipAbsent(s, gone);
+  assert.strictEqual(s.lines[1].skipped, true);
+  while (s.phase === 'write') story.onTimer(s);
+  assert.strictEqual(s.lines.length, 6);
+  story.action(s, 'p0', { type: 'rematch' }, host);
+  assert.strictEqual(s.phase, 'write');
+  assert.strictEqual(s.lines.length, 0);
 });
 
 /* ---------- Name, Place, Animal, Thing ---------- */

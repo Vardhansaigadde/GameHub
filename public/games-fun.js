@@ -91,82 +91,75 @@ handlers.fillin = d => {
 };
 
 /* ======================= Story Chain ======================= */
-const st = { key: null, written: [], focus: null };
+// one shared story: lines appear for everyone as they are written; only new lines animate
+const st = { count: 0, game: null, focus: null };
 const ST_LAUGH = '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 13.5a5 5 0 0 0 10 0z" fill="currentColor" stroke="none"/><path d="m8 8.5 2.2 1.3L8 11M16 8.5l-2.2 1.3L16 11"/></svg>';
+const stWho = id => (id === S.you ? 'You' : esc(nameOf(id)));
 
-function stLine(l, si, li, fresh) {
-  const name = esc(nameOf(l.by));
-  if (l.skipped) return `<div class="st-line skipped ${fresh ? 'new' : ''}"><p>…and then ${name} fell asleep.</p></div>`;
+function stLine(l, i, isNew) {
+  if (l.skipped) return `<div class="st-line skipped ${isNew ? 'new' : ''}"><p>…and then ${esc(nameOf(l.by))} fell asleep.</p></div>`;
   const me = l.by === S.you;
-  return `<div class="st-line ${fresh ? 'new' : ''}"><p>${esc(l.text)}</p>
-    <span class="st-meta">${avatar(nameOf(l.by))}<span>${name}</span>
-      <button class="st-laugh ${l.mine ? 'on' : ''}" data-game="story" data-laugh="${si}:${li}" ${me ? 'disabled' : ''} aria-pressed="${l.mine}" aria-label="Laugh at this line">${ST_LAUGH}${l.n ? `<b>${l.n}</b>` : ''}</button></span></div>`;
+  const laugh = l.auto ? '' : `<button class="st-laugh ${l.mine ? 'on' : ''}" data-game="story" data-laugh="${i}" ${me ? 'disabled' : ''} aria-pressed="${l.mine}" aria-label="Laugh at this line">${ST_LAUGH}${l.n ? `<b>${l.n}</b>` : ''}</button>`;
+  return `<div class="st-line ${i === 0 ? 'first' : ''} ${isNew ? 'new' : ''}"><p>${esc(l.text)}</p>
+    <span class="st-meta">${avatar(nameOf(l.by))}<span>${stWho(l.by)}${l.auto ? ' · a ready-made start' : ''}</span>${laugh}</span></div>`;
 }
 
-function stBook(story, si, title, newIdx = -1) {
-  const more = story.total - story.lines.length;
-  return `<div class="st-book"><div class="st-head">${title}</div>
-    <p class="st-opener">${esc(story.opener)}</p>
-    ${story.lines.map((l, li) => stLine(l, si, li, li === newIdx)).join('')}
-    ${more > 0 ? `<div class="st-more"><i></i><i></i><i></i> ${more} more line${more === 1 ? '' : 's'}</div>` : ''}</div>`;
+function stBook(g, fresh) {
+  const start = fresh ? 0 : st.count;
+  const lines = g.lines.map((l, i) => stLine(l, i, i >= start && !fresh)).join('');
+  const writing = g.phase === 'write' && g.writerId
+    ? `<div class="st-writing">${avatar(nameOf(g.writerId))}<span>${g.writerId === S.you ? 'Your turn to write…' : `${esc(nameOf(g.writerId))} is writing`}</span><span class="st-dots"><i></i><i></i><i></i></span></div>` : '';
+  return `<div class="st-book" id="stBook"><div class="st-head">${g.phase === 'over' ? 'The End' : 'Our story'}</div>
+    ${lines || '<p class="st-empty">The page is empty… someone is about to start the story!</p>'}${writing}</div>`;
 }
 
 renderers.story = () => {
   const g = S.game;
+  const fresh = st.game !== g.seats.join() || g.lines.length < st.count;
+  const book = stBook(g, fresh);
+  st.count = g.lines.length;
+  st.game = g.seats.join();
 
   if (g.phase === 'write') {
-    const key = `w:${g.step}`;
-    const fresh = key !== st.key;
-    if (fresh) { st.key = key; st.written = []; }
-    const pills = ipPills(g, g.written, st.written, fresh);
-    st.written = [...g.written];
-    const typed = $('#stInput') ? $('#stInput').value : '';
-    const body = g.done
-      ? `<div class="st-sent"><span class="st-plane">${icon('send')}</span><b>Line added!</b><small>Waiting for ${g.players.length - g.written.length} more…</small></div>`
-      : `<div class="st-prev"><small>${g.myFirst ? 'The story begins:' : 'The line before yours:'}</small><p>${esc(g.myPrev)}</p></div>
-        <form class="st-form" data-st-form><textarea id="stInput" maxlength="140" rows="2" placeholder="What happens next?" aria-label="Your line">${esc(typed)}</textarea>
-          <div class="st-row"><span class="st-count" id="stCount">${typed.length}/140</span><button class="btn btn-primary" type="submit">${icon('pen')} Add my line</button></div></form>`;
+    const mine = g.writerId === S.you;
+    const first = !g.lines.length;
+    const typed = mine && $('#stInput') ? $('#stInput').value : '';
+    const order = g.seats.map(id => `<span class="st-seat ${id === g.writerId ? 'now' : ''} ${id === g.nextId ? 'next' : ''}" title="${esc(nameOf(id))}">${avatar(nameOf(id))}<small>${id === S.you ? 'You' : esc(nameOf(id))}</small></span>`).join('<i class="st-arrow">›</i>');
+    const form = mine
+      ? `<form class="st-form" data-st-form>
+          ${first && g.ideas ? `<div class="st-ideas"><span>Need an idea?</span>${g.ideas.map(t => `<button type="button" class="chip" data-game="story" data-idea="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
+          <textarea id="stInput" maxlength="140" rows="2" placeholder="${first ? 'Start the story…' : 'What happens next?'}" aria-label="${first ? 'The first line' : 'The next line'}">${esc(typed)}</textarea>
+          <div class="st-row"><span class="st-count" id="stCount">${typed.length}/140</span><button class="btn btn-primary" type="submit">${icon('pen')} ${first ? 'Start the story' : 'Add my line'}</button></div></form>`
+      : `<p class="st-wait">${g.nextId === S.you ? "You're next — read along and get your line ready!" : 'Read along — your turn will come round.'}</p>`;
     return {
-      tone: g.done ? '' : 'mine',
-      turn: g.done ? 'Nice! Waiting for the others…' : 'Add the next line to the story',
-      body: `<div class="fn st${fresh ? ' fn-fresh' : ''}"><div class="fn-top"><span class="pill">Line ${g.step} of ${g.steps}</span></div>
-        ${body}${g.endsAt ? timeBar(g.endsAt, g.totalMs) : ''}<div class="pass-status">${pills}</div></div>`,
+      tone: mine ? 'mine' : 'live',
+      turn: mine ? (first ? 'You start the story!' : 'Your turn — add the next line') : `${esc(nameOf(g.writerId))} is ${first ? 'starting the story' : 'adding a line'}…`,
+      body: `<div class="fn st">
+        <div class="fn-top"><span class="pill">Line ${g.turnNo} of ${g.totalTurns}</span><span class="pill">Round ${g.lap} of ${g.laps}</span></div>
+        <div class="st-order">${order}</div>
+        ${book}
+        ${form}
+        ${g.endsAt ? timeBar(g.endsAt, g.totalMs) : ''}</div>`,
     };
   }
 
-  if (g.phase === 'reveal') {
-    const si = g.stories.length - 1;
-    const story = g.stories[si];
-    const key = `r:${g.storyNo}:${story.lines.length}`;
-    const fresh = key !== st.key;
-    st.key = key;
-    const label = !g.lineDone ? 'Next line' : g.atEnd ? 'Finish' : 'Next story';
-    return {
-      tone: 'live',
-      turn: `Story ${g.storyNo} of ${g.storyCount} — tap the laugh button on the funny lines`,
-      body: `<div class="fn st${fresh ? ' fn-fresh' : ''}">${stBook(story, si, `Story ${g.storyNo} of ${g.storyCount}`, fresh ? story.lines.length - 1 : -1)}
-        <div class="actions">${isHost() ? `<button class="btn btn-primary btn-lg" data-next>${label} ${icon('arrow')}</button>` : `<span class="muted">${esc(nameOf(S.room.hostId))} is reading the stories…</span>`}</div></div>`,
-    };
-  }
-
-  // over: every story, the funniest line, and the scores
+  // the end: the finished story, the funniest line and the scores
   let best = null;
-  g.stories.forEach((s, si) => s.lines.forEach(l => { if (!l.skipped && l.n && (!best || l.n > best.n)) best = { ...l, si }; }));
-  const fresh = st.key !== 'over';
-  st.key = 'over';
+  g.lines.forEach(l => { if (!l.skipped && !l.auto && l.n && (!best || l.n > best.n)) best = l; });
   return {
     tone: 'win',
-    turn: 'The end! Here are all the stories',
-    body: `<div class="fn st${fresh ? ' fn-fresh' : ''}">
+    turn: 'The end! Laugh at your favourite lines',
+    body: `<div class="fn st ${fresh ? 'fn-fresh' : ''}">
       ${best ? `<div class="st-best"><span>${icon('trophy')} Funniest line</span><p>${esc(best.text)}</p><small>${esc(nameOf(best.by))} · ${best.n} laugh${best.n === 1 ? '' : 's'}</small></div>` : ''}
-      <h3 class="fn-title">Final scores</h3>${scoreboard(g.scores)}
-      <div class="st-all">${g.stories.map((s, si) => stBook(s, si, `Story ${si + 1}`)).join('')}</div>
+      ${book}
+      <h3 class="fn-title">Scores</h3>${scoreboard(g.scores)}
       <div class="actions">${rematchBtn()}</div></div>`,
   };
 };
 
 handlers.story = d => {
-  if ('laugh' in d) { const [story, line] = d.laugh.split(':').map(Number); act({ type: 'laugh', story, line }); if (window.SFX) SFX.play('tap'); }
+  if ('laugh' in d) { act({ type: 'laugh', line: +d.laugh }); if (window.SFX) SFX.play('tap'); }
+  else if ('idea' in d) { const t = $('#stInput'); if (t) { t.value = d.idea; t.focus(); const c = $('#stCount'); if (c) c.textContent = `${t.value.length}/140`; } }
 };
 
 /* ======================= Name, Place, Animal, Thing ======================= */
@@ -320,7 +313,10 @@ afterRender.push(() => {
       setTimeout(() => { const el = $('.fi-res.win'); if (el && typeof FX !== 'undefined') FX.burst(el, ['#ffc83d', '#ff2e93', '#2fe07f', '#ffffff']); }, 900);
     }
   } else if (g.gameId === 'story') {
-    if (g.phase === 'write' && !g.done) focusOnce(st, `w${g.step}`, '#stInput');
+    if (g.phase === 'write' && g.writerId === S.you) focusOnce(st, `w${g.turnNo}`, '#stInput');
+    // keep the newest line in view as the story grows
+    const book = $('#stBook');
+    if (book && g.lines.length !== st.scrolled) { st.scrolled = g.lines.length; book.scrollTop = book.scrollHeight; }
   } else if (g.gameId === 'npat') {
     if (g.phase === 'write') {
       const k = `${g.round}`;

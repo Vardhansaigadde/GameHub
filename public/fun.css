@@ -204,3 +204,25 @@ html[data-theme="light"] .np-card.me { border-color: #0877b5; }
   .np-strip { animation: none; transform: translateY(calc(var(--n) * -130px)); }
   .fi-art-blank, .fi-art-word, .fi-art-face, .st-art-line, .st-art-quill, .np-art-letter, .np-art-tick { animation: none; opacity: 1; transform: none; }
 }
+
+/* Story Chain: one live story */
+.st-order { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 4px 6px; margin-bottom: 12px; }
+.st-seat { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 6px; border-radius: 12px; opacity: .55; transition: opacity .25s, transform .25s var(--spring), background .25s; }
+.st-seat small { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: .72rem; }
+.st-seat .avatar { width: 30px; height: 30px; font-size: .75rem; }
+.st-seat.now { opacity: 1; transform: scale(1.12); background: rgba(255, 200, 61, .16); box-shadow: 0 0 0 2px var(--gold); }
+.st-seat.now .avatar { animation: ipTalk 1s ease-in-out infinite; }
+.st-seat.next { opacity: .85; }
+.st-arrow { font-style: normal; color: var(--faint); font-weight: 800; }
+.st-book { max-height: min(56vh, 520px); overflow-y: auto; scroll-behavior: smooth; }
+.st-line.first p { font-family: var(--display); font-weight: 600; font-size: 1.3rem; font-style: italic; color: #4a3f80; }
+.st-empty { color: #9a90c9; font-style: italic; margin: 6px 0 10px; }
+.st-writing { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 8px 10px; border-radius: 12px; background: rgba(124, 77, 255, .08); color: #6a5fa8; font-weight: 700; font-size: .9rem; }
+.st-writing .avatar { width: 24px; height: 24px; font-size: .62rem; }
+.st-dots { display: inline-flex; gap: 3px; }
+.st-dots i { width: 6px; height: 6px; border-radius: 50%; background: #9a8ce0; animation: ipDot 1s ease-in-out infinite; }
+.st-dots i:nth-child(2) { animation-delay: .15s; } .st-dots i:nth-child(3) { animation-delay: .3s; }
+.st-ideas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.st-ideas > span { color: var(--muted); font-weight: 800; font-size: .85rem; }
+.st-ideas .chip { text-align: left; }
+.st-wait { text-align: center; color: var(--muted); font-weight: 700; margin: 6px 0; }

@@ -118,7 +118,6 @@ function thumb(id) {
       ${[0, 1, 2, 3, 4, 5, 6, 7].map(c => `<rect class="ta-key" style="animation-delay:${(c * 0.3).toFixed(1)}s" x="${15.500 + c * 8.300}" y="46" width="6.500" height="5.500" rx="1.200"/>`).join('')}
       ${[0, 1, 2, 3, 4, 5, 6].map(c => `<rect class="ta-key" style="animation-delay:${(c * 0.3 + 1.100).toFixed(1)}s" x="${19.600 + c * 8.300}" y="53" width="6.500" height="5.500" rx="1.200"/>`).join('')}`,
     ludo: `<rect width="96" height="64" fill="#fff"/><g transform="translate(19 3)"><rect width="58" height="58" fill="#fff"/><rect width="23" height="23" fill="#e53935"/><rect x="35" width="23" height="23" fill="#2fb34a"/><rect x="35" y="35" width="23" height="23" fill="#f9c423"/><rect y="35" width="23" height="23" fill="#2a7de1"/><path d="M23 23h12v12H23z" fill="#ddd"/><path d="M23 23l6 6-6 6z" fill="#e53935"/><path d="M23 23l6 6 6-6z" fill="#2fb34a"/><path d="M35 23l-6 6 6 6z" fill="#f9c423"/><path d="M23 35l6-6 6 6z" fill="#2a7de1"/><circle cx="11.500" cy="11.500" r="6" fill="#fff"/><circle cx="46.500" cy="11.500" r="6" fill="#fff"/><circle cx="46.500" cy="46.500" r="6" fill="#fff"/><circle cx="11.500" cy="46.500" r="6" fill="#fff"/></g><rect width="19" height="64" fill="#e53935" opacity=".2"/><rect x="77" width="19" height="64" fill="#2a7de1" opacity=".2"/>`,
-    snakes: `<rect width="96" height="64" fill="#ffe9a8"/>${[0, 1, 2, 3, 4, 5, 6, 7].map(c => [0, 1, 2, 3, 4, 5].map(r => ((r + c) % 2 ? `<rect x="${c * 12}" y="${r * 10.670}" width="12" height="10.670" fill="#bfe9ff"/>` : '')).join('')).join('')}<g stroke="#a4501a" stroke-width="2" stroke-linecap="round"><path d="M16 58L36 8M26 62L46 12M21 49l10 4M25 39l10 4M29 29l10 4M33 19l10 4"/></g><path d="M80 8C62 14 86 28 66 34S74 54 56 56" fill="none" stroke="#2fb34a" stroke-width="6" stroke-linecap="round"/><circle cx="80" cy="8" r="5" fill="#2fb34a"/><circle cx="78.500" cy="7" r="1.200" fill="#fff"/><circle cx="82" cy="7" r="1.200" fill="#fff"/>`,
     colorclash: `<rect width="96" height="64" fill="#2a1b6e"/><g stroke="#fff" stroke-width="1.500"><g transform="rotate(-16 28 36)"><rect x="16" y="14" width="26" height="38" rx="4" fill="#e8303f"/><ellipse cx="29" cy="33" rx="9" ry="13" fill="#fff" stroke="none"/></g><g transform="rotate(14 66 36)"><rect x="54" y="14" width="26" height="38" rx="4" fill="#2ab55a"/><ellipse cx="67" cy="33" rx="9" ry="13" fill="#fff" stroke="none"/></g><g><rect x="35" y="10" width="26" height="40" rx="4" fill="#f7c21f"/><ellipse cx="48" cy="30" rx="9" ry="14" fill="#fff" stroke="none"/></g></g><text x="48" y="35" font-family="Arial" font-size="14" font-weight="900" fill="#e0a000" text-anchor="middle">+2</text>`,
     connect4: `<rect width="96" height="64" fill="#1d46c8"/>${[0, 1, 2, 3, 4, 5, 6].map(c => [0, 1, 2, 3, 4].map(r => { const on = { '3,4': '#e8303f', '4,4': '#f7c21f', '2,4': '#e8303f', '4,3': '#e8303f', '3,3': '#f7c21f', '2,3': '#f7c21f', '5,4': '#e8303f', '1,4': '#f7c21f', '3,2': '#e8303f' }[`${c},${r}`]; return `<circle cx="${12 + c * 12}" cy="${8 + r * 12}" r="4.800" fill="${on || '#0f1a57'}"/>`; }).join('')).join('')}`,
     ipl: `<rect width="96" height="64" fill="#0b1f4d"/><circle cx="40" cy="74" r="50" fill="#163f94"/><circle cx="40" cy="74" r="34" fill="#1f52b8" opacity=".7"/>
@@ -163,6 +162,13 @@ function thumb(id) {
       <g class="np-art-letter"><rect x="8" y="12" width="36" height="40" rx="9" fill="#ff2e93"/><text x="26" y="43" font-family="Fredoka,Arial" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">A</text></g>
       ${[['Name', 15], ['Place', 27], ['Animal', 39], ['Thing', 51]].map(([t, y], i) => `<rect x="50" y="${y - 8}" width="40" height="10" rx="3" fill="#fff" opacity=".92"/><text x="54" y="${y - 1}" font-family="Fredoka,Arial" font-size="6" font-weight="700" fill="#3a1470">${t}</text>
         <g class="np-art-tick" style="animation-delay:${(i * 0.35).toFixed(2)}s"><circle cx="85" cy="${y - 3}" r="3.600" fill="#2fe07f"/><path d="M83.400 ${y - 3}l1.200 1.200 2.200-2.400" stroke="#052b17" stroke-width="1.200" fill="none"/></g>`).join('')}`,
+    handcricket: `<rect width="96" height="64" fill="#2a7f48"/><path d="M0 0h96v64H0z" fill="url(#hcStripes)"/>
+      <defs><pattern id="hcStripes" width="16" height="64" patternUnits="userSpaceOnUse"><rect width="8" height="64" fill="#2e8b4f"/></pattern></defs>
+      <ellipse cx="48" cy="34" rx="15" ry="30" fill="#c9a86a"/>
+      <g class="hcart-hand"><rect x="12" y="22" width="24" height="28" rx="9" fill="#ffd9b3"/><rect x="12" y="44" width="24" height="6" rx="3" fill="#f0b98a"/><text x="24" y="42" font-family="Fredoka,Arial" font-size="16" font-weight="700" fill="#5a3010" text-anchor="middle">3</text></g>
+      <g class="hcart-hand r"><rect x="60" y="22" width="24" height="28" rx="9" fill="#ffd9b3"/><rect x="60" y="44" width="24" height="6" rx="3" fill="#f0b98a"/><text x="72" y="42" font-family="Fredoka,Arial" font-size="16" font-weight="700" fill="#5a3010" text-anchor="middle">3</text></g>
+      <g fill="#f5f0e1"><rect x="44" y="40" width="2" height="14"/><rect x="47" y="40" width="2" height="14"/><rect x="50" y="40" width="2" height="14"/><rect x="43.500" y="39" width="9" height="1.600" rx=".8" fill="#ffc83d"/></g>
+      <g class="hcart-out"><rect x="28" y="6" width="40" height="14" rx="4" fill="#ff4d6d" stroke="#fff" stroke-width="1.500"/><text x="48" y="17" font-family="Fredoka,Arial" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">OUT!</text></g>`,
     sequence: `<rect width="96" height="64" fill="#22603a"/>
       <g transform="rotate(-16 30 40)"><rect x="18" y="16" width="24" height="34" rx="3" fill="#fff"/><text x="22" y="26" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">5♥</text></g>
       <g transform="rotate(-4 46 38)"><rect x="34" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="38" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">6♥</text></g>
@@ -187,7 +193,8 @@ $('#leaveBtn').innerHTML = `${icon('logout')} Leave room`;
 $('#chatSend').innerHTML = icon('send');
 $('#charadesThumb').innerHTML = thumb('charades');
 
-const playersLabel = g => `${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players`;
+const countsText = list => `${list.slice(0, -1).join(', ')} or ${list[list.length - 1]}`;
+const playersLabel = g => (g.allowedCounts ? `${countsText(g.allowedCounts)} players` : `${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players`);
 
 // picture tile: art, name and player count — the rules live in "How to play"
 function gameTile(g, attrs = '', cls = '') {
@@ -459,7 +466,7 @@ function renderGame() {
 function renderLobby() {
   const n = S.room.players.length;
   const g = S.room.games.find(x => x.id === S.room.gameId);
-  const ok = n >= g.minPlayers && n <= g.maxPlayers;
+  const ok = g.allowedCounts ? g.allowedCounts.includes(n) : n >= g.minPlayers && n <= g.maxPlayers;
   const rows = S.room.games.map(x => gameTile(x, `data-select="${x.id}" ${isHost() ? '' : 'disabled'}`, `small ${x.id === S.room.gameId ? 'selected' : ''}`)).join('');
   return `<div class="game lobby">
     <div class="game-bar"><span class="title">Lobby</span><span class="spacer"></span><span class="round">${n} player${n === 1 ? '' : 's'} here</span></div>
@@ -476,7 +483,7 @@ function renderLobby() {
         ${isHost() && g.options ? optionsHtml(g) : ''}
         ${isHost()
           ? `<div class="actions"><button class="btn btn-primary btn-lg" data-start ${ok ? '' : 'disabled'}>${icon('play')} Play ${esc(g.name)}</button></div>
-             ${ok ? '' : `<p class="hint">${esc(g.name)} needs ${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`} players — ${n} in the room.</p>`}`
+             ${ok ? '' : `<p class="hint">${esc(g.name)} needs ${esc(playersLabel(g))} — ${n} in the room.${g.allowedCounts ? ' Teams need an even number of players.' : ''}</p>`}`
           : ''}
       </div>
       ${isHost() ? '<h3 class="hand-title">All games</h3>' : ''}
@@ -1582,7 +1589,9 @@ $('#openCharades').addEventListener('click', syncWakeLock);
 /* ======================= Game options & countdowns ======================= */
 function optionsHtml(g) {
   const chosen = ui_opts[g.id] || {};
-  return `<div class="options">${g.options.map(o => {
+  const val = key => String(chosen[key] ?? (g.options.find(x => x.key === key) || {}).default);
+  const n = S.room ? S.room.players.length : 0;
+  return `<div class="options">${g.options.filter(o => (!o.showIf || Object.entries(o.showIf).every(([k, v]) => val(k) === String(v))) && (!o.players || o.players.includes(n))).map(o => {
     const cur = String(chosen[o.key] ?? o.default);
     const custom = o.custom
       ? `<label class="opt-custom">${esc(o.custom.prefix || '')}<input type="number" inputmode="numeric" id="opt-${g.id}-${o.key}" data-optinput="${g.id}:${o.key}" min="${o.custom.min}" max="${o.custom.max}" step="${o.custom.step}" value="${esc(cur)}" aria-label="${esc(o.label)} (custom)">${esc(o.custom.suffix || '')}</label>`

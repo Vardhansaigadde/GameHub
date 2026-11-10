@@ -137,99 +137,6 @@ function ludoAfter(g) {
   });
 }
 
-/* ======================= Snakes & Ladders ======================= */
-const SNL_COL = ['#ff3d6e', '#38c6ff', '#ffc83d', '#2fe07f', '#b06bff', '#ff8a3d'];
-const snlXY = n => {
-  const i = n - 1, r = Math.floor(i / 10), col = r % 2 === 0 ? i % 10 : 9 - (i % 10);
-  return [(col + 0.5) * 10, (9 - r + 0.5) * 10];
-};
-const snlPrev = {};
-const snlSpot = (n, idx) => (n === 0 ? [5 + idx * 9, 105] : snlXY(n));
-
-function snlOverlay(g) {
-  let out = '';
-  for (const [a, b] of Object.entries(g.ladders)) {
-    const [x1, y1] = snlXY(+a), [x2, y2] = snlXY(b);
-    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy), nx = (-dy / len) * 1.5, ny = (dx / len) * 1.5;
-    let rungs = '';
-    const count = Math.max(3, Math.round(len / 5));
-    for (let i = 1; i < count; i++) {
-      const t = i / count, cx = x1 + dx * t, cy = y1 + dy * t;
-      rungs += `<line x1="${cx - nx}" y1="${cy - ny}" x2="${cx + nx}" y2="${cy + ny}"/>`;
-    }
-    out += `<g class="ladder"><line x1="${x1 - nx}" y1="${y1 - ny}" x2="${x2 - nx}" y2="${y2 - ny}"/><line x1="${x1 + nx}" y1="${y1 + ny}" x2="${x2 + nx}" y2="${y2 + ny}"/>${rungs}</g>`;
-  }
-  const hues = ['#2fb34a', '#e5284f', '#7c4dff', '#ff8a00', '#00a0c6', '#d81b90', '#6b9b1a', '#c2410c'];
-  Object.entries(g.snakes).forEach(([a, b], i) => {
-    const [x1, y1] = snlXY(+a), [x2, y2] = snlXY(b);
-    const dx = x2 - x1, dy = y2 - y1;
-    const wob = 7;
-    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-    const nx = -dy / Math.hypot(dx, dy) * wob, ny = dx / Math.hypot(dx, dy) * wob;
-    const d = `M${x1} ${y1} Q${x1 + dx * 0.25 + nx} ${y1 + dy * 0.25 + ny} ${mx} ${my} T${x2} ${y2}`;
-    out += `<g class="snake" style="--s:${hues[i % hues.length]}"><path d="${d}"/><path class="belly" d="${d}"/><circle cx="${x1}" cy="${y1}" r="2.6"/><circle class="eye" cx="${x1 - 0.9}" cy="${y1 - 0.7}" r=".6"/><circle class="eye" cx="${x1 + 0.9}" cy="${y1 - 0.7}" r=".6"/></g>`;
-  });
-  return `<svg class="snl-svg" viewBox="0 0 100 100" aria-hidden="true">${out}</svg>`;
-}
-
-renderers.snakes = () => {
-  const g = S.game;
-  const myTurn = g.turnId === S.you;
-  let cells = '';
-  for (let n = 100; n >= 1; n--) {
-    const [x, y] = snlXY(n);
-    const shade = (Math.floor((x - 5) / 10) + Math.floor((y - 5) / 10)) % 2;
-    cells += `<div class="sc s${shade} ${n === 100 ? 'goal' : ''}" style="left:${x - 5}%;top:${y - 5}%"><span>${n}</span></div>`;
-  }
-  const taken = {};
-  const tokens = g.players.map((p, i) => {
-    const [x, y] = snlSpot(p.pos, i);
-    const k = `${x},${y}`;
-    const nudge = taken[k] = (taken[k] || 0) + 1;
-    return `<span class="ltok snl-tok" style="left:${x + (nudge - 1) * 1.6}%;top:${y - (nudge - 1) * 1.6}%;--c:${SNL_COL[i]}" data-snl="${p.id}" title="${esc(p.name)}"></span>`;
-  }).join('');
-  const seats = g.players.map((p, i) => `<div class="seat ${p.id === g.turnId ? 'active' : ''}"><span class="ltok-key" style="--c:${SNL_COL[i]}"></span><span><b>${esc(p.name)}</b>${p.id === S.you ? ' (you)' : ''}<small>Square ${p.pos}</small></span></div>`).join('');
-  return {
-    tone: g.phase === 'over' ? 'win' : myTurn ? 'mine' : '',
-    turn: g.phase === 'over' ? `${esc(nameOf(g.winnerId))} reached 100!` : myTurn ? 'Tap the dice to roll' : `${esc(nameOf(g.turnId))} is rolling`,
-    body: `${g.phase === 'over' ? winnerBanner(g.winnerId) : ''}
-      <div class="seat-strip">${seats}</div>
-      <div class="board-wrap">
-        <div class="snl-board">${cells}${snlOverlay(g)}${tokens}</div>
-        <div class="die-dock">${dieHtml(g.roll, myTurn && g.phase === 'play' ? 'data-game="snakes" data-roll aria-label="Roll the dice"' : '')}
-          <div class="log-line">${g.log.slice(-2).map(esc).join('<br>')}</div>
-          ${isHost() && g.phase !== 'over' ? '<button class="btn btn-sm btn-ghost" data-game="snakes" data-skip>Skip this turn</button>' : ''}
-        </div>
-      </div>
-      ${g.phase === 'over' ? `<div class="actions">${rematchBtn()}</div>` : ''}`,
-  };
-};
-handlers.snakes = d => {
-  if ('roll' in d) act({ type: 'roll' });
-  else if ('skip' in d) act({ type: 'skip' });
-};
-function snakesAfter(g) {
-  g.players.forEach((p, i) => {
-    const prev = snlPrev[p.id];
-    snlPrev[p.id] = p.pos;
-    if (prev === undefined || prev === p.pos) return;
-    const el = document.querySelector(`[data-snl="${p.id}"]`);
-    const l = g.last && g.last.id === p.id ? g.last : null;
-    const landed = l ? l.landed : p.pos;
-    const stops = [];
-    for (let n = prev; n <= landed; n++) stops.push(snlSpot(n, i));
-    if (landed !== p.pos) stops.push(snlSpot(p.pos, i));
-    const steps = Math.max(1, stops.length - 1);
-    if (landed === p.pos) walk(el, stops, 170);
-    else {
-      // walk to the ladder or snake, then glide along it
-      const walkMs = (steps - 1) * 170;
-      const frames = stops.map(([x, y], k) => ({ left: `${x}%`, top: `${y}%`, offset: k === stops.length - 1 ? 1 : (k * 170) / (walkMs + 650) }));
-      anim(el, frames, { duration: walkMs + 650, easing: 'linear' });
-    }
-  });
-}
-
 /* ======================= Color Clash ======================= */
 const CC_SYMBOL = { skip: '⊘', reverse: '⇄', wild: '★' };
 const ccLabel = v => CC_SYMBOL[v] || v;
@@ -904,7 +811,6 @@ afterRender.push(() => {
   const g = S && S.game;
   if (!g) { lastRolls = null; ccLastPlays = null; c4Moves = null; ccPick = null; return; }
   if (g.gameId === 'ludo') { spinDie(g); ludoAfter(g); }
-  else if (g.gameId === 'snakes') { spinDie(g); snakesAfter(g); }
   else lastRolls = null;
   if (g.gameId === 'colorclash') clashAfter(g);
   if (g.gameId === 'connect4') c4After(g);

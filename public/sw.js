@@ -1,7 +1,7 @@
 // Keeps the app shell and the movie list cached so Dumb Charades works offline.
 // Network first (so updates show up straight away), the saved copy as the fallback.
-const CACHE = 'gamehub-v31';
-const SHELL = ['/', '/index.html', '/style.css', '/arena.css', '/arcade.css', '/games-arcade.js', '/battle-scenes.js', '/battle-scenes.css', '/theme-light.css', '/games-battle.js', '/games-telephone.js', '/app.js', '/fx.js', '/icons/icon.svg', '/sound.js', '/games-party.js', '/games-fun.js', '/fun.css', '/games-ipl.js', '/data/telugu-movies.json', '/manifest.webmanifest', '/terms', '/privacy', '/legal.css', '/socket.io/socket.io.js', '/icons/icon-192.png'];
+const CACHE = 'gamehub-v38';
+const SHELL = ['/', '/index.html', '/style.css', '/arena.css', '/arcade.css', '/games-arcade.js', '/battle-scenes.js', '/battle-scenes.css', '/theme-light.css', '/games-battle.js', '/games-telephone.js', '/app.js', '/fx.js', '/icons/icon.svg', '/sound.js', '/games-party.js', '/games-fun.js', '/fun.css', '/games-cricket.js', '/cricket.css', '/games-ipl.js', '/data/telugu-movies.json', '/manifest.webmanifest', '/terms', '/privacy', '/legal.css', '/socket.io/socket.io.js', '/icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

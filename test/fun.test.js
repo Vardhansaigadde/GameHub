@@ -134,7 +134,7 @@ test('npat: STOP only works once all four start with the letter, then everyone g
 test('npat: unique answers score 10, shared 5, wrong letter or flagged out 0', () => {
   const s = writing(3);
   const L = s.letter;
-  fill(s, 'p0', [L + 'aaa', L + 'bbb', L + 'ccc', 'wrong']);
+  fill(s, 'p0', [L + 'aaa', L + 'bbb', L + 'ccc', 'zzzz']);
   fill(s, 'p1', [L + 'aaa', L + 'xyz', L + 'ccc', '']);
   fill(s, 'p2', [L + 'qqq', L + 'bbb', L + 'fake', L + 'ddd']);
   npat.onTimer(s);

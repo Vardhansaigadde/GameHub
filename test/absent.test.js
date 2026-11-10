@@ -6,7 +6,7 @@ const games = require('../games');
 const P = ['A', 'B', 'C', 'D'].map((name, i) => ({ id: 'p' + i, name }));
 const guest = { isHost: false };
 
-for (const id of ['ludo', 'snakes', 'colorclash', 'ashtachamma', 'leastcount']) {
+for (const id of ['ludo', 'colorclash', 'ashtachamma', 'leastcount']) {
   test(`${id}: skipping a gone player's turn moves to the next player`, () => {
     const g = games[id];
     const players = P.slice(0, 3);

@@ -1,7 +1,7 @@
-// Rules for Typing Arena, Ludo, Snakes & Ladders, Color Clash and Four in a Row.
+// Rules for Typing Arena, Ludo, Color Clash and Four in a Row.
 const test = require('node:test');
 const assert = require('node:assert');
-const { typing, ludo, snakes, colorclash, connect4 } = require('../games');
+const { typing, ludo, colorclash, connect4 } = require('../games');
 
 const P = ['A', 'B', 'C', 'D'].map((name, i) => ({ id: 'p' + i, name }));
 const host = { isHost: true }, guest = { isHost: false };
@@ -185,39 +185,6 @@ test('ludo: home needs the exact roll and all four win', () => {
   ludo.action(s, 'p0', { type: 'move', token: 0 }, guest);
   assert.strictEqual(s.phase, 'over');
   assert.strictEqual(s.winnerId, 'p0');
-});
-
-/* ---------- Snakes & Ladders ---------- */
-const sroll = (s, id, force) => snakes.action(s, id, { type: 'roll', test: true, force }, guest);
-
-test('snakes: ladders climb, snakes bite, 6 rolls again, exact finish', () => {
-  const s = snakes.setup(P.slice(0, 2));
-  sroll(s, 'p0', 4);
-  assert.strictEqual(s.players[0].pos, 25, 'ladder from 4');
-  assert.strictEqual(s.last.kind, 'ladder');
-  assert.strictEqual(s.turn, 1);
-  s.players[1].pos = 21;
-  sroll(s, 'p1', 6);
-  assert.strictEqual(s.players[1].pos, 5, 'snake at 27');
-  assert.strictEqual(s.turn, 1, 'a 6 rolls again');
-  s.players[1].pos = 98;
-  sroll(s, 'p1', 5);
-  assert.strictEqual(s.players[1].pos, 98, 'overshoot stays');
-  s.turn = 1;
-  sroll(s, 'p1', 2);
-  assert.strictEqual(s.phase, 'over');
-  assert.strictEqual(s.winnerId, 'p1');
-});
-
-test('snakes: ladders and snakes never overlap or end on each other', () => {
-  for (const [from, to] of Object.entries(snakes.LADDERS)) {
-    assert.ok(to > +from);
-    assert.ok(!snakes.SNAKES[to] && !snakes.SNAKES[from]);
-  }
-  for (const [from, to] of Object.entries(snakes.SNAKES)) {
-    assert.ok(to < +from);
-    assert.ok(!snakes.LADDERS[to]);
-  }
 });
 
 /* ---------- Color Clash ---------- */

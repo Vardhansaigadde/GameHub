@@ -1,0 +1,288 @@
+/* ---------- Hand Cricket ---------- */
+.hc { --blue-team: #38c6ff; --orange-team: #ff9a3d; }
+.side-a { --team: var(--blue-team); } .side-b { --team: var(--orange-team); }
+
+/* scoreboard */
+.hc-board { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 12px 16px; margin-bottom: 12px; border-radius: 18px;
+  background: linear-gradient(135deg, #0d2b1c, #123d29); border: 2px solid color-mix(in srgb, var(--team) 55%, transparent); box-shadow: 0 10px 24px rgba(0, 0, 0, .35); color: #fff; }
+.hc-total small { display: block; color: var(--team); font: 700 .78rem var(--display); text-transform: uppercase; letter-spacing: .08em; }
+.hc-total b { display: block; font: 700 2.3rem/1 var(--display); }
+.hc-total b span { font-size: 1.4rem; opacity: .75; }
+.hc-total em { font-style: normal; color: #b9e6c9; font-weight: 700; font-size: .85rem; }
+.hc-chase { text-align: center; color: #d6f5e1; font-weight: 700; }
+.hc-chase b { color: #ffc83d; font: 700 1.3rem var(--display); }
+.hc-over small { display: block; text-align: right; margin-bottom: 4px; color: #b9e6c9; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.hc-over div { display: flex; gap: 4px; }
+.hc-dot { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, .14); font: 700 .85rem var(--display); }
+.hc-dot.empty { background: transparent; border: 2px dashed rgba(255, 255, 255, .2); }
+.hc-dot.w { background: #ff4d6d; }
+.hc-dot.b4 { background: #38c6ff; color: #04263a; }
+.hc-dot.b6 { background: #ffc83d; color: #3a2300; }
+.hc-fresh .hc-dot:not(.empty):last-of-type { animation: mlTick .4s var(--spring) both; }
+
+/* the field: batter, the two hands, bowler */
+.hc-field { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; min-height: 210px; padding: 22px 14px; margin-bottom: 12px; border-radius: 26px; overflow: hidden; color: #fff;
+  background: radial-gradient(ellipse 30% 70% at 50% 50%, #c9a86a 0 60%, transparent 61%), repeating-linear-gradient(90deg, #2e8b4f 0 40px, #2a7f48 40px 80px); box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .2), 0 16px 34px rgba(0, 0, 0, .35); }
+.hc-player { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.hc-player .avatar { width: 54px; height: 54px; font-size: 1.15rem; box-shadow: 0 0 0 3px #fff, 0 6px 14px rgba(0, 0, 0, .35); }
+.hc-player b { font: 600 1.15rem var(--display); }
+.hc-player small { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; background: rgba(0, 0, 0, .35); font-weight: 800; }
+.hc-player small svg.icon { width: 15px; height: 15px; }
+.hc-mid { display: flex; align-items: center; gap: 12px; }
+.hc-vs { font: 700 1.1rem var(--display); color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
+.hc-hand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 92px; height: 104px; border-radius: 26px 26px 34px 34px; background: #ffd9b3; color: #5a3010; box-shadow: inset 0 -6px 0 #f0b98a, 0 10px 20px rgba(0, 0, 0, .35); }
+.hc-hand b { font: 700 2.6rem/1 var(--display); }
+.hc-hand small { font-weight: 800; font-size: .72rem; }
+.hc-hand.wait { animation: hcShake 1s ease-in-out infinite; }
+.hc-hand.wait.bowl { animation-delay: -.5s; }
+.hc-hand.ready { background: #c9ffd9; color: #0b5a30; box-shadow: inset 0 -6px 0 #8fe6ae, 0 10px 20px rgba(0, 0, 0, .35); }
+.hc-hand.ready svg.icon { width: 34px; height: 34px; }
+.hc-hand.show { animation: hcReveal .55s var(--spring) both; }
+.hc-hand.show.bowl { animation-delay: .08s; }
+.hc-hand.show.out { background: #ffc4cf; color: #8a1830; box-shadow: inset 0 -6px 0 #ff8aa0, 0 0 0 4px #ff4d6d, 0 10px 20px rgba(0, 0, 0, .35); }
+.hc-fingers { display: flex; gap: 3px; height: 14px; align-items: flex-end; }
+.hc-fingers i { width: 6px; height: 14px; border-radius: 3px 3px 1px 1px; background: currentColor; opacity: .55; }
+.hc-result { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 124px; margin: 8px 0 6px; pointer-events: none; animation: hcBang .7s .35s var(--spring) both; }
+.hc-result b { font: 700 clamp(2.6rem, 9vw, 4.2rem)/1 var(--display); letter-spacing: .02em; -webkit-text-stroke: 2px rgba(0, 0, 0, .25); text-shadow: 0 5px 0 rgba(0, 0, 0, .3), 0 0 30px currentColor; }
+.hc-result small { padding: 2px 10px; margin-top: 4px; border-radius: 999px; background: rgba(0, 0, 0, .5); color: #fff; font-weight: 800; }
+.hc-result.six { color: #ffc83d; } .hc-result.four { color: #38c6ff; } .hc-result.runs { color: #fff; } .hc-result.out { color: #ff4d6d; }
+.hc-result.out b { animation: hcStamp .5s .45s var(--spring) both; }
+
+/* number pad */
+.hc-pad { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 12px 0 6px; }
+.hc-num { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; border: 0; border-radius: 20px; cursor: pointer; color: #3a2300;
+  background: linear-gradient(180deg, #ffe37a, #ffc83d); box-shadow: 0 5px 0 #b77a00, 0 10px 18px rgba(0, 0, 0, .3); transition: transform .1s, box-shadow .1s, filter .2s; }
+.hc-num b { font: 700 2rem/1 var(--display); }
+.hc-num:hover:not(:disabled) { transform: translateY(-3px); }
+.hc-num:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #b77a00; }
+.hc-num:disabled { filter: grayscale(.7) brightness(.75); cursor: default; }
+.hc-num.on { filter: none; background: linear-gradient(180deg, #7bf5b1, #2fe07f); color: #052b17; box-shadow: 0 0 0 4px #fff, 0 0 22px rgba(47, 224, 127, .6); }
+.hc-fresh .hc-num { animation: mlPop .35s var(--spring) both; animation-delay: calc(var(--i) * 40ms); }
+.hc-tip { text-align: center; color: var(--muted); font-weight: 700; }
+.hc-tip b { color: var(--gold); }
+.hc-keys { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; background: var(--well); font-size: .75rem; }
+
+/* team lists */
+.hc-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.hc-col { padding: 10px; border-radius: 16px; background: var(--well-2); border-top: 4px solid var(--team); }
+.hc-col.batting { box-shadow: 0 0 0 2px color-mix(in srgb, var(--team) 60%, transparent); }
+.hc-col h4 { margin: 0 0 6px; color: var(--team); font-size: 1rem; }
+.hc-col h4 small { color: var(--muted); font-weight: 600; }
+.hc-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 10px; font-weight: 700; }
+.hc-row .avatar { width: 24px; height: 24px; flex: none; font-size: .62rem; }
+.hc-row .hc-rn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hc-row svg.icon { width: 16px; height: 16px; color: var(--gold); }
+.hc-row b small { color: var(--faint); font-weight: 600; }
+.hc-row em { font-style: normal; padding: 0 6px; border-radius: 999px; background: #ff4d6d; color: #fff; font-size: .75rem; }
+.hc-row.bat, .hc-row.bowl { background: rgba(255, 200, 61, .14); }
+.hc-row.gone .hc-rn { text-decoration: line-through; text-decoration-color: rgba(255, 77, 109, .7); color: var(--muted); }
+
+/* toss and innings break */
+.hc-toss { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; text-align: center; perspective: 600px; }
+.hc-coin { position: relative; width: 110px; height: 110px; transform-style: preserve-3d; animation: hcFlip 2.2s cubic-bezier(.2, .7, .3, 1) forwards; }
+.hc-coin.b { animation-name: hcFlipB; }
+.hc-coin .f { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, #ffc83d 55%, #c98a00); box-shadow: inset 0 0 0 6px rgba(255, 255, 255, .35), 0 12px 26px rgba(0, 0, 0, .4); color: #6b4300; }
+.hc-coin .f svg.icon { width: 48px; height: 48px; }
+.hc-coin .f.b { transform: rotateY(180deg); }
+.hc-toss-text { font: 600 1.35rem var(--display); opacity: 0; animation: mlPop .5s 2.2s var(--spring) forwards; }
+.hc-toss-text b { color: var(--gold); }
+.hc-break { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 18px 0 12px; text-align: center; }
+.hc-break > small { color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.hc-break p { margin: 0; font-weight: 700; }
+.hc-break > b { font: 700 3.4rem/1.1 var(--display); color: var(--gold); }
+.hc-break > b span { font-size: 2rem; opacity: .7; }
+.hc-target { font-size: 1.15rem; margin-top: 8px !important; }
+.hc-target em { font-style: normal; font: 700 1.6rem var(--display); color: var(--green); }
+.hc-fresh .hc-break > b { animation: mlNum .6s var(--spring) both; }
+
+/* result */
+.hc-final { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 22px 12px; margin-bottom: 12px; border-radius: 22px; text-align: center;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--team, #7c4dff) 45%, #1a1240), #1a1240 75%); border: 2px solid var(--team, var(--gold)); color: #fff; }
+.hc-final b { font: 700 2.2rem var(--display); }
+.hc-final small { color: #d9d2ff; font-weight: 700; }
+.hc-cup { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--gold); color: #3a2300; box-shadow: 0 0 26px rgba(255, 200, 61, .6); }
+.hc-cup svg.icon { width: 34px; height: 34px; }
+.hc-fresh .hc-cup { animation: trophyIn .7s var(--spring) both; }
+.hc-fresh .hc-final b { animation: mlPop .5s .25s var(--spring) both; }
+.hc-mvp { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; color: var(--muted); font-weight: 700; }
+.hc-mvp b { color: var(--gold); }
+.hc-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.hc-card { padding: 12px; border-radius: 16px; background: var(--well-2); border-top: 4px solid var(--team); }
+.hc-fresh .hc-card { animation: mlSlide .45s var(--spring) both; animation-delay: calc(.3s + var(--i) * 150ms); }
+.hc-card-head { display: flex; justify-content: space-between; align-items: baseline; font: 600 1.15rem var(--display); }
+.hc-card-head b { color: var(--team); }
+.hc-card .scoreboard { margin-top: 6px; }
+.hc-bowl { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; color: var(--muted); font-size: .85rem; font-weight: 700; }
+.hc-bowl svg.icon { width: 16px; height: 16px; }
+
+@keyframes hcShake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg) translateY(-4px); } 40% { transform: rotate(6deg); } 60% { transform: rotate(-4deg) translateY(-2px); } }
+@keyframes hcReveal { from { transform: rotateY(90deg) scale(.8); } }
+@keyframes hcBang { from { opacity: 0; transform: scale(.3) rotate(-10deg); } 70% { transform: scale(1.15) rotate(3deg); } }
+@keyframes hcStamp { from { transform: scale(2.4); } }
+@keyframes hcFlip { from { transform: rotateY(0) translateY(0); } 50% { transform: rotateY(900deg) translateY(-40px); } to { transform: rotateY(1800deg) translateY(0); } }
+@keyframes hcFlipB { from { transform: rotateY(0) translateY(0); } 50% { transform: rotateY(990deg) translateY(-40px); } to { transform: rotateY(1980deg) translateY(0); } }
+
+@media (max-width: 560px) {
+  .hc-board { grid-template-columns: 1fr auto; }
+  .hc-chase { grid-column: 1 / -1; grid-row: 2; }
+  .hc-over div { gap: 3px; } .hc-dot { width: 22px; height: 22px; font-size: .75rem; }
+  .hc-field { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; min-height: 0; padding: 16px 10px; }
+  .hc-mid { grid-column: 1 / -1; grid-row: 2; justify-content: center; }
+  .hc-hand { width: 76px; height: 86px; } .hc-hand b { font-size: 2.1rem; }
+  .hc-pad { grid-template-columns: repeat(3, 1fr); }
+  .hc-teams { grid-template-columns: 1fr; }
+  .hc-keys { display: none; }
+}
+
+/* game-list picture */
+.hcart-hand { transform-box: fill-box; transform-origin: center bottom; animation: hcArtShake 1.6s ease-in-out infinite; }
+.hcart-hand.r { animation-delay: -.8s; }
+.hcart-out { opacity: 0; transform-box: fill-box; transform-origin: center; animation: hcArtOut 3.2s ease-out infinite; }
+@keyframes hcArtShake { 0%, 60%, 100% { transform: rotate(0); } 15% { transform: rotate(-10deg) translateY(-3px); } 30% { transform: rotate(8deg); } 45% { transform: rotate(-5deg) translateY(-2px); } }
+@keyframes hcArtOut { 0%, 55% { opacity: 0; transform: scale(2); } 62%, 90% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; } }
+
+html[data-theme="light"] .hc-col, html[data-theme="light"] .hc-card { background: #fff; box-shadow: 0 6px 16px rgba(70, 50, 140, .1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hc *, .hc *::before { animation: none !important; }
+  .hc-toss-text { opacity: 1; }
+  .hcart-hand, .hcart-out { animation: none; opacity: 1; }
+}
+
+/* ==================== the stadium ==================== */
+.hc-stadium { position: relative; padding: 118px 12px 14px; margin-bottom: 12px; border-radius: 28px; overflow: hidden; isolation: isolate;
+  background: radial-gradient(ellipse 80% 45% at 50% 0%, #2b3f8f 0%, transparent 70%), linear-gradient(180deg, #070b24 0%, #101a45 38%, #0b2a1a 70%, #0b2416 100%);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .45), inset 0 0 0 2px rgba(255, 255, 255, .08); }
+.hc-inner { position: relative; z-index: 2; }
+.hc-stadium .hc-toss, .hc-stadium .hc-break, .hc-stadium .hc-final { color: #fff; }
+.hc-sub { color: #c9d6ff; font-weight: 700; margin: 0; }
+.hc-stadium .hc-final { margin-bottom: 0; background: rgba(10, 14, 40, .65); backdrop-filter: blur(4px); }
+
+/* floodlights: towers in the corners, soft beams sweeping the ground */
+.hc-sky { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.hc-tower { position: absolute; top: 6px; width: 54px; height: 22px; border-radius: 6px; background: #1d2550; box-shadow: 0 0 0 2px #2c3670; }
+.hc-tower.l { left: 18px; transform: rotate(-8deg); } .hc-tower.r { right: 18px; transform: rotate(8deg); }
+.hc-tower i { position: absolute; inset: 4px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #fffbe0 0 8px, #ffeaa0 8px 10px); box-shadow: 0 0 18px 6px rgba(255, 246, 200, .75), 0 0 60px 20px rgba(255, 240, 180, .35); animation: hcFlood 4s ease-in-out infinite; }
+.hc-tower.r i { animation-delay: -2s; }
+.hc-beam { position: absolute; top: 14px; width: 60%; height: 120%; opacity: .18; filter: blur(6px);
+  background: linear-gradient(180deg, rgba(255, 248, 210, .9), transparent 75%); }
+.hc-beam.l { left: 10px; transform-origin: top left; clip-path: polygon(0 0, 18% 0, 100% 100%, 40% 100%); animation: hcBeamL 7s ease-in-out infinite alternate; }
+.hc-beam.r { right: 10px; transform-origin: top right; clip-path: polygon(82% 0, 100% 0, 60% 100%, 0 100%); animation: hcBeamR 7s ease-in-out infinite alternate; }
+
+/* LED scoreboard */
+.hc-stadium .hc-board { background: linear-gradient(180deg, #0b0f1f, #121a33); border-color: color-mix(in srgb, var(--team) 65%, transparent);
+  box-shadow: 0 0 0 4px #1b2240, 0 10px 26px rgba(0, 0, 0, .5), 0 0 26px color-mix(in srgb, var(--team) 30%, transparent); }
+.hc-stadium .hc-total b { font-family: "Cascadia Mono", ui-monospace, Consolas, monospace; color: #ffcf4d; text-shadow: 0 0 10px rgba(255, 207, 77, .75), 0 0 2px #fff; letter-spacing: .02em; }
+.hc-stadium .hc-total b span { color: #ff8a4d; }
+.hc-stadium .hc-chase b { text-shadow: 0 0 10px rgba(255, 200, 61, .7); }
+.hc-fresh .hc-total b { animation: hcFlash .5s ease-out; }
+
+/* commentary */
+.hc-talk { display: flex; align-items: center; gap: 10px; padding: 8px 14px; margin: -2px 0 12px; border-radius: 999px; background: rgba(6, 10, 30, .7); border: 1px solid rgba(255, 255, 255, .12); color: #eef2ff; font-weight: 700; overflow: hidden; }
+.hc-mic { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: #ff2e93; color: #fff; animation: hcLive 1.4s ease-in-out infinite; }
+.hc-mic svg.icon { width: 15px; height: 15px; }
+.hc-fresh .hc-talk span:last-child { animation: hcTicker .5s ease-out both; }
+
+/* the ground: rope, mowed stripes, and a pitch at the bottom with stumps at both ends */
+.hc-stadium .hc-field { padding-bottom: 86px; border-radius: 50% 50% 26px 26px / 22% 22% 26px 26px;
+  background: radial-gradient(ellipse 70% 90% at 50% 100%, transparent 0 96%, rgba(255, 255, 255, .55) 96.5% 97.5%, transparent 98%), repeating-linear-gradient(90deg, #2f9152 0 44px, #2a8449 44px 88px);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, .35), 0 12px 30px rgba(0, 0, 0, .4); }
+.hc-pitch { position: absolute; left: 9%; right: 9%; bottom: 16px; height: 52px; border-radius: 8px; z-index: 0;
+  background: linear-gradient(180deg, #d9bd84, #c6a466); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25), 0 6px 14px rgba(0, 0, 0, .25); }
+.hc-crease { position: absolute; top: 4px; bottom: 4px; width: 3px; background: rgba(255, 255, 255, .85); }
+.hc-crease.bat { left: 15%; } .hc-crease.bowl { right: 15%; }
+.hc-stumps { position: absolute; bottom: 10px; display: flex; gap: 3px; height: 34px; }
+.hc-stumps.bat { left: 7%; } .hc-stumps.bowl { right: 7%; }
+.hc-stumps i { width: 4px; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #fff6dc, #e2c98c); box-shadow: 0 2px 2px rgba(0, 0, 0, .3); transform-origin: bottom center; }
+.hc-stumps .bail { position: absolute; top: -3px; width: 9px; height: 3px; border-radius: 2px; background: #ffc83d; }
+.hc-stumps .b1 { left: 0; } .hc-stumps .b2 { right: 0; }
+.hc-stumps.hit i:nth-child(1) { animation: hcStumpL .5s 1s ease-out forwards; }
+.hc-stumps.hit i:nth-child(2) { animation: hcStumpM .5s 1s ease-out forwards; }
+.hc-stumps.hit i:nth-child(3) { animation: hcStumpR .5s 1s ease-out forwards; }
+.hc-stumps.hit .b1 { animation: hcBail1 .9s 1s cubic-bezier(.2, .7, .4, 1) forwards; }
+.hc-stumps.hit .b2 { animation: hcBail2 .9s 1s cubic-bezier(.2, .7, .4, 1) forwards; }
+
+/* the ball: waits at the bowler's end, then runs down the pitch to the batter and does what the result says */
+.hc-ballfx { position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; }
+.hc-ballfx i { position: absolute; left: 86%; top: 16px; width: 16px; height: 16px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8a8a, #d0102a 55%, #7a0614); box-shadow: 0 3px 4px rgba(0, 0, 0, .4); }
+.hc-ballfx i::after { content: ""; position: absolute; inset: 6px -1px; border-top: 1px dashed rgba(255, 255, 255, .8); border-radius: 50%; }
+.hc-ballfx.ready i { animation: hcPolish 1.2s ease-in-out infinite; }
+.hc-ballfx.runs i { animation: hcDeliver .7s ease-in forwards, hcRoll .8s .7s ease-out forwards; }
+.hc-ballfx.four i { animation: hcDeliver .7s ease-in forwards, hcFour .7s .7s cubic-bezier(.2, .8, .3, 1) forwards; }
+.hc-ballfx.six i { animation: hcDeliver .7s ease-in forwards, hcSix 1.1s .7s cubic-bezier(.25, .6, .35, 1) forwards; }
+.hc-ballfx.out i { animation: hcDeliver .7s ease-in forwards, hcBowled .4s .7s ease-out forwards; }
+.hc-player.bat .avatar { position: relative; }
+.hc-stadium .hc-field:has(.hc-ballfx.six) .hc-player.bat .avatar,
+.hc-stadium .hc-field:has(.hc-ballfx.four) .hc-player.bat .avatar,
+.hc-stadium .hc-field:has(.hc-ballfx.runs) .hc-player.bat .avatar { animation: hcSwing .45s .62s ease-out; }
+.hc-stadium .hc-field:has(.hc-ballfx.out) .hc-player.bat .avatar { animation: hcSlumpOne .6s 1s ease-out both; }
+
+/* the result now waits for the ball to arrive */
+.hc-result { animation-delay: .75s; }
+.hc-hand.show { animation-delay: 0s; }
+
+@keyframes hcFlood { 0%, 100% { opacity: 1; } 47% { opacity: .85; } 50% { opacity: 1; } 53% { opacity: .9; } }
+@keyframes hcBeamL { from { transform: rotate(-4deg); } to { transform: rotate(6deg); } }
+@keyframes hcBeamR { from { transform: rotate(4deg); } to { transform: rotate(-6deg); } }
+@keyframes hcBob { 50% { transform: translateY(-2px); } }
+@keyframes hcJump { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-11px) scale(1.08); } }
+@keyframes hcSlump { to { transform: translateY(3px) scaleY(.8); opacity: .5; } }
+@keyframes hcFlash { 0% { filter: brightness(2.2); } 100% { filter: none; } }
+@keyframes hcLive { 50% { box-shadow: 0 0 0 6px rgba(255, 46, 147, .25); } }
+@keyframes hcTicker { from { opacity: 0; transform: translateX(30px); } }
+@keyframes hcPolish { 50% { transform: translateY(-3px) rotate(180deg); } }
+@keyframes hcDeliver { 0% { left: 86%; top: 16px; } 55% { top: 30px; } 100% { left: 12%; top: 14px; } }
+@keyframes hcRoll { from { left: 12%; top: 14px; } to { left: 34%; top: -26px; transform: rotate(540deg); } }
+@keyframes hcFour { from { left: 12%; top: 14px; } to { left: -10%; top: -60px; transform: rotate(720deg); } }
+@keyframes hcSix { 0% { left: 12%; top: 14px; transform: scale(1); } 60% { top: -230px; transform: scale(1.8); } 100% { left: 70%; top: -330px; transform: scale(.4); opacity: 0; } }
+@keyframes hcBowled { from { left: 12%; } to { left: 7.6%; top: 18px; } }
+@keyframes hcStumpL { to { transform: rotate(-28deg); } }
+@keyframes hcStumpM { to { transform: rotate(-10deg) translateX(-2px); } }
+@keyframes hcStumpR { to { transform: rotate(14deg); } }
+@keyframes hcBail1 { to { transform: translate(-26px, -40px) rotate(-260deg); opacity: .9; } }
+@keyframes hcBail2 { to { transform: translate(22px, -46px) rotate(300deg); opacity: .9; } }
+@keyframes hcSwing { 40% { transform: rotate(-24deg) scale(1.08); } }
+@keyframes hcSlumpOne { to { transform: translateY(4px) rotate(-8deg); filter: grayscale(.6); } }
+
+@media (max-width: 560px) {
+  .hc-stadium { padding: 96px 8px 10px; border-radius: 20px; }
+  .hc-tower { width: 40px; height: 16px; }
+  .hc-talk { font-size: .85rem; border-radius: 16px; }
+  .hc-stadium .hc-field { border-radius: 40% 40% 20px 20px / 14% 14% 20px 20px; padding-bottom: 80px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-stadium *, .hc-stadium *::after { animation: none !important; }
+}
+
+
+/* ==================== the ground: an oval with the rope inside, the pitch in the middle ==================== */
+.hc-stadium .hc-field { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: "hands hands hands" "bat pitch bowl"; align-items: center; row-gap: 18px; column-gap: 10px;
+  min-height: 0; padding: 30px 7% 40px; overflow: visible; border-radius: 50% / 46%;
+  background: radial-gradient(ellipse 60% 50% at 50% 55%, rgba(255, 255, 255, .06), transparent 70%), repeating-linear-gradient(90deg, #2f9152 0 44px, #2a8449 44px 88px);
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, .4), 0 14px 30px rgba(0, 0, 0, .4); }
+.hc-stadium .hc-field::before { content: ""; position: absolute; inset: 12px 3%; border-radius: 50% / 46%; border: 2px solid rgba(255, 255, 255, .65); pointer-events: none; }
+.hc-stadium .hc-mid { grid-area: hands; justify-content: center; }
+.hc-stadium .hc-player.bat { grid-area: bat; justify-self: end; }
+.hc-stadium .hc-player.bowl { grid-area: bowl; justify-self: start; }
+.hc-stadium .hc-pitch { grid-area: pitch; position: relative; left: auto; right: auto; bottom: auto; width: clamp(200px, 38vw, 380px); height: 52px; }
+.hc-stadium .hc-player .avatar { width: 48px; height: 48px; }
+/* the ball heads for the rope on a four, and into the stands on a six */
+@keyframes hcFour { from { left: 12%; top: 14px; } to { left: -70%; top: -70px; transform: rotate(720deg); } }
+@keyframes hcRoll { from { left: 12%; top: 14px; } to { left: -22%; top: 46px; transform: rotate(540deg); } }
+@keyframes hcSix { 0% { left: 12%; top: 14px; transform: scale(1); } 55% { top: -260px; transform: scale(1.9); } 100% { left: 40%; top: -420px; transform: scale(.35); opacity: 0; } }
+
+@media (max-width: 560px) {
+  .hc-stadium .hc-field { grid-template-columns: auto 1fr auto; column-gap: 6px; padding: 24px 5% 34px; border-radius: 40% / 30%; }
+  .hc-stadium .hc-field::before { inset: 10px 2%; border-radius: 40% / 30%; }
+  .hc-stadium .hc-pitch { width: 100%; height: 44px; }
+  .hc-stadium .hc-player .avatar { width: 36px; height: 36px; font-size: .9rem; }
+  .hc-stadium .hc-player b { font-size: .9rem; }
+  .hc-stadium .hc-player small { padding: 1px 6px; font-size: .72rem; }
+}
+
+/* no stands: just the night sky, floodlights and the ground */
+.hc-stadium { padding-top: 54px; }
+@media (max-width: 560px) { .hc-stadium { padding-top: 44px; } }

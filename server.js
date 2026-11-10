@@ -14,8 +14,9 @@ app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] })
 app.get('/health', (req, res) => res.send('ok'));
 
 const HOWTO = require('./games/howto');
+const countsText = list => `${list.slice(0, -1).join(', ')} or ${list[list.length - 1]}`;
 const GAME_LIST = Object.values(games).map(g => ({
-  id: g.id, name: g.name, minPlayers: g.minPlayers, maxPlayers: g.maxPlayers, options: g.options || null,
+  id: g.id, name: g.name, minPlayers: g.minPlayers, maxPlayers: g.maxPlayers, allowedCounts: g.allowedCounts || null, options: g.options || null,
   cat: (HOWTO.games[g.id] || {}).cat || 'party',
   tagline: (HOWTO.games[g.id] || {}).tagline || '',
   steps: (HOWTO.games[g.id] || {}).steps || [],
@@ -260,6 +261,9 @@ io.on('connection', socket => {
     const n = room.players.length;
     if (n < game.minPlayers || n > game.maxPlayers) {
       return reply(cb, { error: `${game.name} needs ${game.minPlayers}-${game.maxPlayers} players (you have ${n}).` });
+    }
+    if (game.allowedCounts && !game.allowedCounts.includes(n)) {
+      return reply(cb, { error: `${game.name} needs ${countsText(game.allowedCounts)} players (you have ${n}).` });
     }
     room.state = game.setup(room.players.map(p => ({ id: p.id, name: p.name })), (opts && opts.options) || {});
     addChat(room, null, `${player.name} started ${game.name}!`);

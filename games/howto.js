@@ -41,6 +41,17 @@ module.exports = {
         'Word Blitz (the whole group): the host sets any number of rounds. Everyone gets the same word, and the first to type it wins the round. Win in a row for bonus points.',
       ],
     },
+    handcricket: {
+      cat: 'party',
+      tagline: 'Pick 1 to 6. Same number? OUT!',
+      steps: [
+        'Play the computer on your own, 1 vs 1 with a friend, or in two teams with 4, 6 or 8 players.',
+        'Each ball, the batter and the bowler secretly pick a number from 1 to 6.',
+        'Different numbers: the batter scores what they picked. Same number: OUT!',
+        'Each side bats once and the side batting second chases the target. Choose Overs for a limited number of overs, or Test to bat until everyone is out.',
+        'Playing the computer or 1 vs 1? Choose how many lives each batter gets. In teams, everyone bats once. Team totals and the runs and wickets of every player are kept.',
+      ],
+    },
     ludo: {
       cat: 'board',
       tagline: 'The classic race home',
@@ -49,16 +60,6 @@ module.exports = {
         'Tap a glowing token to move it. A 6 rolls again (three 6s lose the turn).',
         'Land on an opponent to send them back and roll again. Star squares are safe.',
         'Bring all 4 tokens home with an exact roll to win.',
-      ],
-    },
-    snakes: {
-      cat: 'board',
-      tagline: 'Climb ladders, dodge snakes',
-      steps: [
-        'Tap the dice on your turn. A 6 rolls again.',
-        'Land on a ladder to climb up.',
-        'Land on a snake\'s head and slide down.',
-        'First to land exactly on 100 wins.',
       ],
     },
     colorclash: {

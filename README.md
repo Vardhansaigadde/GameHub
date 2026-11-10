@@ -59,6 +59,8 @@ Open http://localhost:3000, enter your name, **Create a room**, and share the 4-
 3. Go to https://render.com → sign in with GitHub → **New → Blueprint** → pick the `gamehub` repo. It reads `render.yaml` and deploys automatically.
 4. You get a link like `https://gamehub-xxxx.onrender.com` — send it to your friends!
 
+The live site is **https://gamehub-24.onrender.com**. Render addresses can't be renamed; a different address means creating a new service (and deleting the old one).
+
 Note: the free plan sleeps after ~15 minutes with no one playing, so the first visit can take ~30–50 seconds to wake up.
 
 ## Adding a new game

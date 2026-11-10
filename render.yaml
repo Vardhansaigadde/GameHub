@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: gamehub
+    name: gamehub-24
     runtime: node
     plan: free
     buildCommand: npm install

@@ -45,7 +45,7 @@ function finishStep(s) {
 module.exports = {
   id: 'story',
   name: 'Story Chain',
-  minPlayers: 3,
+  minPlayers: 2,
   maxPlayers: 8,
   options: [{ key: 'laps', label: 'Lines each', choices: LAP_CHOICES, default: 1, labels: ['1 per story', '2 per story'] }],
 

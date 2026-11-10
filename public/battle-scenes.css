@@ -256,3 +256,11 @@ html[data-theme="light"] .duel-word span { color: #fff; }
 .im-odd { transform-box: view-box; transform-origin: 56px 58px; animation: imOdd 4s ease-in-out infinite; }
 @keyframes imOdd { 0%, 38%, 72%, 100% { transform: none; } 44% { transform: rotate(-7deg); } 52% { transform: rotate(7deg) translateY(-2px); } 60% { transform: rotate(-4deg); } }
 @media (prefers-reduced-motion: reduce) { .im-glass { animation: none; transform: translate(56px, 36px); } .im-odd { animation: none; } }
+
+/* phones: the chat box grows to fit its message bar instead of cutting it off */
+@media (max-width: 639px) {
+  body.in-game #chatPanel { flex: 1 0 auto; min-height: 0; overflow: visible; }
+  body.in-game #chatPanel .chat-log { flex: 1 1 auto; min-height: 64px; max-height: 24dvh; }
+  body.in-game #chatPanel .chat-form { padding: 8px 10px 10px; }
+  body.in-game #chatPanel .chat-form input { min-height: 44px; }
+}

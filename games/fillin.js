@@ -64,7 +64,7 @@ function reveal(s) {
 module.exports = {
   id: 'fillin',
   name: 'Funny Fill-in',
-  minPlayers: 3,
+  minPlayers: 2,
   maxPlayers: 8,
   options: [{ key: 'rounds', label: 'Rounds', choices: ROUND_CHOICES, default: 5 }],
 

@@ -123,12 +123,35 @@ renderers.handcricket = () => {
   const tossName = () => (g.mode === 'teams' ? `Team ${hcSide(g, g.toss)}` : hcName(g, g.sides[g.toss][0]));
   const wonVerb = () => (g.mode !== 'teams' && g.sides[g.toss][0] === S.you ? 'win' : 'wins');
 
+  const callerName = () => (g.mode === 'teams' ? `Team ${hcSide(g, g.callSide)}` : hcName(g, g.caller));
+  const COIN = `<span class="f a"><b>H</b><small>Heads</small></span><span class="f b"><b>T</b><small>Tails</small></span>`;
+
+  if (g.phase === 'call') {
+    const mine = g.caller === S.you;
+    return {
+      tone: mine ? 'mine' : 'live',
+      turn: mine ? 'Call it — heads or tails?' : `${hcName(g, g.caller)} is calling the toss…`,
+      body: wrap(`${hcStadium(`<div class="hc-choice">
+          <div class="hc-coin idle">${COIN}</div>
+          <h3>${mine ? 'You call the toss!' : `${callerName()} ${g.mode !== 'teams' && mine ? 'call' : 'calls'} the toss`}</h3>
+          ${mine
+            ? `<div class="hc-pick2"><button class="hc-opt heads" data-game="handcricket" data-call="heads"><span class="hc-face">H</span><b>Heads</b></button>
+               <button class="hc-opt tails" data-game="handcricket" data-call="tails"><span class="hc-face">T</span><b>Tails</b></button></div>`
+            : `<p class="hc-sub">${g.mode === 'teams' ? `Captain ${hcName(g, g.caller)} is` : `${hcName(g, g.caller)} is`} choosing heads or tails…</p><div class="hc-think"><i></i><i></i><i></i></div>`}
+          ${matchLine}</div>`, 'buzz')}
+        ${timeBar(g.endsAt, g.totalMs)}${hcTeams(g)}`),
+    };
+  }
+
   if (g.phase === 'toss') {
+    const callBy = g.caller === 'ai' ? 'The computer' : callerName();
+    const callVerb = g.caller === S.you && g.mode !== 'teams' ? 'called' : 'called';
     return {
       tone: 'live',
-      turn: 'The coin is in the air…',
-      body: wrap(`${hcStadium(`<div class="hc-toss"><div class="hc-coin ${g.toss}"><span class="f a">${HC_BAT}</span><span class="f b">${HC_BALL}</span></div>
-        <p class="hc-toss-text"><b>${tossName()}</b> ${wonVerb()} the toss!</p>${matchLine}</div>`, 'buzz')}
+      turn: `${callBy} ${callVerb} ${g.call}. The coin is in the air…`,
+      body: wrap(`${hcStadium(`<div class="hc-toss"><p class="hc-called">${callBy} ${callVerb} <b>${g.call.toUpperCase()}</b></p>
+        <div class="hc-coin land-${g.coin}">${COIN}</div>
+        <p class="hc-toss-text">It's <b>${g.coin === 'heads' ? 'HEADS' : 'TAILS'}</b>! <b>${tossName()}</b> ${wonVerb()} the toss!</p>${matchLine}</div>`, 'buzz')}
         ${hcTeams(g)}`),
     };
   }
@@ -231,6 +254,7 @@ renderers.handcricket = () => {
 handlers.handcricket = d => {
   if ('pick' in d) act({ type: 'pick', n: +d.pick });
   else if ('toss' in d) act({ type: 'tossChoice', choice: d.toss });
+  else if ('call' in d) act({ type: 'call', call: d.call });
 };
 
 // number keys pick too, when you're batting or bowling and not typing somewhere

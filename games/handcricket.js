@@ -1,6 +1,7 @@
 // Hand Cricket: the batter and the bowler each secretly pick 1 to 6.
 //   Different numbers: the batter scores what they picked. Same number: OUT.
-//   1 player plays the computer, 2 players play each other, and 4, 6 or 8 players split into two teams.
+//   1 player plays the computer, 2 players play each other, and 3 to 8 players split into two teams.
+//   With an odd number of players the computer joins the smaller team, so everyone plays.
 //   Each side bats once; the side batting second chases the target.
 //   Overs format: each innings is limited to the chosen overs. Test format: no limit, bat until all out.
 const { shuffle, findPlayer, cue } = require('./util');
@@ -9,6 +10,7 @@ const AI = 'ai';
 const FORMATS = ['overs', 'test'];
 const OVER_CHOICES = [1, 2, 3, 5];
 const WICKET_CHOICES = [1, 2, 3];
+const CALL_MS = 12000;     // one side calls heads or tails
 const TOSS_MS = 3500;      // the coin in the air
 const CHOICE_MS = 15000;   // the toss winner picks bat or bowl
 const DECIDED_MS = 2800;   // everyone sees the decision
@@ -48,6 +50,19 @@ function startBall(s) {
   s.totalMs = BALL_MS;
   s.timerAt = s.endsAt;
 }
+
+// a random side calls heads or tails (their captain, or the computer at once); then the coin is flipped
+function callToss(s, call) {
+  s.call = call === 'tails' ? 'tails' : 'heads';
+  s.coin = Math.random() < 0.5 ? 'heads' : 'tails';
+  s.toss = s.call === s.coin ? s.callSide : other(s.callSide);
+  s.phase = 'toss';
+  s.endsAt = Date.now() + TOSS_MS;
+  s.totalMs = TOSS_MS;
+  s.timerAt = s.endsAt;
+  cue(s, 'roll');
+}
+const randomCall = () => (Math.random() < 0.5 ? 'heads' : 'tails');
 
 // after the coin lands: the toss winner's captain chooses; the computer decides straight away
 function afterToss(s) {
@@ -139,20 +154,21 @@ module.exports = {
   name: 'Hand Cricket',
   minPlayers: 1,
   maxPlayers: 8,
-  allowedCounts: [1, 2, 4, 6, 8],
   options: [
     { key: 'format', label: 'Format', choices: FORMATS, labels: ['Overs', 'Test (till all out)'], default: 'overs' },
     { key: 'overs', label: 'Overs', choices: OVER_CHOICES, default: 2, showIf: { format: 'overs' } },
-    // lives only matter when one batter plays alone (vs the computer, or 1 vs 1); in teams everyone gets one life
-    { key: 'wickets', label: 'Lives', choices: WICKET_CHOICES, default: 1, players: [1, 2] },
+    // wickets only matter when one batter plays alone (vs the computer, or 1 vs 1); in teams everyone bats once
+    { key: 'wickets', label: 'Wickets', choices: WICKET_CHOICES, default: 1, players: [1, 2] },
   ],
 
   setup(players, opts = {}) {
     const n = players.length;
-    if (!this.allowedCounts.includes(n)) throw new Error('Hand Cricket needs 1, 2, 4, 6 or 8 players');
     const mode = n === 1 ? 'ai' : n === 2 ? 'duel' : 'teams';
     const ids = shuffle(players.map(p => p.id));
-    const sides = mode === 'ai' ? { a: [ids[0]], b: [AI] } : { a: ids.slice(0, n / 2), b: ids.slice(n / 2) };
+    // teams: the bigger half first; an odd group gets the computer on the smaller team (it bats and bowls last)
+    const half = Math.ceil(n / 2);
+    const sides = mode === 'ai' ? { a: [ids[0]], b: [AI] } : { a: ids.slice(0, half), b: ids.slice(half) };
+    if (mode === 'teams' && n % 2) sides.b.push(AI);
     const names = Object.fromEntries(players.map(p => [p.id, p.name]));
     names[AI] = 'Computer';
     const all = [...sides.a, ...sides.b];
@@ -169,20 +185,24 @@ module.exports = {
       habits: {},
       inns: [],
       innings: 0,
-      toss: Math.random() < 0.5 ? 'a' : 'b',
-      phase: 'toss',
+      callSide: Math.random() < 0.5 ? 'a' : 'b',
+      toss: null,
+      phase: 'call',
       last: null,
       winner: null,
     };
-    s.endsAt = Date.now() + TOSS_MS;
-    s.totalMs = TOSS_MS;
+    s.caller = s.sides[s.callSide][0];
+    if (s.caller === AI) { callToss(s, randomCall()); return s; }
+    s.endsAt = Date.now() + CALL_MS;
+    s.totalMs = CALL_MS;
     s.timerAt = s.endsAt;
-    cue(s, 'roll');
+    cue(s, 'reveal');
     return s;
   },
 
   onTimer(s) {
-    if (s.phase === 'toss') afterToss(s);
+    if (s.phase === 'call') callToss(s, randomCall()); // no call in time: the coin calls for them
+    else if (s.phase === 'toss') afterToss(s);
     else if (s.phase === 'choice') decide(s, true); // no answer in time: bat first
     else if (s.phase === 'decided') startInnings(s, s.firstBat);
     else if (s.phase === 'break') startInnings(s, other(s.inns[0].side));
@@ -196,6 +216,7 @@ module.exports = {
   },
 
   absentBlock(s, absentIds) {
+    if (s.phase === 'call') return absentIds.includes(s.caller) ? s.caller : null;
     if (s.phase === 'choice') return absentIds.includes(s.captain) ? s.captain : null;
     if (s.phase !== 'play' || s.gap) return null;
     if (s.picks.bat === null && absentIds.includes(s.batterId)) return s.batterId;
@@ -204,6 +225,7 @@ module.exports = {
   },
 
   skipAbsent(s, id) {
+    if (s.phase === 'call' && id === s.caller) return callToss(s, randomCall());
     if (s.phase === 'choice' && id === s.captain) return decide(s, true);
     if (s.phase !== 'play' || s.gap) return;
     if (id === s.batterId && s.picks.bat === null) s.picks.bat = rand();
@@ -213,6 +235,14 @@ module.exports = {
 
   action(s, playerId, a, { isHost }) {
     findPlayer(s, playerId);
+
+    if (a.type === 'call') {
+      if (s.phase !== 'call') throw new Error('The coin has already been called');
+      if (playerId !== s.caller) throw new Error(`${s.names[s.caller]} calls the toss`);
+      if (a.call !== 'heads' && a.call !== 'tails') throw new Error('Call heads or tails');
+      callToss(s, a.call);
+      return;
+    }
 
     if (a.type === 'tossChoice') {
       if (s.phase !== 'choice') throw new Error('The toss is already decided');
@@ -256,6 +286,10 @@ module.exports = {
       format: s.format,
       overs: s.overs,
       toss: s.toss,
+      callSide: s.callSide,
+      caller: s.caller,
+      call: s.call || null,
+      coin: s.phase === 'call' ? null : s.coin || null,
       captain: s.captain || null,
       choseBat: s.choseBat,
       firstBat: s.firstBat || null,

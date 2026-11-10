@@ -1,0 +1,29 @@
+/* Entrances for things that just appeared (see polish.js). */
+.px-roll { animation: pxRoll .75s var(--spring) both; }
+.px-slide { animation: pxSlide .45s var(--spring) both; }
+.px-pop { animation: pxPop .5s var(--spring) both; }
+.px-stamp { animation: pxStamp .5s var(--spring) both; }
+.tcell.daub.px-daub::after { animation: pxStamp .4s var(--spring) both; }
+.tcell.px-daub { animation: pxFlash .6s ease-out; }
+.bcell.cut.px-strike::after { transform-origin: left center; animation: pxStrike .35s ease-out both; }
+.bcell.px-strike { animation: pxFlash .7s ease-out; }
+.bingo-word span.px-letter { animation: pxLetter .7s var(--spring) both; animation-delay: calc(var(--px, 0) * 90ms); }
+.px-deal { animation: pxDeal .5s var(--spring) both; animation-delay: calc(var(--px, 0) * 55ms); }
+.px-drop { animation: pxDrop .45s var(--spring) both; }
+.num-board span.last { animation: pxGlow 1.6s ease-in-out infinite; }
+
+@keyframes pxRoll { from { opacity: 0; transform: translateX(140px) rotate(320deg) scale(.6); } }
+@keyframes pxSlide { from { opacity: 0; transform: translateX(-28px) scale(.6); } }
+@keyframes pxPop { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } }
+@keyframes pxStamp { from { opacity: 0; transform: scale(1.9) rotate(-12deg); } }
+@keyframes pxFlash { from { background-color: rgba(255, 200, 61, .7); } }
+@keyframes pxStrike { from { transform: rotate(-38deg) scaleX(0); } }
+@keyframes pxLetter { 0% { transform: scale(.5); } 50% { transform: scale(1.45) rotate(-8deg); text-shadow: 0 0 18px rgba(255, 200, 61, .9); } }
+@keyframes pxDeal { from { opacity: 0; transform: translateY(-70px) rotate(-18deg) scale(.7); } }
+@keyframes pxDrop { from { opacity: 0; transform: translateY(-46px) rotate(14deg) scale(1.2); } }
+@keyframes pxGlow { 50% { box-shadow: 0 0 0 3px rgba(255, 200, 61, .45), 0 0 14px rgba(255, 200, 61, .6); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .px-roll, .px-slide, .px-pop, .px-stamp, .px-daub, .px-strike, .px-letter, .px-deal, .px-drop, .num-board span.last,
+  .px-daub::after, .px-strike::after { animation: none !important; }
+}

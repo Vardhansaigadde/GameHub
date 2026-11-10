@@ -7,7 +7,9 @@ const P = n => Array.from({ length: n }, (_, i) => ({ id: 'p' + i, name: 'P' + i
 const host = { isHost: true }, guest = { isHost: false };
 const pick = (s, id, n) => hc.action(s, id, { type: 'pick', n }, guest);
 // coin, then the toss winner's choice (nobody answers, so they bat), then the first ball
-const toPlay = s => { let k = 0; while (s.phase !== 'play' && k++ < 5) hc.onTimer(s); };
+const toPlay = s => { let k = 0; while (s.phase !== 'play' && k++ < 8) hc.onTimer(s); };
+// call (nobody calls, so the coin calls for them), then the coin lands
+const toChoice = s => { let k = 0; while (s.phase !== 'choice' && s.phase !== 'decided' && k++ < 4) hc.onTimer(s); };
 // both players pick; then the result shows and the next ball starts
 function ball(s, bat, bowl) {
   if (s.batterId !== 'ai') pick(s, s.batterId, bat); else s.picks.bat = bat;
@@ -17,8 +19,15 @@ function ball(s, bat, bowl) {
   hc.onTimer(s);
 }
 
-test('handcricket: only 1, 2, 4, 6 or 8 players', () => {
-  for (const n of [3, 5, 7]) assert.throws(() => hc.setup(P(n)), /1, 2, 4, 6 or 8/);
+test('handcricket: any group from 1 to 8; an odd group gets the computer on the smaller team', () => {
+  for (const n of [3, 5, 7]) {
+    const s = hc.setup(P(n));
+    assert.strictEqual(s.mode, 'teams');
+    assert.strictEqual(s.sides.a.length, s.sides.b.length, 'even teams once the computer joins');
+    assert.deepStrictEqual(s.sides.b.slice(-1), ['ai'], 'the computer bats and bowls last');
+    assert.ok(!s.sides.a.includes('ai'));
+    assert.deepStrictEqual([...s.sides.a, ...s.sides.b].filter(id => id !== 'ai').sort(), P(n).map(p => p.id).sort(), 'every player is on a team');
+  }
   assert.strictEqual(hc.setup(P(1)).mode, 'ai');
   assert.strictEqual(hc.setup(P(2)).mode, 'duel');
   const s = hc.setup(P(6));
@@ -101,7 +110,7 @@ test('handcricket: playing the computer works on its own, and timeouts pick for 
   assert.strictEqual(s.phase, 'over');
   assert.strictEqual(s.inns.length, 2);
   hc.action(s, 'p0', { type: 'rematch' }, host);
-  assert.strictEqual(s.phase, 'toss');
+  assert.ok(['call', 'toss'].includes(s.phase), 'a rematch starts with a new toss');
   assert.strictEqual(s.overs, 1);
 });
 
@@ -139,9 +148,9 @@ test('handcricket: Overs is the default format', () => {
   assert.deepStrictEqual(hc.options.find(o => o.key === 'overs').showIf, { format: 'overs' });
 });
 
-test('handcricket: lives are only offered for 1 or 2 players, and teams ignore them', () => {
+test('handcricket: wickets are only offered for 1 or 2 players, and teams ignore them', () => {
   const lives = hc.options.find(o => o.key === 'wickets');
-  assert.strictEqual(lives.label, 'Lives');
+  assert.strictEqual(lives.label, 'Wickets');
   assert.deepStrictEqual(lives.players, [1, 2]);
   const s = hc.setup(P(4), { wickets: 3 });
   toPlay(s);
@@ -150,8 +159,8 @@ test('handcricket: lives are only offered for 1 or 2 players, and teams ignore t
 
 test('handcricket: the toss winner chooses to bat or bowl; only they can choose', () => {
   const s = hc.setup(P(2));
-  assert.strictEqual(s.phase, 'toss');
-  hc.onTimer(s);
+  assert.strictEqual(s.phase, 'call');
+  toChoice(s);
   assert.strictEqual(s.phase, 'choice');
   const winner = s.sides[s.toss][0];
   const loser = s.sides[s.toss === 'a' ? 'b' : 'a'][0];
@@ -168,7 +177,7 @@ test('handcricket: the toss winner chooses to bat or bowl; only they can choose'
 
 test('handcricket: teams: the captain of the winning side chooses; a gone captain bats', () => {
   const s = hc.setup(P(4));
-  hc.onTimer(s);
+  toChoice(s);
   const captain = s.sides[s.toss][0];
   const mate = s.sides[s.toss][1];
   assert.throws(() => hc.action(s, mate, { type: 'tossChoice', choice: 'bowl' }, guest), /decides/);
@@ -182,9 +191,51 @@ test('handcricket: teams: the captain of the winning side chooses; a gone captai
 test('handcricket: when the computer wins the toss it decides by itself', () => {
   for (let k = 0; k < 30; k++) {
     const s = hc.setup(P(1));
-    hc.onTimer(s);
+    toChoice(s);
     if (s.sides[s.toss][0] === 'ai') { assert.strictEqual(s.phase, 'decided'); assert.strictEqual(typeof s.choseBat, 'boolean'); return; }
     assert.strictEqual(s.phase, 'choice');
   }
   assert.fail('the computer never won the toss in 30 tries');
+});
+
+test('handcricket: one side calls heads or tails; a right call wins the toss', () => {
+  for (let k = 0; k < 40; k++) {
+    const s = hc.setup(P(2));
+    assert.strictEqual(s.phase, 'call');
+    const caller = s.caller;
+    const other = s.players.find(p => p.id !== caller).id;
+    assert.throws(() => hc.action(s, other, { type: 'call', call: 'heads' }, guest), /calls the toss/);
+    assert.throws(() => hc.action(s, caller, { type: 'call', call: 'edge' }, guest), /heads or tails/);
+    hc.action(s, caller, { type: 'call', call: 'tails' }, guest);
+    assert.strictEqual(s.phase, 'toss');
+    assert.strictEqual(hc.view(s, other).call, 'tails');
+    assert.strictEqual(s.toss, s.coin === 'tails' ? s.callSide : (s.callSide === 'a' ? 'b' : 'a'));
+    hc.onTimer(s);
+    assert.strictEqual(s.phase, 'choice');
+    assert.strictEqual(s.captain, s.sides[s.toss][0]);
+  }
+});
+
+test('handcricket: a gone caller gets a random call, and the computer calls for itself', () => {
+  const s = hc.setup(P(2));
+  assert.strictEqual(hc.absentBlock(s, [s.caller]), s.caller);
+  hc.skipAbsent(s, s.caller);
+  assert.strictEqual(s.phase, 'toss');
+  assert.ok(['heads', 'tails'].includes(s.call));
+  for (let k = 0; k < 30; k++) {
+    const a = hc.setup(P(1));
+    if (a.caller === 'ai') { assert.strictEqual(a.phase, 'toss'); return; }
+  }
+  assert.fail('the computer never called in 30 tries');
+});
+
+test('handcricket: with 3 players the computer plays its part in a full match', () => {
+  const s = hc.setup(P(3), { format: 'test' }); // till all out, so every batter gets a turn
+  let guard = 0;
+  while (s.phase !== 'over' && guard++ < 2000) hc.onTimer(s);
+  assert.strictEqual(s.phase, 'over');
+  const aiSide = s.sides.a.includes('ai') ? 'a' : 'b';
+  const st = s.stats.ai;
+  assert.ok(st.balls > 0, 'the computer batted');
+  assert.strictEqual(s.sides[aiSide].length, 2);
 });

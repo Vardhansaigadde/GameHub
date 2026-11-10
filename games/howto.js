@@ -130,6 +130,36 @@ module.exports = {
         'Catch the imposter and everyone who voted for them scores. If the imposter escapes, they score big.',
       ],
     },
+    fillin: {
+      cat: 'party',
+      tagline: 'Fill the blank. Make them laugh.',
+      steps: [
+        'Everyone gets the same funny sentence with a blank, like "The worst thing to say at a wedding is ___".',
+        'Write the funniest answer you can think of.',
+        'All answers appear with no names. Vote for your favourite, but not your own.',
+        'Each vote scores 100, and the favourite answer gets 50 more. The funniest player wins.',
+      ],
+    },
+    story: {
+      cat: 'party',
+      tagline: 'One line each. Total chaos.',
+      steps: [
+        'Every story starts with a silly opening line.',
+        'Add one line to a story, but you only see the line just before yours.',
+        'The stories pass around until everyone has written in each one.',
+        'Then the host reads them out line by line. Tap the laugh button on the funniest lines: each laugh scores 50.',
+      ],
+    },
+    npat: {
+      cat: 'paper',
+      tagline: 'One letter. Four answers. Go!',
+      steps: [
+        'A letter is drawn. Fill in a Name, Place, Animal and Thing starting with it.',
+        'The first to fill all four can press STOP. Everyone else gets 3 more seconds.',
+        'Check everyone’s answers and flag any fakes. Half the other players flagging an answer knocks it out.',
+        'Unique answers score 10, answers someone else also wrote score 5.',
+      ],
+    },
     housie: {
       cat: 'paper',
       tagline: 'Tambola with the gang',

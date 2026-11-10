@@ -148,6 +148,21 @@ function thumb(id) {
         : `<path d="M${x - 9} 58q0-13 9-13t9 13z" fill="#38c6ff"/><circle cx="${x}" cy="36" r="6.500" fill="#9be3ff"/><circle cx="${x - 2.300}" cy="35.500" r="1.100" fill="#24124f"/><circle cx="${x + 2.300}" cy="35.500" r="1.100" fill="#24124f"/>
             <rect x="${x - 8}" y="10" width="16" height="11" rx="5.500" fill="#fff"/><path d="M${x - 3} 20l-1 4 5-4z" fill="#fff"/>${[-4, 0, 4].map(d => `<circle cx="${x + d}" cy="15.500" r="1.200" fill="#24124f"/>`).join('')}`).join('')}
       <g class="im-glass"><circle r="9" fill="rgba(255,255,255,.18)" stroke="#ffc83d" stroke-width="2.600"/><path d="M6.500 6.500L13 13" stroke="#ffc83d" stroke-width="3.400" stroke-linecap="round"/></g>`,
+    fillin: `<rect width="96" height="64" fill="#2a1466"/><circle cx="84" cy="10" r="14" fill="#ff2e93" opacity=".25"/>
+      <g transform="rotate(-4 48 30)"><rect x="12" y="10" width="72" height="40" rx="6" fill="#fff3c4"/><rect x="38" y="5" width="20" height="8" rx="1.500" fill="#fff" opacity=".6"/>
+        <rect x="20" y="20" width="22" height="4" rx="2" fill="#7c6fb8"/><rect x="20" y="34" width="14" height="4" rx="2" fill="#7c6fb8"/><rect x="38" y="34" width="30" height="4" rx="2" fill="#7c6fb8" opacity=".5"/>
+        <rect class="fi-art-blank" x="46" y="22" width="28" height="3" rx="1.500" fill="#ff2e93"/>
+        <g class="fi-art-word"><rect x="45" y="17" width="30" height="10" rx="3" fill="#ff2e93"/><text x="60" y="25" font-family="Fredoka,Arial" font-size="8" font-weight="700" fill="#fff" text-anchor="middle">LOL</text></g></g>
+      <g class="fi-art-face"><circle cx="78" cy="48" r="10" fill="#ffc83d"/><path d="M73 45l3 1.500-3 1.500M83 45l-3 1.500 3 1.500" stroke="#5a3300" stroke-width="1.300" fill="none" stroke-linecap="round"/><path d="M72.500 50h11q-1 5-5.500 5t-5.500-5z" fill="#5a3300"/></g>`,
+    story: `<rect width="96" height="64" fill="#1b2a5e"/>
+      <path d="M48 12c-10-4-24-4-34 0v42c10-4 24-4 34 0z" fill="#fffaf0"/><path d="M48 12c10-4 24-4 34 0v42c-10-4-24-4-34 0z" fill="#f1ead2"/><path d="M48 12v42" stroke="#c9bf9d" stroke-width="1.500"/>
+      <g fill="#b9b0de"><rect x="19" y="20" width="24" height="2.400" rx="1.200"/><rect x="19" y="27" width="22" height="2.400" rx="1.200"/><rect x="19" y="34" width="24" height="2.400" rx="1.200"/><rect x="19" y="41" width="16" height="2.400" rx="1.200"/></g>
+      <g fill="#7c4dff"><rect class="st-art-line" x="54" y="20" width="22" height="2.400" rx="1.200"/><rect class="st-art-line" style="animation-delay:.9s" x="54" y="28" width="22" height="2.400" rx="1.200"/><rect class="st-art-line" style="animation-delay:1.800s" x="54" y="36" width="22" height="2.400" rx="1.200"/></g>
+      <g class="st-art-quill"><g transform="translate(54 20)"><path d="M0 0l3-1 16-17c2-2 5 1 3 3L5 2z" fill="#ffc83d"/><path d="M0 0l3-1 2 3z" fill="#2a2150"/></g></g>`,
+    npat: `<rect width="96" height="64" fill="#3a1470"/>
+      <g class="np-art-letter"><rect x="8" y="12" width="36" height="40" rx="9" fill="#ff2e93"/><text x="26" y="43" font-family="Fredoka,Arial" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">A</text></g>
+      ${[['Name', 15], ['Place', 27], ['Animal', 39], ['Thing', 51]].map(([t, y], i) => `<rect x="50" y="${y - 8}" width="40" height="10" rx="3" fill="#fff" opacity=".92"/><text x="54" y="${y - 1}" font-family="Fredoka,Arial" font-size="6" font-weight="700" fill="#3a1470">${t}</text>
+        <g class="np-art-tick" style="animation-delay:${(i * 0.35).toFixed(2)}s"><circle cx="85" cy="${y - 3}" r="3.600" fill="#2fe07f"/><path d="M83.400 ${y - 3}l1.200 1.200 2.200-2.400" stroke="#052b17" stroke-width="1.200" fill="none"/></g>`).join('')}`,
     sequence: `<rect width="96" height="64" fill="#22603a"/>
       <g transform="rotate(-16 30 40)"><rect x="18" y="16" width="24" height="34" rx="3" fill="#fff"/><text x="22" y="26" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">5♥</text></g>
       <g transform="rotate(-4 46 38)"><rect x="34" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="38" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">6♥</text></g>

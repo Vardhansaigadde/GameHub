@@ -46,6 +46,7 @@ module.exports = {
       tagline: 'Pick 1 to 6. Same number? OUT!',
       steps: [
         'Play the computer on your own, 1 vs 1 with a friend, or in two teams with 4, 6 or 8 players.',
+        'A coin is tossed. The toss winner chooses to bat or bowl first.',
         'Each ball, the batter and the bowler secretly pick a number from 1 to 6.',
         'Different numbers: the batter scores what they picked. Same number: OUT!',
         'Each side bats once and the side batting second chases the target. Choose Overs for a limited number of overs, or Test to bat until everyone is out.',

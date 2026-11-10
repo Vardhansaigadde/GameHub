@@ -9,7 +9,9 @@ const AI = 'ai';
 const FORMATS = ['overs', 'test'];
 const OVER_CHOICES = [1, 2, 3, 5];
 const WICKET_CHOICES = [1, 2, 3];
-const TOSS_MS = 3500;
+const TOSS_MS = 3500;      // the coin in the air
+const CHOICE_MS = 15000;   // the toss winner picks bat or bowl
+const DECIDED_MS = 2800;   // everyone sees the decision
 const BALL_MS = 12000;
 const GAP_MS = 2300;   // time to watch the hands and the result before the next ball
 const BREAK_MS = 5000;
@@ -45,6 +47,28 @@ function startBall(s) {
   s.endsAt = Date.now() + BALL_MS;
   s.totalMs = BALL_MS;
   s.timerAt = s.endsAt;
+}
+
+// after the coin lands: the toss winner's captain chooses; the computer decides straight away
+function afterToss(s) {
+  const captain = s.sides[s.toss][0];
+  s.captain = captain;
+  if (captain === AI) return decide(s, Math.random() < 0.5);
+  s.phase = 'choice';
+  s.endsAt = Date.now() + CHOICE_MS;
+  s.totalMs = CHOICE_MS;
+  s.timerAt = s.endsAt;
+  cue(s, 'reveal');
+}
+
+function decide(s, bat) {
+  s.choseBat = !!bat;
+  s.firstBat = bat ? s.toss : other(s.toss);
+  s.phase = 'decided';
+  s.endsAt = Date.now() + DECIDED_MS;
+  s.totalMs = DECIDED_MS;
+  s.timerAt = s.endsAt;
+  cue(s, 'tap');
 }
 
 function startInnings(s, side) {
@@ -158,7 +182,9 @@ module.exports = {
   },
 
   onTimer(s) {
-    if (s.phase === 'toss') startInnings(s, s.toss);
+    if (s.phase === 'toss') afterToss(s);
+    else if (s.phase === 'choice') decide(s, true); // no answer in time: bat first
+    else if (s.phase === 'decided') startInnings(s, s.firstBat);
     else if (s.phase === 'break') startInnings(s, other(s.inns[0].side));
     else if (s.phase === 'play') {
       if (s.gap) return afterGap(s);
@@ -170,6 +196,7 @@ module.exports = {
   },
 
   absentBlock(s, absentIds) {
+    if (s.phase === 'choice') return absentIds.includes(s.captain) ? s.captain : null;
     if (s.phase !== 'play' || s.gap) return null;
     if (s.picks.bat === null && absentIds.includes(s.batterId)) return s.batterId;
     if (s.picks.bowl === null && absentIds.includes(s.bowlerId)) return s.bowlerId;
@@ -177,6 +204,7 @@ module.exports = {
   },
 
   skipAbsent(s, id) {
+    if (s.phase === 'choice' && id === s.captain) return decide(s, true);
     if (s.phase !== 'play' || s.gap) return;
     if (id === s.batterId && s.picks.bat === null) s.picks.bat = rand();
     if (id === s.bowlerId && s.picks.bowl === null) s.picks.bowl = rand();
@@ -185,6 +213,13 @@ module.exports = {
 
   action(s, playerId, a, { isHost }) {
     findPlayer(s, playerId);
+
+    if (a.type === 'tossChoice') {
+      if (s.phase !== 'choice') throw new Error('The toss is already decided');
+      if (playerId !== s.captain) throw new Error(`${s.names[s.captain]} won the toss and decides`);
+      decide(s, a.choice === 'bat');
+      return;
+    }
 
     if (a.type === 'pick') {
       if (s.phase !== 'play' || s.gap) throw new Error('Wait for the next ball');
@@ -221,6 +256,9 @@ module.exports = {
       format: s.format,
       overs: s.overs,
       toss: s.toss,
+      captain: s.captain || null,
+      choseBat: s.choseBat,
+      firstBat: s.firstBat || null,
       innings: s.innings,
       inns: s.inns,
       target: s.innings === 2 || s.phase === 'break' ? s.inns[0].runs + 1 : null,

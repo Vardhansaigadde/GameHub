@@ -6,6 +6,8 @@ const { handcricket: hc } = require('../games');
 const P = n => Array.from({ length: n }, (_, i) => ({ id: 'p' + i, name: 'P' + i }));
 const host = { isHost: true }, guest = { isHost: false };
 const pick = (s, id, n) => hc.action(s, id, { type: 'pick', n }, guest);
+// coin, then the toss winner's choice (nobody answers, so they bat), then the first ball
+const toPlay = s => { let k = 0; while (s.phase !== 'play' && k++ < 5) hc.onTimer(s); };
 // both players pick; then the result shows and the next ball starts
 function ball(s, bat, bowl) {
   if (s.batterId !== 'ai') pick(s, s.batterId, bat); else s.picks.bat = bat;
@@ -28,7 +30,7 @@ test('handcricket: only 1, 2, 4, 6 or 8 players', () => {
 
 test('handcricket: different numbers score, the same number is out, picks stay secret', () => {
   const s = hc.setup(P(2), { overs: 2, wickets: 1 });
-  hc.onTimer(s); // toss
+  toPlay(s); // toss
   assert.strictEqual(s.phase, 'play');
   const bat = s.batterId, bowl = s.bowlerId;
   assert.throws(() => pick(s, bat, 7), /1 to 6/);
@@ -49,7 +51,7 @@ test('handcricket: different numbers score, the same number is out, picks stay s
 
 test('handcricket: the chase ends as soon as the target is passed', () => {
   const s = hc.setup(P(2), { overs: 5 });
-  hc.onTimer(s);
+  toPlay(s);
   ball(s, 6, 1); ball(s, 2, 2);         // 6 runs, then out
   hc.onTimer(s);                        // innings break over
   assert.strictEqual(s.innings, 2);
@@ -63,7 +65,7 @@ test('handcricket: the chase ends as soon as the target is passed', () => {
 
 test('handcricket: overs run out, bowlers change every over, a tie is a tie', () => {
   const s = hc.setup(P(4), { overs: 1 });
-  hc.onTimer(s);
+  toPlay(s);
   const bowlers = new Set();
   for (let b = 0; b < 6; b++) { bowlers.add(s.bowlerId); ball(s, 1, 2); }
   assert.strictEqual(bowlers.size, 1, 'one bowler for the whole over');
@@ -77,7 +79,7 @@ test('handcricket: overs run out, bowlers change every over, a tie is a tie', ()
 
 test('handcricket: in teams every batter gets one life, and team and player totals add up', () => {
   const s = hc.setup(P(4), { overs: 5 });
-  hc.onTimer(s);
+  toPlay(s);
   const side = s.inns[0].side;
   const first = s.batterId;
   ball(s, 4, 1); ball(s, 3, 3);
@@ -91,7 +93,7 @@ test('handcricket: in teams every batter gets one life, and team and player tota
 
 test('handcricket: playing the computer works on its own, and timeouts pick for you', () => {
   const s = hc.setup(P(1), { overs: 1 });
-  hc.onTimer(s);
+  toPlay(s);
   assert.ok(s.sides.b.includes('ai'));
   assert.notStrictEqual(s.picks[s.batterId === 'ai' ? 'bat' : 'bowl'], null, 'the computer picks straight away');
   let guard = 0;
@@ -105,7 +107,7 @@ test('handcricket: playing the computer works on its own, and timeouts pick for 
 
 test('handcricket: a gone batter or bowler gets a random pick so the game carries on', () => {
   const s = hc.setup(P(2));
-  hc.onTimer(s);
+  toPlay(s);
   pick(s, s.batterId, 3);
   assert.strictEqual(hc.absentBlock(s, [s.bowlerId]), s.bowlerId);
   hc.skipAbsent(s, s.bowlerId);
@@ -116,7 +118,7 @@ test('handcricket: a Test match has no overs limit; the innings ends only when e
   const s = hc.setup(P(2), { format: 'test', overs: 1, wickets: 2 });
   assert.strictEqual(s.format, 'test');
   assert.strictEqual(s.overs, null, 'overs are ignored in a Test');
-  hc.onTimer(s);
+  toPlay(s);
   for (let b = 0; b < 20; b++) ball(s, 1, 2);   // 20 balls, well past any overs limit
   assert.strictEqual(s.phase, 'play');
   assert.strictEqual(s.inns[0].runs, 20);
@@ -142,6 +144,47 @@ test('handcricket: lives are only offered for 1 or 2 players, and teams ignore t
   assert.strictEqual(lives.label, 'Lives');
   assert.deepStrictEqual(lives.players, [1, 2]);
   const s = hc.setup(P(4), { wickets: 3 });
-  hc.onTimer(s);
+  toPlay(s);
   assert.strictEqual(s.inns[0].maxWickets, 2, 'a team of 2 is all out after 2 wickets');
+});
+
+test('handcricket: the toss winner chooses to bat or bowl; only they can choose', () => {
+  const s = hc.setup(P(2));
+  assert.strictEqual(s.phase, 'toss');
+  hc.onTimer(s);
+  assert.strictEqual(s.phase, 'choice');
+  const winner = s.sides[s.toss][0];
+  const loser = s.sides[s.toss === 'a' ? 'b' : 'a'][0];
+  assert.strictEqual(hc.view(s, loser).captain, winner);
+  assert.throws(() => hc.action(s, loser, { type: 'tossChoice', choice: 'bat' }, guest), /won the toss/);
+  hc.action(s, winner, { type: 'tossChoice', choice: 'bowl' }, guest);
+  assert.strictEqual(s.phase, 'decided');
+  assert.strictEqual(s.choseBat, false);
+  hc.onTimer(s);
+  assert.strictEqual(s.phase, 'play');
+  assert.notStrictEqual(s.inns[0].side, s.toss, 'chose to bowl, so the other side bats');
+  assert.strictEqual(s.bowlerId, winner);
+});
+
+test('handcricket: teams: the captain of the winning side chooses; a gone captain bats', () => {
+  const s = hc.setup(P(4));
+  hc.onTimer(s);
+  const captain = s.sides[s.toss][0];
+  const mate = s.sides[s.toss][1];
+  assert.throws(() => hc.action(s, mate, { type: 'tossChoice', choice: 'bowl' }, guest), /decides/);
+  assert.strictEqual(hc.absentBlock(s, [captain]), captain);
+  hc.skipAbsent(s, captain);
+  assert.strictEqual(s.choseBat, true);
+  hc.onTimer(s);
+  assert.strictEqual(s.inns[0].side, s.toss);
+});
+
+test('handcricket: when the computer wins the toss it decides by itself', () => {
+  for (let k = 0; k < 30; k++) {
+    const s = hc.setup(P(1));
+    hc.onTimer(s);
+    if (s.sides[s.toss][0] === 'ai') { assert.strictEqual(s.phase, 'decided'); assert.strictEqual(typeof s.choseBat, 'boolean'); return; }
+    assert.strictEqual(s.phase, 'choice');
+  }
+  assert.fail('the computer never won the toss in 30 tries');
 });

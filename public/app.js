@@ -162,13 +162,25 @@ function thumb(id) {
       <g class="np-art-letter"><rect x="8" y="12" width="36" height="40" rx="9" fill="#ff2e93"/><text x="26" y="43" font-family="Fredoka,Arial" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">A</text></g>
       ${[['Name', 15], ['Place', 27], ['Animal', 39], ['Thing', 51]].map(([t, y], i) => `<rect x="50" y="${y - 8}" width="40" height="10" rx="3" fill="#fff" opacity=".92"/><text x="54" y="${y - 1}" font-family="Fredoka,Arial" font-size="6" font-weight="700" fill="#3a1470">${t}</text>
         <g class="np-art-tick" style="animation-delay:${(i * 0.35).toFixed(2)}s"><circle cx="85" cy="${y - 3}" r="3.600" fill="#2fe07f"/><path d="M83.400 ${y - 3}l1.200 1.200 2.200-2.400" stroke="#052b17" stroke-width="1.200" fill="none"/></g>`).join('')}`,
-    handcricket: `<rect width="96" height="64" fill="#2a7f48"/><path d="M0 0h96v64H0z" fill="url(#hcStripes)"/>
-      <defs><pattern id="hcStripes" width="16" height="64" patternUnits="userSpaceOnUse"><rect width="8" height="64" fill="#2e8b4f"/></pattern></defs>
-      <ellipse cx="48" cy="34" rx="15" ry="30" fill="#c9a86a"/>
-      <g class="hcart-hand"><rect x="12" y="22" width="24" height="28" rx="9" fill="#ffd9b3"/><rect x="12" y="44" width="24" height="6" rx="3" fill="#f0b98a"/><text x="24" y="42" font-family="Fredoka,Arial" font-size="16" font-weight="700" fill="#5a3010" text-anchor="middle">3</text></g>
-      <g class="hcart-hand r"><rect x="60" y="22" width="24" height="28" rx="9" fill="#ffd9b3"/><rect x="60" y="44" width="24" height="6" rx="3" fill="#f0b98a"/><text x="72" y="42" font-family="Fredoka,Arial" font-size="16" font-weight="700" fill="#5a3010" text-anchor="middle">3</text></g>
-      <g fill="#f5f0e1"><rect x="44" y="40" width="2" height="14"/><rect x="47" y="40" width="2" height="14"/><rect x="50" y="40" width="2" height="14"/><rect x="43.500" y="39" width="9" height="1.600" rx=".8" fill="#ffc83d"/></g>
-      <g class="hcart-out"><rect x="28" y="6" width="40" height="14" rx="4" fill="#ff4d6d" stroke="#fff" stroke-width="1.500"/><text x="48" y="17" font-family="Fredoka,Arial" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">OUT!</text></g>`,
+    handcricket: `<defs><linearGradient id="hcxSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a1633"/><stop offset=".6" stop-color="#1c3a6e"/><stop offset="1" stop-color="#245a3a"/></linearGradient>
+        <radialGradient id="hcxGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff8d6" stop-opacity=".9"/><stop offset="1" stop-color="#fff8d6" stop-opacity="0"/></radialGradient></defs>
+      <rect width="96" height="64" fill="url(#hcxSky)"/>
+      <path d="M78 6 L60 46 L96 46 L96 18 Z" fill="#fff8d6" opacity=".08"/>
+      <circle cx="84" cy="8" r="9" fill="url(#hcxGlow)"/><rect x="79" y="5" width="10" height="5" rx="1.500" fill="#fffbe6"/><rect x="83.300" y="10" width="1.400" height="14" fill="#2b3550"/>
+      <rect y="44" width="96" height="20" fill="#2f8f50"/>${[0, 1, 2, 3, 4, 5].map(i => `<rect x="${i * 16}" y="44" width="8" height="20" fill="#2a8048"/>`).join('')}
+      <path d="M0 45 Q48 41 96 45" stroke="#fff" stroke-opacity=".5" stroke-width=".8" fill="none"/>
+      <rect x="6" y="49" width="84" height="7" rx="1.500" fill="#d6b77c"/><rect x="20" y="49" width="1" height="7" fill="#fff" opacity=".8"/>
+      <g fill="#f3e6c4"><rect x="11" y="37" width="1.400" height="15" rx=".6"/><rect x="13.300" y="37" width="1.400" height="15" rx=".6"/><rect x="15.600" y="37" width="1.400" height="15" rx=".6"/></g>
+      <g class="hcx-bails" fill="#ffc83d"><rect x="10.800" y="36.200" width="3.200" height="1.100" rx=".5"/><rect x="13.900" y="36.200" width="3.200" height="1.100" rx=".5"/></g>
+      <g class="hcx-batter">
+        <path d="M24.500 39 L23 52 M29.500 39 L31 52" stroke="#f4f4f4" stroke-width="3.400" stroke-linecap="round"/>
+        <path d="M22 52h3M30 52h3" stroke="#1f2937" stroke-width="1.600" stroke-linecap="round"/>
+        <rect x="22.500" y="26" width="9" height="14" rx="3.500" fill="#1e5bd8"/><rect x="22.500" y="33" width="9" height="2" fill="#ffc83d"/>
+        <circle cx="27" cy="21.500" r="4.300" fill="#173d99"/><path d="M27.500 19.500h4.200v4.200h-3" fill="none" stroke="#cbd5e1" stroke-width=".9"/><rect x="25.400" y="17" width="5" height="1.500" rx=".7" fill="#ffc83d"/>
+        <g class="hcx-bat"><path d="M29 28 L35 33" stroke="#ffd9b3" stroke-width="2.400" stroke-linecap="round"/><path d="M34.500 32.500 L37 35.300" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/><path d="M36.400 34.600 L45.500 45 L43.600 46.700 L34.800 36.100 Z" fill="#ecc98d" stroke="#b88a4a" stroke-width=".6"/></g>
+      </g>
+      <g class="hcx-ball"><circle r="2.100" fill="#d0102a"/><path d="M-1.900 -.4 Q0 .6 1.900 -.4" stroke="#fff" stroke-width=".5" fill="none"/></g>
+      <g class="hcx-six"><rect x="60" y="13" width="22" height="11" rx="3" fill="#ffc83d"/><text x="71" y="21.600" font-family="Fredoka,Arial" font-size="8.500" font-weight="700" fill="#3a2300" text-anchor="middle">SIX!</text></g>`,
     sequence: `<rect width="96" height="64" fill="#22603a"/>
       <g transform="rotate(-16 30 40)"><rect x="18" y="16" width="24" height="34" rx="3" fill="#fff"/><text x="22" y="26" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">5♥</text></g>
       <g transform="rotate(-4 46 38)"><rect x="34" y="12" width="24" height="34" rx="3" fill="#fff"/><text x="38" y="22" font-family="Georgia" font-size="8" font-weight="700" fill="#c8102e">6♥</text></g>

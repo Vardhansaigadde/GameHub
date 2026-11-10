@@ -118,13 +118,52 @@ renderers.handcricket = () => {
   hc.key = key;
   const wrap = body => `<div class="hc${fresh ? ' hc-fresh' : ''}">${body}</div>`;
 
+  const matchLine = `<p class="hc-sub">${g.mode === 'ai' ? 'You vs the computer' : g.mode === 'duel' ? '1 vs 1' : `${hcSide(g, 'a')} vs ${hcSide(g, 'b')}`} · ${hcFormat(g)}</p>`;
+  // who won the toss, in words: "You", a player's name, or a team ("Blue")
+  const tossName = () => (g.mode === 'teams' ? `Team ${hcSide(g, g.toss)}` : hcName(g, g.sides[g.toss][0]));
+  const wonVerb = () => (g.mode !== 'teams' && g.sides[g.toss][0] === S.you ? 'win' : 'wins');
+
   if (g.phase === 'toss') {
     return {
       tone: 'live',
-      turn: 'Toss time…',
+      turn: 'The coin is in the air…',
       body: wrap(`${hcStadium(`<div class="hc-toss"><div class="hc-coin ${g.toss}"><span class="f a">${HC_BAT}</span><span class="f b">${HC_BALL}</span></div>
-        <p class="hc-toss-text"><b>${hcSide(g, g.toss)}</b> won the toss and will bat first!</p>
-        <p class="hc-sub">${g.mode === 'ai' ? 'You vs the computer' : g.mode === 'duel' ? '1 vs 1' : `${hcSide(g, 'a')} vs ${hcSide(g, 'b')}`} · ${hcFormat(g)}</p></div>`, 'buzz')}
+        <p class="hc-toss-text"><b>${tossName()}</b> ${wonVerb()} the toss!</p>${matchLine}</div>`, 'buzz')}
+        ${hcTeams(g)}`),
+    };
+  }
+
+  if (g.phase === 'choice') {
+    const mine = g.captain === S.you;
+    const who = hcName(g, g.captain);
+    return {
+      tone: mine ? 'mine' : 'live',
+      turn: mine ? 'You won the toss! Bat or bowl first?' : `${who} won the toss and is deciding…`,
+      body: wrap(`${hcStadium(`<div class="hc-choice">
+          <span class="hc-coin-small">${g.toss === 'a' ? HC_BAT : HC_BALL}</span>
+          <h3>${mine ? 'You won the toss!' : `${tossName()} ${wonVerb()} the toss`}</h3>
+          ${mine
+            ? `<p class="hc-sub">What would you like to do first?</p>
+               <div class="hc-pick2"><button class="hc-opt bat" data-game="handcricket" data-toss="bat">${HC_BAT}<b>Bat first</b><small>Set a target</small></button>
+               <button class="hc-opt bowl" data-game="handcricket" data-toss="bowl">${HC_BALL}<b>Bowl first</b><small>Chase it down</small></button></div>`
+            : `<p class="hc-sub">${g.mode === 'teams' ? `Captain ${who} is` : `${who} is`} choosing to bat or bowl…</p><div class="hc-think"><i></i><i></i><i></i></div>`}
+        </div>`, 'buzz')}
+        ${timeBar(g.endsAt, g.totalMs)}${hcTeams(g)}`),
+    };
+  }
+
+  if (g.phase === 'decided') {
+    const who = g.captain === 'ai' ? 'The computer' : g.mode === 'teams' ? `Team ${hcSide(g, g.toss)}` : hcName(g, g.captain);
+    const verb = g.captain === S.you && g.mode !== 'teams' ? 'chose' : 'chose';
+    return {
+      tone: 'live',
+      turn: `${who} won the toss and ${verb} to ${g.choseBat ? 'bat' : 'bowl'} first`,
+      body: wrap(`${hcStadium(`<div class="hc-choice decided">
+          <span class="hc-coin-small big ${g.choseBat ? 'bat' : 'bowl'}">${g.choseBat ? HC_BAT : HC_BALL}</span>
+          <h3>${who} won the toss</h3>
+          <p class="hc-decision">and chose to <b>${g.choseBat ? 'BAT' : 'BOWL'}</b> first</p>
+          <p class="hc-sub">${hcSide(g, g.firstBat)} ${g.mode !== 'teams' && g.sides[g.firstBat][0] === S.you ? 'bat' : 'bats'} first</p>${matchLine}
+        </div>`, 'buzz')}
         ${hcTeams(g)}`),
     };
   }
@@ -191,6 +230,7 @@ renderers.handcricket = () => {
 
 handlers.handcricket = d => {
   if ('pick' in d) act({ type: 'pick', n: +d.pick });
+  else if ('toss' in d) act({ type: 'tossChoice', choice: d.toss });
 };
 
 // number keys pick too, when you're batting or bowling and not typing somewhere

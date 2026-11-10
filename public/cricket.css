@@ -135,19 +135,20 @@
   .hc-keys { display: none; }
 }
 
-/* game-list picture */
-.hcart-hand { transform-box: fill-box; transform-origin: center bottom; animation: hcArtShake 1.6s ease-in-out infinite; }
-.hcart-hand.r { animation-delay: -.8s; }
-.hcart-out { opacity: 0; transform-box: fill-box; transform-origin: center; animation: hcArtOut 3.2s ease-out infinite; }
-@keyframes hcArtShake { 0%, 60%, 100% { transform: rotate(0); } 15% { transform: rotate(-10deg) translateY(-3px); } 30% { transform: rotate(8deg); } 45% { transform: rotate(-5deg) translateY(-2px); } }
-@keyframes hcArtOut { 0%, 55% { opacity: 0; transform: scale(2); } 62%, 90% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; } }
+/* game-list picture: the batter swings, the ball flies away for six */
+.hcx-bat { transform-box: view-box; transform-origin: 29px 28px; animation: hcxBat 3s ease-in-out infinite; }
+.hcx-ball { animation: hcxBall 3s linear infinite; }
+.hcx-six { opacity: 0; transform-box: fill-box; transform-origin: center; animation: hcxSix 3s ease-out infinite; }
+@keyframes hcxBat { 0%, 26% { transform: rotate(-95deg); } 34% { transform: rotate(18deg); } 60% { transform: rotate(30deg); } 82%, 100% { transform: rotate(-95deg); } }
+@keyframes hcxBall { 0% { transform: translate(92px, 46px); } 31% { transform: translate(40px, 44px); } 70% { transform: translate(90px, 4px) scale(.45); opacity: 1; } 71%, 100% { transform: translate(92px, 46px); opacity: 0; } }
+@keyframes hcxSix { 0%, 40% { opacity: 0; transform: scale(.4); } 48%, 80% { opacity: 1; transform: scale(1) rotate(-6deg); } 90%, 100% { opacity: 0; } }
 
 html[data-theme="light"] .hc-col, html[data-theme="light"] .hc-card { background: #fff; box-shadow: 0 6px 16px rgba(70, 50, 140, .1); }
 
 @media (prefers-reduced-motion: reduce) {
   .hc *, .hc *::before { animation: none !important; }
   .hc-toss-text { opacity: 1; }
-  .hcart-hand, .hcart-out { animation: none; opacity: 1; }
+  .hcx-bat, .hcx-ball, .hcx-six { animation: none; } .hcx-six { opacity: 1; }
 }
 
 /* ==================== the stadium ==================== */
@@ -286,3 +287,30 @@ html[data-theme="light"] .hc-col, html[data-theme="light"] .hc-card { background
 /* no stands: just the night sky, floodlights and the ground */
 .hc-stadium { padding-top: 54px; }
 @media (max-width: 560px) { .hc-stadium { padding-top: 44px; } }
+
+/* toss: winner chooses bat or bowl */
+.hc-choice { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 8px 8px; color: #fff; text-align: center; }
+.hc-choice h3 { margin: 0; font: 600 1.6rem var(--display); }
+.hc-coin-small { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; color: #6b4300;
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, #ffc83d 55%, #c98a00); box-shadow: inset 0 0 0 5px rgba(255, 255, 255, .35), 0 10px 22px rgba(0, 0, 0, .4); }
+.hc-coin-small svg.icon { width: 30px; height: 30px; }
+.hc-coin-small.big { width: 84px; height: 84px; } .hc-coin-small.big svg.icon { width: 40px; height: 40px; }
+.hc-fresh .hc-coin-small { animation: npLand .6s var(--spring) both; }
+.hc-pick2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: min(100%, 440px); margin-top: 6px; }
+.hc-opt { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px 10px; border: 0; border-radius: 22px; cursor: pointer; color: #fff; font: inherit;
+  transition: transform .15s var(--spring), box-shadow .15s; }
+.hc-opt svg.icon { width: 40px; height: 40px; }
+.hc-opt b { font: 700 1.35rem var(--display); }
+.hc-opt small { opacity: .85; font-weight: 700; }
+.hc-opt.bat { background: linear-gradient(160deg, #2fe07f, #0f9a50); box-shadow: 0 6px 0 #0b6b38, 0 14px 26px rgba(47, 224, 127, .35); }
+.hc-opt.bowl { background: linear-gradient(160deg, #ff6b8a, #d0102a); box-shadow: 0 6px 0 #8a0a1e, 0 14px 26px rgba(255, 77, 109, .35); }
+.hc-opt:hover { transform: translateY(-4px) scale(1.03); }
+.hc-opt:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .4); }
+.hc-fresh .hc-opt { animation: mlPop .45s var(--spring) both; }
+.hc-fresh .hc-opt.bowl { animation-delay: .1s; }
+.hc-think { display: flex; gap: 6px; margin-top: 4px; }
+.hc-think i { width: 10px; height: 10px; border-radius: 50%; background: #ffc83d; animation: ipDot 1s ease-in-out infinite; }
+.hc-think i:nth-child(2) { animation-delay: .15s; } .hc-think i:nth-child(3) { animation-delay: .3s; }
+.hc-decision { margin: 0; font: 600 1.3rem var(--display); }
+.hc-decision b { display: inline-block; padding: 2px 14px; border-radius: 10px; background: #ffc83d; color: #3a2300; letter-spacing: .06em; }
+.hc-fresh .hc-decision b { animation: hcStamp .5s .25s var(--spring) both; }
